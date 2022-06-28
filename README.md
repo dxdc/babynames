@@ -13,6 +13,8 @@ The source code for this project is included, as are the compiled datasets:
 
 - [all-names.csv](all-names.csv), as well as [boys.csv](boys.csv) and [girls.csv](girls.csv)
 
+You can also view an [abbreviated version of this list](https://dxdc.github.io/babynames/) online.
+
 Recommendation: Review this list in order from top to bottom, applying any filters you wish (e.g., using Excel).
 
 The following columns are provided:
