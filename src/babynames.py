@@ -221,6 +221,7 @@ def main():
             "n_percent",
             100 * (gender["n_sum"].cumsum() / gender["n_sum"].sum()).round(3),
         )
+        gender.insert(0, "rank", gender["n_sum"].rank(ascending=False))
         gender.to_csv("{}.csv".format("boys" if sex == "M" else "girls"), index=False)
 
 

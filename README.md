@@ -19,6 +19,7 @@ The following columns are provided:
 
 | Header             | Description                                                                                                    |
 | ------------------ | -------------------------------------------------------------------------------------------------------------- |
+| rank               | Popularity index (1880 - 2001)                                                                                 |
 | name               | Baby name                                                                                                      |
 | alt_spellings      | A list of alternative spellings, separated by spaces                                                           |
 | n_sum              | Total number of babies born in the United States with this name (includes alternate spellings)                 |
