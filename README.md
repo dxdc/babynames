@@ -36,7 +36,7 @@ The following columns are provided:
 
 ## Observations
 
-Reviewing a few thousand names is probably sufficient to give you child a name that is relatively "normal", and encompasses 90-95% of the most common names.
+Reviewing a few thousand names is probably sufficient to find one that is relatively "normal", and encompasses 90-95% of the most common names.
 Unless you happen to be looking for a highly unique or specific name, that is a very reasonable number of options for review.
 
 ![](/images/graph.png?raw=true "Baby names distribution")
