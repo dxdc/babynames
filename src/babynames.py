@@ -60,6 +60,11 @@ def alliteration_in_word(phones: List[str]) -> Optional[int]:
         return 1
 
 
+def alliteration_in_word_first_letter(phones: List[str]) -> Optional[int]:
+    if any(phone.split().count(phone.split()[0]) > 1 for phone in phones):
+        return 2
+
+
 def alliteration_with_last(phones: List[str]) -> Optional[str]:
     # last_name_phones = "K AE1 S P IY0"
 
@@ -149,10 +154,19 @@ def main():
 
     df.insert(1, "alt_spellings", alt_spellings)
 
-    ## merge in  the most popular year for each name
+    ## merge in the most popular year for each name
 
     df = df.merge(
         popular_years, how="left", left_on=["name", "sex"], right_on=["name", "sex"]
+    )
+
+    ## add palindromes
+
+    df["palindrome"] = (
+        df["name"]
+        .str.lower()
+        .swifter.progress_bar(False)
+        .apply(lambda name: 1 if name == name[::-1] else None)
     )
 
     ## combine all names:
@@ -170,6 +184,7 @@ def main():
                 "year_max": "max",
                 "year_pop": "max",
                 "biblical": "max",
+                "palindrome": "max",
                 "phones": lambda x: list(set(list(chain(*x)))),
             }
         )
@@ -187,6 +202,11 @@ def main():
     df["syllables"] = df["phones"].swifter.progress_bar(False).apply(syllables_in_word)
     df["alliteration_first"] = (
         df["phones"].swifter.progress_bar(False).apply(alliteration_in_word)
+    )
+    df["alliteration_first"] = (
+        df["phones"]
+        .swifter.progress_bar(False)
+        .apply(alliteration_in_word_first_letter)
     )
 
     # TODO: Can be customized for specific last name choices as well

@@ -77,6 +77,11 @@ const grid = new gridjs.Grid({
       formatter: (cell) => `${cell == 1 ? "Y" : ""}`,
     },
     {
+      id: "palindrome",
+      name: "Palindrome",
+      hidden: true,
+    },
+    {
       id: "phones",
       name: "Phones",
       hidden: true,

@@ -30,11 +30,12 @@ The following columns are provided:
 | year_max           | Year this name was last used                                                                                   |
 | year_pop           | Most popular year for this name                                                                                |
 | biblical           | Biblical name                                                                                                  |
+| palindrome         | Palindrome                                                                                                     |
 | phones             | Deduplicated list of phonetic phonemes                                                                         |
 | first_letter       | First letter of the name                                                                                       |
 | stresses           | Lexical stress pattern                                                                                         |
 | syllables          | Number of syllables                                                                                            |
-| alliteration_first | Name contains alliteration (repeated syllables)                                                                |
+| alliteration_first | Name contains alliteration (1 = any, 2 = with first letter)                                                    |
 | unisex             | Unisex determined arbitrarily using a cut-off of 15,000 minimum babies born to each gender and used since 1970 |
 
 ## Observations
