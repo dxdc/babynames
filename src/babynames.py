@@ -1,10 +1,10 @@
 import re
+from collections.abc import Callable
 from functools import lru_cache
 from itertools import chain
 from itertools import product as iterprod
 from pathlib import Path
 from statistics import mean
-from typing import Callable, List, Optional
 
 import nltk
 import pandas as pd
@@ -18,8 +18,8 @@ except LookupError:
     arpabet = nltk.corpus.cmudict.dict()
 
 
-@lru_cache()
-def wordbreak(s: str) -> List[str]:
+@lru_cache
+def wordbreak(s: str) -> list[str]:
     s = s.lower()
     if s in arpabet:
         return arpabet[s]
@@ -32,19 +32,19 @@ def wordbreak(s: str) -> List[str]:
     return []
 
 
-def phones_in_word(word: str) -> List[str]:
-    phones: List[str] = phones_for_word(word)
+def phones_in_word(word: str) -> list[str]:
+    phones: list[str] = phones_for_word(word)
     if phones:
         return phones
 
     return [" ".join(x) for x in wordbreak(word)]
 
 
-def stresses_in_word(phones: List[str]) -> List[str]:
+def stresses_in_word(phones: list[str]) -> list[str]:
     return [re.sub(r"[^0-2]", "", phone) for phone in phones]
 
 
-def syllables_in_word(phones: List[str]) -> int:
+def syllables_in_word(phones: list[str]) -> int:
     if len(phones) > 0:
         mean_syllables: float = mean([syllable_count(phone) for phone in phones])
         return int(round(mean_syllables, 1))
@@ -52,7 +52,7 @@ def syllables_in_word(phones: List[str]) -> int:
     return 0
 
 
-def alliteration_in_word(phones: List[str]) -> Optional[int]:
+def alliteration_in_word(phones: list[str]) -> int | None:
     if any(
         any(phone.split().count(element) > 1 for element in phone.split())
         for phone in phones
@@ -60,12 +60,12 @@ def alliteration_in_word(phones: List[str]) -> Optional[int]:
         return 1
 
 
-def alliteration_in_word_first_letter(phones: List[str]) -> Optional[int]:
+def alliteration_in_word_first_letter(phones: list[str]) -> int | None:
     if any(phone.split().count(phone.split()[0]) > 1 for phone in phones):
         return 2
 
 
-def alliteration_with_last(phones: List[str]) -> Optional[str]:
+def alliteration_with_last(phones: list[str]) -> str | None:
     # last_name_phones = "K AE1 S P IY0"
 
     if any(phone.startswith("K ") for phone in phones):
@@ -133,14 +133,14 @@ def main():
 
     ## develop complete list of alternative spellings based on phonetic pronunctiation
 
-    full_alt_spellings_lambda: Callable[[List[str]], str] = lambda row: " ".join(
+    full_alt_spellings_lambda: Callable[[list[str]], str] = lambda row: " ".join(
         list(set(" ".join([phones_map[phone] for phone in row]).split(" ")))
     )
     df["full_alt_spellings"] = (
         df["phones"].swifter.progress_bar(False).apply(full_alt_spellings_lambda)
     )
 
-    alt_spellings_lambda: Callable[[List[str]], str] = lambda row: " ".join(
+    alt_spellings_lambda: Callable[[list[str]], str] = lambda row: " ".join(
         [x for x in row["full_alt_spellings"].split(" ") if x != row["name"]]
     )
     alt_spellings = (
@@ -242,7 +242,7 @@ def main():
             100 * (gender["n_sum"].cumsum() / gender["n_sum"].sum()).round(3),
         )
         gender.insert(0, "rank", gender["n_sum"].rank(method="dense", ascending=False))
-        gender.to_csv("{}.csv".format("boys" if sex == "M" else "girls"), index=False)
+        gender.to_csv(f"{'boys' if sex == 'M' else 'girls'}.csv", index=False)
 
 
 if __name__ == "__main__":
