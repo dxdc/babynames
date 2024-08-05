@@ -188,7 +188,7 @@ def main():
                 "phones": lambda x: list(set(list(chain(*x)))),
             }
         )
-        .drop("full_alt_spellings", 1)
+        .drop("full_alt_spellings", axis=1)
         .sort_values(by=["sex", "n_sum", "name"], ascending=[True, False, True])
     )
 
@@ -235,7 +235,7 @@ def main():
     ## split by gender (M, F), assign n_percent, which represents the cumulative percentage of names
 
     for sex in ["M", "F"]:
-        gender = df[df["sex"] == sex].drop("sex", 1)
+        gender = df[df["sex"] == sex].drop("sex", axis=1)
         gender.insert(
             3,
             "n_percent",

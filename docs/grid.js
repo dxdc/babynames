@@ -147,7 +147,7 @@ document.querySelectorAll("a.btn-gender").forEach((button) =>
     e.preventDefault();
     const gender = e.currentTarget.dataset.gender;
     loadBabyNames(gender);
-  })
+  }),
 );
 
 // load boys by default
