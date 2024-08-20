@@ -30,7 +30,7 @@ joblib==1.4.2
     # via nltk
 locket==1.0.0
     # via partd
-nltk==3.8.1
+nltk==3.9
     # via -r requirements.in
 numpy==1.26.4
     # via
