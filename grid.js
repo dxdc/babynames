@@ -26,8 +26,6 @@ let activeFilters = {
 // ---------------------------------------------------------------
 
 function initTable(data, onReady) {
-  document.getElementById("loading").style.display = "none";
-
   table = new Tabulator("#table-container", {
     height: "70vh",
     data: data,
@@ -232,6 +230,8 @@ function updateYearReferences(maxYear) {
 
 function loadData(gender) {
   currentGender = gender;
+  loadData._gen = (loadData._gen || 0) + 1;
+  const gen = loadData._gen;
 
   if (dataCache[gender]) {
     allData = dataCache[gender];
@@ -243,15 +243,22 @@ function loadData(gender) {
         applyFilters();
       });
     } else if (tableReady) {
-      table.setData(allData).then(function () {
-        applyFilters();
-      });
+      table
+        .setData(allData)
+        .then(function () {
+          applyFilters();
+        })
+        .catch(function (err) {
+          console.error("setData error:", err);
+        });
     }
     return;
   }
 
   const url = DATA_URLS[gender];
-  document.getElementById("loading").style.display = "block";
+  const loadingEl = document.getElementById("loading");
+  loadingEl.textContent = "Loading baby names\u2026";
+  loadingEl.style.display = "block";
 
   Papa.parse(url, {
     download: true,
@@ -259,6 +266,10 @@ function loadData(gender) {
     skipEmptyLines: true,
     dynamicTyping: true,
     complete: function (results) {
+      // Ignore stale responses from a previous gender switch
+      if (gen !== loadData._gen) return;
+
+      loadingEl.style.display = "none";
       allData = results.data;
       dataCache[gender] = allData;
 
@@ -275,13 +286,19 @@ function loadData(gender) {
           applyFilters();
         });
       } else if (tableReady) {
-        table.setData(allData).then(function () {
-          applyFilters();
-        });
+        table
+          .setData(allData)
+          .then(function () {
+            applyFilters();
+          })
+          .catch(function (err) {
+            console.error("setData error:", err);
+          });
       }
     },
     error: function () {
-      document.getElementById("loading").textContent =
+      if (gen !== loadData._gen) return;
+      loadingEl.textContent =
         "Failed to load data. Please try refreshing the page.";
     },
   });
@@ -627,7 +644,7 @@ function saveStateToHash() {
   }
 
   if (activeFilters.letters.length > 0)
-    params.set("letters", activeFilters.letters.sort().join(","));
+    params.set("letters", [...activeFilters.letters].sort().join(","));
   if (activeFilters.biblical) params.set("biblical", "1");
   if (activeFilters.unisex) params.set("unisex", "1");
   if (activeFilters.trending) params.set("trending", "1");
