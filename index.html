@@ -5,16 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="Browse US baby names from 1880-2023, de-duplicated by pronunciation. Filter by gender, rank, syllables, year range, starting letter, and more."
+      content="Browse and filter US baby names from 1880-2024, phonetically de-duplicated using the CMU Pronouncing Dictionary. Search by gender, popularity rank, syllables, year range, starting letter, biblical, and unisex names. Free downloadable CSV datasets."
     />
-    <title>Baby Names</title>
+    <meta
+      name="keywords"
+      content="baby names, US baby names, SSA baby names, popular baby names, name popularity, baby name search, name finder, biblical names, unisex names"
+    />
+    <title>Baby Names - US Baby Name Search &amp; Explorer (1880-2024)</title>
     <link
       rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@picocss/pico@2.0.6/css/pico.min.css"
+      href="https://cdn.jsdelivr.net/npm/@picocss/pico@2.1.1/css/pico.min.css"
     />
     <link
       rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/tabulator-tables@6.3.1/dist/css/tabulator_simple.min.css"
+      href="https://cdn.jsdelivr.net/npm/tabulator-tables@6.4.0/dist/css/tabulator_simple.min.css"
     />
     <style>
       :root {
@@ -114,14 +118,14 @@
         }
 
         & select,
-        & input[type="number"] {
+        & input[type="text"] {
           padding: 0.3rem 0.5rem;
           font-size: 0.85rem;
           margin: 0;
           height: auto;
         }
 
-        & input[type="number"] {
+        & input.year-input {
           width: 5rem;
         }
       }
@@ -164,26 +168,22 @@
         border-radius: 4px;
         cursor: pointer;
         border: 2px solid transparent;
+        background: var(--chip-bg);
+        color: var(--pico-color);
         transition: all 0.15s;
 
-        &.boys {
-          background: oklch(0.93 0.03 250);
-          color: oklch(0.45 0.12 250);
-
-          &.active {
-            background: oklch(0.45 0.12 250);
-            color: #fff;
-          }
+        &.boys.active {
+          background: oklch(0.45 0.12 250);
+          color: #fff;
         }
 
-        &.girls {
-          background: oklch(0.93 0.03 15);
-          color: oklch(0.45 0.15 15);
+        &.girls.active {
+          background: oklch(0.45 0.15 15);
+          color: #fff;
+        }
 
-          &.active {
-            background: oklch(0.45 0.15 15);
-            color: #fff;
-          }
+        &:not(.active):hover {
+          border-color: var(--pico-primary);
         }
       }
 
@@ -371,9 +371,9 @@
       <h1>Baby Names</h1>
       <div class="nav-links">
         <a href="https://github.com/dxdc/babynames">GitHub</a>
-        <a href="boys.csv" download>Boys CSV</a>
-        <a href="girls.csv" download>Girls CSV</a>
-        <a href="all-names.csv" download>All CSV</a>
+        <a href="data/boys.csv" download>Boys CSV</a>
+        <a href="data/girls.csv" download>Girls CSV</a>
+        <a href="data/all-names.csv" download>All CSV</a>
         <button
           id="theme-toggle"
           class="toggle-btn"
@@ -434,10 +434,13 @@
           <div class="filter-group">
             <label>Active After</label>
             <input
-              type="number"
+              type="text"
+              inputmode="numeric"
+              pattern="[0-9]*"
+              class="year-input"
               id="year-min"
               placeholder="1880"
-              min="1880"
+              maxlength="4"
               aria-label="Show names still used after this year"
             />
           </div>
@@ -445,10 +448,13 @@
           <div class="filter-group">
             <label>Active Before</label>
             <input
-              type="number"
+              type="text"
+              inputmode="numeric"
+              pattern="[0-9]*"
+              class="year-input"
               id="year-max"
-              placeholder="2023"
-              max="2023"
+              placeholder="2024"
+              maxlength="4"
               aria-label="Show names that existed before this year"
             />
           </div>
@@ -497,8 +503,8 @@
       </div>
     </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/tabulator-tables@6.3.1/dist/js/tabulator.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.5.2/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tabulator-tables@6.4.0/dist/js/tabulator.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.5.3/papaparse.min.js"></script>
     <script src="grid.js"></script>
   </body>
 </html>

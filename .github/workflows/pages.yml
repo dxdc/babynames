@@ -6,8 +6,7 @@ on:
     paths:
       - "index.html"
       - "grid.js"
-      - "boys.csv"
-      - "girls.csv"
+      - "data/*.csv"
 
 permissions:
   contents: read

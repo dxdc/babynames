@@ -2,8 +2,8 @@
 // Loads CSV data and renders with filtering, sorting, pagination
 
 const DATA_URLS = {
-  M: "boys.csv",
-  F: "girls.csv",
+  M: "data/boys.csv",
+  F: "data/girls.csv",
 };
 
 const dataCache = {};
@@ -333,16 +333,48 @@ document.getElementById("name-search").addEventListener("input", function () {
   searchTimeout = setTimeout(applyFilters, 200);
 });
 
-// Dropdowns and number inputs
-["rank-filter", "syllable-filter", "year-min", "year-max"].forEach(
-  function (id) {
-    document.getElementById(id).addEventListener("change", applyFilters);
-    document.getElementById(id).addEventListener("input", function () {
-      clearTimeout(searchTimeout);
-      searchTimeout = setTimeout(applyFilters, 300);
-    });
-  },
-);
+// Dropdowns
+["rank-filter", "syllable-filter"].forEach(function (id) {
+  document.getElementById(id).addEventListener("change", applyFilters);
+});
+
+// Year inputs: strip non-digits on input, validate and clamp on blur
+var YEAR_MIN = 1880;
+var YEAR_MAX = new Date().getFullYear();
+
+function clampYear(value, lo, hi) {
+  var n = parseInt(value, 10);
+  if (isNaN(n)) return "";
+  if (n < lo) return String(lo);
+  if (n > hi) return String(hi);
+  return String(n);
+}
+
+function validateYearRange() {
+  var afterEl = document.getElementById("year-min");
+  var beforeEl = document.getElementById("year-max");
+  var afterVal = afterEl.value ? parseInt(afterEl.value, 10) : null;
+  var beforeVal = beforeEl.value ? parseInt(beforeEl.value, 10) : null;
+  if (afterVal !== null && beforeVal !== null && afterVal > beforeVal) {
+    beforeEl.value = String(afterVal);
+  }
+}
+
+["year-min", "year-max"].forEach(function (id) {
+  var el = document.getElementById(id);
+  el.addEventListener("input", function () {
+    this.value = this.value.replace(/[^0-9]/g, "");
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(applyFilters, 300);
+  });
+  el.addEventListener("blur", function () {
+    if (this.value) {
+      this.value = clampYear(this.value, YEAR_MIN, YEAR_MAX);
+    }
+    validateYearRange();
+    applyFilters();
+  });
+});
 
 // Letter chips
 (function () {

@@ -18,7 +18,7 @@ jobs:
       - run: pip install polars cmudict
       - name: Generate CSVs
         working-directory: src
-        run: python babynames.py --verbose --output-dir ..
+        run: python babynames.py --verbose --output-dir ../data
       - name: Check for changes
         id: diff
         run: |
@@ -29,6 +29,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add *.csv
+          git add data/*.csv
           git commit -m "chore: regenerate CSV output"
           git push

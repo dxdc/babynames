@@ -449,8 +449,8 @@ def main() -> None:
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=Path(".."),
-        help="Output directory for CSV files (default: ..)",
+        default=Path("../data"),
+        help="Output directory for CSV files (default: ../data)",
     )
     parser.add_argument(
         "-v",
