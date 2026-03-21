@@ -60,6 +60,19 @@ function initTable(data, onReady) {
         minWidth: 120,
         headerFilter: false,
         responsive: 3,
+        formatter: function (cell) {
+          const val = cell.getValue();
+          if (!val) return "";
+          const names = val.split(" ");
+          if (names.length <= 3) return val;
+          return (
+            names.slice(0, 3).join(" ") + " +" + (names.length - 3) + " more"
+          );
+        },
+        tooltip: function (e, cell) {
+          const val = cell.getValue();
+          return val ? val.split(" ").join(", ") : "";
+        },
       },
       {
         title: "Count",

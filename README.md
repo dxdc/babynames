@@ -34,7 +34,7 @@ Reviewing a few thousand names is probably sufficient to find one that is relati
 
 ![Baby Name Distribution](/images/graph.png?raw=true "Baby Name Distribution")
 
-As the chart shows, boys' names are more concentrated (775 names covers 90%), while girls' names are more diverse (1,834 names to reach 90%). In either case, reviewing roughly 2,000–3,000 names covers the vast majority.
+As the chart shows, boys' names are more concentrated (fewer names to reach 90%), while girls' names are more diverse. In either case, reviewing roughly 2,000–3,000 names covers the vast majority. The exact thresholds are annotated on the chart and update automatically when the data is regenerated.
 
 ### CSV Columns
 
@@ -77,7 +77,7 @@ Using uv (recommended):
 ```bash
 uv venv
 source .venv/bin/activate   # Linux/macOS
-uv pip install -e ".[dev]"  # or: uv pip install polars cmudict g2p-en pytest ruff
+uv pip install -e ".[dev,g2p]"  # or: uv pip install polars cmudict g2p-en pytest ruff
 ```
 
 Using pip:
@@ -88,7 +88,7 @@ source .venv/bin/activate   # Linux/macOS
 pip install polars cmudict g2p-en pytest ruff
 ```
 
-The `g2p-en` package is optional but recommended — it provides a neural model for pronouncing names not found in the CMU dictionary (e.g., Jaxson, Khloe). Without it, the pipeline falls back to a subword-splitting heuristic.
+The `g2p-en` package is optional but recommended — it provides a neural model for pronouncing names not found in the CMU dictionary (e.g., Jaxson, Khloe). Without it, the pipeline falls back to a subword-splitting heuristic. If you install g2p-en, it will automatically download its required NLTK data on first run.
 
 ### Regenerating CSV Files
 

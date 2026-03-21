@@ -111,9 +111,26 @@ def _g2p_neural(name: str) -> PronunciationList:
     return []
 
 
+def get_grouping_pronunciations(name: str) -> PronunciationList:
+    """Get pronunciations suitable for determining spelling variant groups.
+
+    Only uses high-confidence sources: CMU dictionary direct lookup and
+    subword splitting (which itself only combines known CMU entries).
+    Does NOT use the g2p_en neural model, because it can produce
+    incorrect English-centric pronunciations for non-English names
+    (e.g., Juane → 'W EY1 N' instead of the correct Spanish pronunciation),
+    causing unrelated names to merge.
+    """
+    lower = name.lower()
+    if lower in ARPABET:
+        return [" ".join(phonemes) for phonemes in ARPABET[lower]]
+    return [" ".join(phonemes) for phonemes in split_into_subwords(name)]
+
+
 def get_pronunciations(name: str) -> PronunciationList:
     """Get all known ARPABET pronunciations for a name.
 
+    Used for display, syllable counting, and feature extraction.
     Priority:
     1. CMU dictionary direct lookup (may return multiple pronunciations)
     2. g2p_en neural model if available (single pronunciation, high quality)
@@ -272,18 +289,14 @@ def add_pronunciations(df: pl.DataFrame) -> pl.DataFrame:
 def build_spelling_variants(df: pl.DataFrame) -> pl.DataFrame:
     """Group names that share a pronunciation as spelling variants.
 
+    Uses get_grouping_pronunciations() (CMU dict + subword only) for
+    determining groups, NOT the full pronunciations column (which may
+    include g2p_en neural predictions that incorrectly merge unrelated
+    names like Juane→Wayne or Djaun→John).
+
     For names with multiple pronunciations, each name is assigned to the
     pronunciation cluster with the most members — i.e., the pronunciation
-    shared by the most other names. This prevents multi-pronunciation names
-    from bridging unrelated families while still catching legitimate merges.
-
-    For example:
-    - Meighan [M-EY1-G-AH0-N, M-IY1-AH0-N] picks M-EY1-G-AH0-N (shared
-      by Megan, Magan = 3 members) over M-IY1-AH0-N (shared by Mian = 2),
-      so it merges with Megan instead of bridging Megan to Mian.
-    - Aisling [EY1-S-L-IH0-NG, AE1-SH-L-IH0-NG] picks AE1-SH-L-IH0-NG
-      (shared by Aislinn = 2 members) over EY1-S-L-IH0-NG (only Aisling = 1),
-      so it correctly merges with Aislinn.
+    shared by the most other names.
 
     Since each name maps to exactly one "best" pronunciation, a simple dict
     yields the groups directly — no transitive closure is needed.
@@ -293,11 +306,13 @@ def build_spelling_variants(df: pl.DataFrame) -> pl.DataFrame:
     - variant_group: integer group ID (used as merge key)
     """
     names: list[str] = df["name"].to_list()
-    pronunciations_list: list[PronunciationList] = df["pronunciations"].to_list()
 
-    # Build pronunciation -> names index using ALL pronunciations
+    # Compute grouping-safe pronunciations (CMU dict + subword only)
+    grouping_prons: list[PronunciationList] = [get_grouping_pronunciations(name) for name in names]
+
+    # Build pronunciation -> names index using ALL grouping pronunciations
     pron_to_names: dict[str, set[str]] = {}
-    for name, pronunciations in zip(names, pronunciations_list, strict=True):
+    for name, pronunciations in zip(names, grouping_prons, strict=True):
         for pron in pronunciations:
             if pron:
                 pron_to_names.setdefault(pron, set()).add(name)
@@ -306,7 +321,7 @@ def build_spelling_variants(df: pl.DataFrame) -> pl.DataFrame:
     # This selects the "most shared" pronunciation as the grouping key.
     # Ties are broken by pronunciation order (first in list wins).
     name_to_best_pron: dict[str, str] = {}
-    for name, pronunciations in zip(names, pronunciations_list, strict=True):
+    for name, pronunciations in zip(names, grouping_prons, strict=True):
         if not pronunciations:
             name_to_best_pron[name] = ""
             continue
@@ -359,6 +374,7 @@ def merge_spelling_variants(df: pl.DataFrame) -> pl.DataFrame:
 
     Explicitly selects the name with the highest total_count as the primary name.
     Sums counts, takes min/max of years, unions pronunciations.
+    Spelling variants are sorted by descending popularity (most common first).
     """
     log.info("Merging spelling variants")
 
@@ -370,7 +386,7 @@ def merge_spelling_variants(df: pl.DataFrame) -> pl.DataFrame:
             merged[key] = {
                 "name": row["name"],
                 "_best_count": row["total_count"],
-                "spelling_variants": row["spelling_variants"],
+                "_members": {row["name"]: row["total_count"]},
                 "total_count": row["total_count"],
                 "year_min": row["year_min"],
                 "year_max": row["year_max"],
@@ -382,9 +398,9 @@ def merge_spelling_variants(df: pl.DataFrame) -> pl.DataFrame:
             }
         else:
             entry = merged[key]
+            entry["_members"][row["name"]] = row["total_count"]
             if row["total_count"] > entry["_best_count"]:
                 entry["name"] = row["name"]
-                entry["spelling_variants"] = row["spelling_variants"]
                 entry["_best_count"] = row["total_count"]
                 if row["year_peak"] is not None:
                     entry["year_peak"] = row["year_peak"]
@@ -400,7 +416,15 @@ def merge_spelling_variants(df: pl.DataFrame) -> pl.DataFrame:
 
     records = []
     for entry in merged.values():
+        primary = entry["name"]
+        members = entry.pop("_members")
         del entry["_best_count"]
+        # Sort variants by descending count (most popular first), exclude primary
+        others = sorted(
+            ((name, count) for name, count in members.items() if name != primary),
+            key=lambda x: -x[1],
+        )
+        entry["spelling_variants"] = " ".join(name for name, _ in others)
         entry["pronunciations"] = sorted(entry["pronunciations"])
         records.append(entry)
 
