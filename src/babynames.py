@@ -43,26 +43,31 @@ STRESS_SEPARATOR = " | "
 # ---------------------------------------------------------------------------
 
 
+MAX_PRONUNCIATION_VARIANTS = 10
+
+
 @cache
 def split_into_subwords(word: str) -> list[Phonemes]:
     """Recursively split a word into CMU-dict sub-words and combine phonemes.
 
     Tries partitions starting near the middle of the word, preferring
-    longer prefixes. Returns combined phoneme lists for all valid splits.
+    longer prefixes. Returns combined phoneme lists for all valid splits,
+    capped at MAX_PRONUNCIATION_VARIANTS to avoid combinatorial explosion.
     """
     word = word.lower()
     if word in ARPABET:
-        return ARPABET[word]
+        return ARPABET[word][:MAX_PRONUNCIATION_VARIANTS]
     midpoint = len(word) / 2
     # Try split points ordered by distance from middle (prefer balanced splits)
     split_points = sorted(range(len(word)), key=lambda i: (i - midpoint) ** 2 - i)
     for i in split_points:
         prefix, suffix = word[:i], word[i:]
         if prefix in ARPABET and split_into_subwords(suffix):
-            return [
+            combined = [
                 left + right
                 for left, right in iterprod(ARPABET[prefix], split_into_subwords(suffix))
             ]
+            return combined[:MAX_PRONUNCIATION_VARIANTS]
     return []
 
 
@@ -234,6 +239,7 @@ def build_spelling_variants(df: pl.DataFrame) -> pl.DataFrame:
 def merge_spelling_variants(df: pl.DataFrame) -> pl.DataFrame:
     """Merge rows that share a variant_group, keeping the most popular spelling.
 
+    Explicitly selects the name with the highest total_count as the primary name.
     Sums counts, takes min/max of years, unions pronunciations.
     """
     log.info("Merging spelling variants")
@@ -245,6 +251,7 @@ def merge_spelling_variants(df: pl.DataFrame) -> pl.DataFrame:
         if key not in merged:
             merged[key] = {
                 "name": row["name"],
+                "_best_count": row["total_count"],
                 "spelling_variants": row["spelling_variants"],
                 "total_count": row["total_count"],
                 "year_min": row["year_min"],
@@ -257,15 +264,17 @@ def merge_spelling_variants(df: pl.DataFrame) -> pl.DataFrame:
             }
         else:
             entry = merged[key]
+            # Explicitly pick the spelling with the highest individual count;
+            # use its year_peak since it dominates the group's popularity
+            if row["total_count"] > entry["_best_count"]:
+                entry["name"] = row["name"]
+                entry["spelling_variants"] = row["spelling_variants"]
+                entry["_best_count"] = row["total_count"]
+                if row["year_peak"] is not None:
+                    entry["year_peak"] = row["year_peak"]
             entry["total_count"] += row["total_count"]
             entry["year_min"] = min(entry["year_min"], row["year_min"])
             entry["year_max"] = max(entry["year_max"], row["year_max"])
-            if row["year_peak"] is not None:
-                entry["year_peak"] = (
-                    max(entry["year_peak"], row["year_peak"])
-                    if entry["year_peak"] is not None
-                    else row["year_peak"]
-                )
             if row["biblical"]:
                 entry["biblical"] = 1
             if row.get("is_palindrome"):
@@ -275,6 +284,7 @@ def merge_spelling_variants(df: pl.DataFrame) -> pl.DataFrame:
 
     records = []
     for entry in merged.values():
+        del entry["_best_count"]
         entry["pronunciations"] = sorted(entry["pronunciations"])
         records.append(entry)
 
@@ -373,7 +383,7 @@ def serialize_list_columns(frame: pl.DataFrame) -> pl.DataFrame:
             frame = frame.with_columns(
                 pl.col(col_name).list.join(PRONUNCIATION_SEPARATOR).alias(col_name)
             )
-        elif str(dtype).startswith("List"):
+        elif dtype.base_type() == pl.List:
             frame = frame.with_columns(
                 pl.col(col_name)
                 .cast(pl.List(pl.String))
@@ -394,7 +404,9 @@ def export_csvs(df: pl.DataFrame, output_dir: Path) -> None:
     log.info("Wrote %s (%d rows)", output_dir / "all-names.csv", all_names.height)
 
     for sex_code, filename in [("M", "boys"), ("F", "girls")]:
-        gender_df = df.filter(pl.col("sex") == sex_code).drop("sex")
+        gender_df = (
+            df.filter(pl.col("sex") == sex_code).drop("sex").sort("total_count", descending=True)
+        )
 
         gender_df = gender_df.with_columns(
             pl.col("total_count").rank(method="dense", descending=True).cast(pl.Int64).alias("rank")

@@ -3,6 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Browse US baby names from 1880-2023, de-duplicated by pronunciation. Filter by gender, rank, syllables, year range, starting letter, and more."
+    />
     <title>Baby Names</title>
     <link
       rel="stylesheet"
@@ -246,6 +250,17 @@
         color: var(--pico-muted-color);
       }
 
+      .letter-chips-toggle {
+        display: none;
+        font-size: 0.75rem;
+        cursor: pointer;
+        background: none;
+        border: none;
+        color: var(--pico-primary);
+        text-decoration: underline;
+        padding: 0.2rem 0 0;
+      }
+
       @media (max-width: 768px) {
         .filter-panel {
           padding: 0.75rem;
@@ -262,6 +277,10 @@
           &.expanded {
             max-height: none;
           }
+        }
+
+        .letter-chips-toggle {
+          display: inline-block;
         }
 
         nav.top-nav .nav-links {
@@ -429,7 +448,7 @@
               type="number"
               id="year-max"
               placeholder="2023"
-              max="2100"
+              max="2023"
               aria-label="Show names that existed before this year"
             />
           </div>

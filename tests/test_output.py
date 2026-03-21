@@ -20,9 +20,10 @@ from src.babynames import (
 )
 
 
-@pytest.fixture
-def generated_csvs(ssa_dir, biblical_path, tmp_path) -> Path:
-    """Run the full pipeline and return the output directory."""
+@pytest.fixture(scope="module")
+def generated_csvs(ssa_dir, biblical_path, tmp_path_factory) -> Path:
+    """Run the full pipeline once per module and return the output directory."""
+    tmp_path = tmp_path_factory.mktemp("csvs")
     raw = load_ssa_data(ssa_dir)
     biblical = load_biblical_names(biblical_path)
     peak_years = find_peak_popularity_years(raw)

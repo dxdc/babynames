@@ -1,11 +1,12 @@
-// Baby Names - Grid.js (Tabulator-based)
-// Loads CSV data and renders with filtering, sorting, virtual scrolling
+// Baby Names - Tabulator-based data grid
+// Loads CSV data and renders with filtering, sorting, pagination
 
 const DATA_URLS = {
   M: "boys.csv",
   F: "girls.csv",
 };
 
+const dataCache = {};
 let allData = [];
 let table = null;
 let currentGender = "M";
@@ -63,10 +64,12 @@ function initTable() {
         headerFilter: false,
       },
       {
-        title: "Pct",
+        title: "Cum%",
         field: "cumulative_pct",
         sorter: "number",
         width: 70,
+        tooltip:
+          "Cumulative percentage of all babies with this name or higher-ranked names",
         formatter: function (cell) {
           return Number(cell.getValue()).toFixed(1);
         },
@@ -155,9 +158,21 @@ function initTable() {
       },
       {
         title: "Alliteration",
+        field: "alliteration",
+        headerFilter: false,
+        visible: false,
+        formatter: function (cell) {
+          return cell.getValue() == 1 ? "Y" : "";
+        },
+      },
+      {
+        title: "Allit. First",
         field: "alliteration_first",
         headerFilter: false,
         visible: false,
+        formatter: function (cell) {
+          return cell.getValue() == 1 ? "Y" : "";
+        },
       },
     ],
     initialSort: [{ column: "rank", dir: "asc" }],
@@ -176,8 +191,21 @@ function initTable() {
 
 function loadData(gender) {
   currentGender = gender;
-  const url = DATA_URLS[gender];
 
+  // Return cached data if available
+  if (dataCache[gender]) {
+    allData = dataCache[gender];
+    if (!table) {
+      initTable();
+    }
+    table.setData(allData);
+    document.getElementById("total-count").textContent =
+      allData.length.toLocaleString();
+    applyFilters();
+    return;
+  }
+
+  const url = DATA_URLS[gender];
   document.getElementById("loading").style.display = "block";
 
   Papa.parse(url, {
@@ -187,6 +215,7 @@ function loadData(gender) {
     dynamicTyping: true,
     complete: function (results) {
       allData = results.data;
+      dataCache[gender] = allData;
       document.getElementById("loading").style.display = "none";
 
       if (!table) {
@@ -198,7 +227,7 @@ function loadData(gender) {
         allData.length.toLocaleString();
       applyFilters();
     },
-    error: function (err) {
+    error: function () {
       document.getElementById("loading").textContent =
         "Failed to load data. Please try refreshing the page.";
     },
@@ -214,14 +243,16 @@ function applyFilters() {
 
   const filters = [];
 
-  // Name search (case-insensitive via custom function)
+  // Name search (case-insensitive, also searches spelling variants)
   const search = document.getElementById("name-search").value.trim();
   if (search) {
     const searchLower = search.toLowerCase();
     filters.push({
       field: "name",
-      type: function (value) {
-        return String(value).toLowerCase().includes(searchLower);
+      type: function (value, rowData) {
+        if (String(value).toLowerCase().includes(searchLower)) return true;
+        var variants = rowData.spelling_variants;
+        return variants && String(variants).toLowerCase().includes(searchLower);
       },
     });
   }
@@ -315,43 +346,59 @@ document.getElementById("name-search").addEventListener("input", function () {
 
 // Letter chips
 (function () {
-  const container = document.getElementById("letter-chips");
-  for (let i = 65; i <= 90; i++) {
-    const letter = String.fromCharCode(i);
-    const chip = document.createElement("span");
+  var container = document.getElementById("letter-chips");
+  for (var i = 65; i <= 90; i++) {
+    var letter = String.fromCharCode(i);
+    var chip = document.createElement("span");
     chip.className = "letter-chip";
     chip.textContent = letter;
     chip.dataset.letter = letter;
     chip.tabIndex = 0;
-    chip.role = "button";
+    chip.setAttribute("role", "button");
     chip.setAttribute("aria-label", "Filter by letter " + letter);
     chip.addEventListener("keydown", function (e) {
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
-        chip.click();
+        this.click();
       }
     });
     chip.addEventListener("click", function () {
-      if (activeFilters.letter === letter) {
+      var clickedLetter = this.dataset.letter;
+      if (activeFilters.letter === clickedLetter) {
         activeFilters.letter = null;
-        chip.classList.remove("active");
+        this.classList.remove("active");
       } else {
         document.querySelectorAll(".letter-chip").forEach(function (c) {
           c.classList.remove("active");
         });
-        activeFilters.letter = letter;
-        chip.classList.add("active");
+        activeFilters.letter = clickedLetter;
+        this.classList.add("active");
       }
       applyFilters();
     });
     container.appendChild(chip);
   }
+
+  // Mobile expand/collapse toggle
+  var toggle = document.createElement("button");
+  toggle.className = "letter-chips-toggle";
+  toggle.textContent = "More";
+  toggle.setAttribute("aria-label", "Show all letters");
+  toggle.addEventListener("click", function () {
+    var expanded = container.classList.toggle("expanded");
+    toggle.textContent = expanded ? "Less" : "More";
+    toggle.setAttribute(
+      "aria-label",
+      expanded ? "Show fewer letters" : "Show all letters",
+    );
+  });
+  container.parentNode.appendChild(toggle);
 })();
 
 // Toggle buttons (Biblical, Unisex)
 document.querySelectorAll(".filter-toggle").forEach(function (btn) {
   btn.addEventListener("click", function () {
-    const filter = btn.dataset.filter;
+    var filter = btn.dataset.filter;
     activeFilters[filter] = !activeFilters[filter];
     btn.classList.toggle("active");
     applyFilters();
@@ -378,9 +425,9 @@ document.getElementById("clear-filters").addEventListener("click", function () {
 
 // Dark mode toggle
 document.getElementById("theme-toggle").addEventListener("click", function () {
-  const html = document.documentElement;
-  const current = html.getAttribute("data-theme");
-  const next = current === "dark" ? "light" : "dark";
+  var html = document.documentElement;
+  var current = html.getAttribute("data-theme");
+  var next = current === "dark" ? "light" : "dark";
   html.setAttribute("data-theme", next);
   this.textContent = next === "dark" ? "Light" : "Dark";
   localStorage.setItem("theme", next);
@@ -388,7 +435,7 @@ document.getElementById("theme-toggle").addEventListener("click", function () {
 
 // Restore theme from localStorage
 (function () {
-  const saved = localStorage.getItem("theme");
+  var saved = localStorage.getItem("theme");
   if (saved) {
     document.documentElement.setAttribute("data-theme", saved);
     document.getElementById("theme-toggle").textContent =
@@ -401,30 +448,34 @@ document.getElementById("theme-toggle").addEventListener("click", function () {
 // ---------------------------------------------------------------
 
 function saveStateToHash() {
-  const params = new URLSearchParams();
+  var params = new URLSearchParams();
   if (currentGender !== "M") params.set("g", currentGender);
-  const search = document.getElementById("name-search").value.trim();
+  var search = document.getElementById("name-search").value.trim();
   if (search) params.set("q", search);
-  const rank = document.getElementById("rank-filter").value;
+  var rank = document.getElementById("rank-filter").value;
   if (rank) params.set("rank", rank);
-  const syll = document.getElementById("syllable-filter").value;
+  var syll = document.getElementById("syllable-filter").value;
   if (syll) params.set("syll", syll);
-  const ymin = document.getElementById("year-min").value;
+  var ymin = document.getElementById("year-min").value;
   if (ymin) params.set("ymin", ymin);
-  const ymax = document.getElementById("year-max").value;
+  var ymax = document.getElementById("year-max").value;
   if (ymax) params.set("ymax", ymax);
   if (activeFilters.letter) params.set("letter", activeFilters.letter);
   if (activeFilters.biblical) params.set("biblical", "1");
   if (activeFilters.unisex) params.set("unisex", "1");
 
-  const hash = params.toString();
+  var hash = params.toString();
   history.replaceState(null, "", hash ? "#" + hash : location.pathname);
 }
 
+function isValidLetter(value) {
+  return typeof value === "string" && /^[A-Z]$/.test(value);
+}
+
 function loadStateFromHash() {
-  const hash = location.hash.slice(1);
+  var hash = location.hash.slice(1);
   if (!hash) return;
-  const params = new URLSearchParams(hash);
+  var params = new URLSearchParams(hash);
 
   if (params.get("g") === "F") {
     document.querySelectorAll(".gender-btn").forEach(function (b) {
@@ -442,10 +493,10 @@ function loadStateFromHash() {
     document.getElementById("year-min").value = params.get("ymin");
   if (params.get("ymax"))
     document.getElementById("year-max").value = params.get("ymax");
-  if (params.get("letter")) {
+  if (params.get("letter") && isValidLetter(params.get("letter"))) {
     activeFilters.letter = params.get("letter");
-    const chip = document.querySelector(
-      `.letter-chip[data-letter="${activeFilters.letter}"]`,
+    var chip = document.querySelector(
+      '.letter-chip[data-letter="' + activeFilters.letter + '"]',
     );
     if (chip) chip.classList.add("active");
   }
@@ -464,7 +515,7 @@ function loadStateFromHash() {
 }
 
 // Save state whenever filters change
-const origApplyFilters = applyFilters;
+var origApplyFilters = applyFilters;
 applyFilters = function () {
   origApplyFilters();
   saveStateToHash();
