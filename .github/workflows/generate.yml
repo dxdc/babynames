@@ -17,7 +17,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install polars cmudict matplotlib==3.9.*
+      - run: pip install polars cmudict matplotlib==3.9.* g2p-en
+      - name: Download NLTK data for g2p-en
+        run: python -c "import nltk; nltk.download('cmudict', quiet=True); nltk.download('averaged_perceptron_tagger_eng', quiet=True)"
       - name: Generate CSVs
         run: python src/babynames.py --verbose
       - name: Generate distribution graph

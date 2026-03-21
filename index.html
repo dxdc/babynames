@@ -434,7 +434,7 @@
             <select
               id="length-filter"
               aria-label="Filter by name length"
-              title="Length of primary spelling only"
+              title="Matches if any spelling (primary or variant) fits the range"
             >
               <option value="">All</option>
               <option value="short">Short (≤4)</option>
@@ -510,6 +510,18 @@
           </div>
 
           <div class="filter-group">
+            <label>Variants</label>
+            <select
+              id="variants-filter"
+              aria-label="Filter by spelling variants"
+            >
+              <option value="">All</option>
+              <option value="has">Has variants</option>
+              <option value="no">No variants</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
             <label>Traits</label>
             <div class="toggle-group">
               <button
@@ -542,14 +554,6 @@
                 title="Name contains repeated phonemes (e.g., Lila, Mimi)"
               >
                 Alliteration
-              </button>
-              <button
-                class="toggle-btn filter-toggle"
-                data-filter="hasVariants"
-                aria-pressed="false"
-                title="Name has alternate spellings (e.g., John → Jon, Jonn)"
-              >
-                Has Variants
               </button>
             </div>
           </div>

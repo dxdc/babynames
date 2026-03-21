@@ -22,7 +22,6 @@ let activeFilters = {
   trending: false,
   palindrome: false,
   alliteration: false,
-  hasVariants: false,
 };
 
 // ---------------------------------------------------------------
@@ -127,15 +126,19 @@ function initTable(data, onReady) {
         responsive: 1,
       },
       {
-        title: "Unisex%",
+        title: "Unisex",
         field: "unisex_pct",
         sorter: "number",
-        width: 80,
+        width: 90,
         headerFilter: false,
-        tooltip: "Minority gender share (50% = perfectly balanced)",
+        tooltip:
+          "Minority gender share (50% = perfectly balanced). Shows dominant gender.",
         formatter: function (cell) {
           const val = cell.getValue();
-          return val != null ? val + "%" : "";
+          if (val == null) return "";
+          const dom = cell.getRow().getData().unisex_dominant;
+          const label = dom === "M" ? "♂" : dom === "F" ? "♀" : "";
+          return val + "% " + label;
         },
         responsive: 1,
       },
@@ -353,7 +356,9 @@ function applyFilters() {
   const trendingFilter = activeFilters.trending;
   const palindromeFilter = activeFilters.palindrome;
   const alliterationFilter = activeFilters.alliteration;
-  const hasVariantsFilter = activeFilters.hasVariants;
+
+  // Variants dropdown
+  const variantsVal = document.getElementById("variants-filter").value;
 
   // Trending threshold: peaked within last TRENDING_WINDOW years of data
   const trendingCutoff = dataMaxYear ? dataMaxYear - TRENDING_WINDOW + 1 : 2010;
@@ -366,12 +371,12 @@ function applyFilters() {
     decadeNum ||
     (yearMode && yearVal) ||
     unisexMin ||
+    variantsVal ||
     letterFilters.length > 0 ||
     biblicalFilter ||
     trendingFilter ||
     palindromeFilter ||
-    alliterationFilter ||
-    hasVariantsFilter;
+    alliterationFilter;
 
   if (!hasAnyFilter) {
     table.clearFilter(true);
@@ -404,12 +409,31 @@ function applyFilters() {
       if (data.syllables !== syllNum) return false;
     }
 
-    // Name length (primary spelling only)
+    // Name length (any spelling — primary or any variant)
     if (lengthVal) {
-      const nameLen = String(data.name).length;
-      if (lengthVal === "short" && nameLen > 4) return false;
-      if (lengthVal === "medium" && (nameLen < 5 || nameLen > 6)) return false;
-      if (lengthVal === "long" && nameLen < 7) return false;
+      const allNames = [String(data.name)];
+      if (data.spelling_variants) {
+        String(data.spelling_variants)
+          .split(" ")
+          .forEach(function (v) {
+            if (v) allNames.push(v);
+          });
+      }
+      const minLen = Math.min.apply(
+        null,
+        allNames.map(function (n) {
+          return n.length;
+        }),
+      );
+      const maxLen = Math.max.apply(
+        null,
+        allNames.map(function (n) {
+          return n.length;
+        }),
+      );
+      if (lengthVal === "short" && minLen > 4) return false;
+      if (lengthVal === "medium" && (minLen > 6 || maxLen < 5)) return false;
+      if (lengthVal === "long" && maxLen < 7) return false;
     }
 
     // Peak decade
@@ -451,7 +475,8 @@ function applyFilters() {
     if (trendingFilter && data.year_peak < trendingCutoff) return false;
     if (palindromeFilter && data.is_palindrome != 1) return false;
     if (alliterationFilter && data.alliteration != 1) return false;
-    if (hasVariantsFilter && !data.spelling_variants) return false;
+    if (variantsVal === "has" && !data.spelling_variants) return false;
+    if (variantsVal === "no" && data.spelling_variants) return false;
 
     return true;
   });
@@ -494,6 +519,7 @@ document.getElementById("name-search").addEventListener("input", function () {
   "decade-filter",
   "year-mode",
   "unisex-filter",
+  "variants-filter",
 ].forEach(function (id) {
   document.getElementById(id).addEventListener("change", applyFilters);
 });
@@ -577,7 +603,7 @@ function clampYear(value, lo, hi) {
   container.parentNode.appendChild(toggle);
 })();
 
-// Toggle buttons (Biblical, Trending, Palindrome, Alliteration, Has Variants)
+// Toggle buttons (Biblical, Trending, Palindrome, Alliteration)
 document.querySelectorAll(".filter-toggle").forEach(function (btn) {
   btn.addEventListener("click", function () {
     const filter = btn.dataset.filter;
@@ -598,12 +624,12 @@ document.getElementById("clear-filters").addEventListener("click", function () {
   document.getElementById("year-mode").value = "";
   document.getElementById("year-value").value = "";
   document.getElementById("unisex-filter").value = "";
+  document.getElementById("variants-filter").value = "";
   activeFilters.letters = [];
   activeFilters.biblical = false;
   activeFilters.trending = false;
   activeFilters.palindrome = false;
   activeFilters.alliteration = false;
-  activeFilters.hasVariants = false;
   document
     .querySelectorAll(".letter-chip, .filter-toggle")
     .forEach(function (el) {
@@ -669,7 +695,8 @@ function saveStateToHash() {
   if (activeFilters.trending) params.set("trending", "1");
   if (activeFilters.palindrome) params.set("palindrome", "1");
   if (activeFilters.alliteration) params.set("alliteration", "1");
-  if (activeFilters.hasVariants) params.set("hasVariants", "1");
+  const variants = document.getElementById("variants-filter").value;
+  if (variants) params.set("variants", variants);
 
   const hash = params.toString();
   history.replaceState(null, "", hash ? "#" + hash : location.pathname);
@@ -743,8 +770,12 @@ function loadStateFromHash() {
     }
   }
 
+  // Variants dropdown
+  if (params.get("variants"))
+    document.getElementById("variants-filter").value = params.get("variants");
+
   // Boolean toggles
-  ["biblical", "trending", "palindrome", "alliteration", "hasVariants"].forEach(
+  ["biblical", "trending", "palindrome", "alliteration"].forEach(
     function (key) {
       if (params.get(key)) {
         activeFilters[key] = true;

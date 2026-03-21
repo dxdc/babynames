@@ -14,12 +14,13 @@ Browse the data using the [interactive web viewer](https://dxdc.github.io/babyna
 - **Name search** — case-insensitive substring match (also searches spelling variants)
 - **Rank** — top 100, 500, 1,000, or 5,000
 - **Syllable count** — 1, 2, 3, or 4+
-- **Name length** — short (≤4 chars), medium (5–6), or long (≥7), based on primary spelling
+- **Name length** — short (≤4 chars), medium (5–6), or long (≥7); matches if any spelling (primary or variant) fits
 - **Peak decade** — when the name was most popular (2020s, 2010s, … 1940s & earlier)
 - **Year filter** — single dropdown with clear modes: "Appeared after" (modern names), "Appeared before" (vintage names), "Retired before" (extinct names), "Still used after" (active names)
 - **Starting letter** — A through Z (multi-select: click several letters to combine)
-- **Unisex** — dropdown to filter by minority gender share (≥5%, ≥10%, ≥20%, ≥30%, ≥40% of total)
-- **Traits** — Biblical, Trending (peaked within last 15 years), Palindrome, Alliteration, and Has Variants toggles
+- **Unisex** — dropdown to filter by minority gender share (≥5%, ≥10%, ≥20%, ≥30%, ≥40%); the Unisex column shows the percentage and dominant gender (♂/♀)
+- **Variants** — dropdown to filter names that have or don't have alternate spellings
+- **Traits** — Biblical, Trending (peaked within last 15 years), Palindrome, and Alliteration toggles
 
 Filter states are saved in the URL hash for easy sharing. Dark mode is also available.
 
@@ -56,6 +57,7 @@ As the chart shows, boys' names are more concentrated (775 names covers 90%), wh
 | alliteration       | Name contains any repeated phoneme (1 = yes)                                                           |
 | alliteration_first | First phoneme repeats later in the name (1 = yes)                                                      |
 | unisex_pct         | Minority gender share as % of total (0–50, where 50 = perfectly balanced); null if single-gender       |
+| unisex_dominant    | Dominant gender for the name (M or F); null if single-gender                                           |
 
 ## About
 
@@ -75,7 +77,7 @@ Using uv (recommended):
 ```bash
 uv venv
 source .venv/bin/activate   # Linux/macOS
-uv pip install -e ".[dev]"  # or: uv pip install polars cmudict pytest ruff
+uv pip install -e ".[dev]"  # or: uv pip install polars cmudict g2p-en pytest ruff
 ```
 
 Using pip:
@@ -83,8 +85,10 @@ Using pip:
 ```bash
 python -m venv .venv
 source .venv/bin/activate   # Linux/macOS
-pip install polars cmudict pytest ruff
+pip install polars cmudict g2p-en pytest ruff
 ```
+
+The `g2p-en` package is optional but recommended — it provides a neural model for pronouncing names not found in the CMU dictionary (e.g., Jaxson, Khloe). Without it, the pipeline falls back to a subword-splitting heuristic.
 
 ### Regenerating CSV Files
 

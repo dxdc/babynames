@@ -3,6 +3,9 @@
 Processes US Social Security Administration baby name data (1880-present),
 deduplicates names by phonetic pronunciation using the CMU Pronouncing Dictionary,
 and enriches with features like syllable count, stress patterns, and biblical status.
+
+For names not found in CMU dict, the g2p_en neural model is used if available
+(pip install g2p-en), otherwise falls back to recursive subword splitting.
 """
 
 import argparse
@@ -36,6 +39,16 @@ ARPABET: ArpabetDict = cmudict.dict()
 
 PRONUNCIATION_SEPARATOR = " | "
 STRESS_SEPARATOR = " | "
+
+# Try to load g2p_en for neural OOV pronunciation
+_g2p_model = None
+try:
+    from g2p_en import G2p as _G2p
+
+    _g2p_model = _G2p()
+    log.info("g2p_en neural model loaded -- will use for OOV names")
+except Exception:
+    log.info("g2p_en not available -- falling back to subword splitting for OOV names")
 
 
 # ---------------------------------------------------------------------------
@@ -79,15 +92,39 @@ def split_into_subwords(word: str) -> list[Phonemes]:
     return []
 
 
+def _g2p_neural(name: str) -> PronunciationList:
+    """Use g2p_en neural model to predict pronunciation for an OOV name.
+
+    Returns a single-element list with the ARPABET pronunciation string,
+    or an empty list if the model produces no valid phonemes.
+    """
+    if _g2p_model is None:
+        return []
+    try:
+        raw = _g2p_model(name)
+        # g2p_en returns a flat list mixing phonemes and spaces; filter to phonemes only
+        phonemes = [p for p in raw if p.strip() and p != " "]
+        if phonemes:
+            return [" ".join(phonemes)]
+    except Exception:
+        pass
+    return []
+
+
 def get_pronunciations(name: str) -> PronunciationList:
     """Get all known ARPABET pronunciations for a name.
 
-    First checks the CMU dictionary directly, then falls back to
-    recursive sub-word splitting for compound or unusual names.
+    Priority:
+    1. CMU dictionary direct lookup (may return multiple pronunciations)
+    2. g2p_en neural model if available (single pronunciation, high quality)
+    3. Recursive sub-word splitting (multiple pronunciations, lower quality)
     """
     lower = name.lower()
     if lower in ARPABET:
         return [" ".join(phonemes) for phonemes in ARPABET[lower]]
+    neural = _g2p_neural(name)
+    if neural:
+        return neural
     return [" ".join(phonemes) for phonemes in split_into_subwords(name)]
 
 
@@ -430,15 +467,19 @@ def classify_unisex_names(
     for row in candidates.iter_rows(named=True):
         name_sex_counts.setdefault(row["name"], {})[row["sex"]] = row["total_count"]
 
-    # Compute minority share for names with both genders
+    # Compute minority share and dominant gender for names with both genders
     name_pcts: dict[str, float] = {}
+    name_dominant: dict[str, str] = {}
     for name, sex_counts in name_sex_counts.items():
         if len(sex_counts) < 2:
             continue
         counts = list(sex_counts.values())
+        sexes = list(sex_counts.keys())
         minority = min(counts)
         total = sum(counts)
         name_pcts[name] = round(100 * minority / total, 1)
+        # Dominant = the gender with more babies
+        name_dominant[name] = sexes[0] if counts[0] >= counts[1] else sexes[1]
 
     log.info(
         "Computed unisex share for %d names (min count %d, after %d)",
@@ -447,12 +488,18 @@ def classify_unisex_names(
         min_year,
     )
 
+    names_list = df["name"].to_list()
     return df.with_columns(
         pl.Series(
             "unisex_pct",
-            [name_pcts.get(name) for name in df["name"].to_list()],
+            [name_pcts.get(name) for name in names_list],
             dtype=pl.Float64,
-        )
+        ),
+        pl.Series(
+            "unisex_dominant",
+            [name_dominant.get(name) for name in names_list],
+            dtype=pl.String,
+        ),
     )
 
 
@@ -489,6 +536,7 @@ OUTPUT_COLUMNS: list[str] = [
     "alliteration",
     "alliteration_first",
     "unisex_pct",
+    "unisex_dominant",
 ]
 
 
