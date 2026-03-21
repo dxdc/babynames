@@ -1,0 +1,510 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Browse and filter US baby names from 1880-2023, phonetically de-duplicated using the CMU Pronouncing Dictionary. Search by gender, popularity rank, syllables, year range, starting letter, biblical, and unisex names. Free downloadable CSV datasets."
+    />
+    <meta
+      name="keywords"
+      content="baby names, US baby names, SSA baby names, popular baby names, name popularity, baby name search, name finder, biblical names, unisex names"
+    />
+    <title>Baby Names - US Baby Name Search &amp; Explorer (1880-2023)</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@picocss/pico@2.1.1/css/pico.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/tabulator-tables@6.4.0/dist/css/tabulator_simple.min.css"
+    />
+    <style>
+      :root {
+        --pico-font-size: 15px;
+      }
+
+      [data-theme="dark"] {
+        --filter-bg: color-mix(
+          in oklch,
+          var(--pico-background-color) 85%,
+          white
+        );
+        --filter-border: color-mix(
+          in oklch,
+          var(--pico-color) 25%,
+          transparent
+        );
+        --chip-bg: color-mix(in oklch, var(--pico-background-color) 75%, white);
+        --chip-active: var(--pico-primary);
+      }
+
+      [data-theme="light"] {
+        --filter-bg: color-mix(
+          in oklch,
+          var(--pico-background-color) 95%,
+          black
+        );
+        --filter-border: color-mix(
+          in oklch,
+          var(--pico-color) 15%,
+          transparent
+        );
+        --chip-bg: color-mix(in oklch, var(--pico-background-color) 90%, black);
+        --chip-active: var(--pico-primary);
+      }
+
+      body {
+        padding-top: 0;
+      }
+
+      nav.top-nav {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: var(--pico-background-color);
+        border-bottom: 1px solid var(--filter-border);
+        padding: 0.5rem 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+
+        & h1 {
+          margin: 0;
+          font-size: 1.3rem;
+        }
+
+        & .nav-links {
+          display: flex;
+          gap: 0.75rem;
+          align-items: center;
+          flex-wrap: wrap;
+        }
+
+        & a {
+          font-size: 0.85rem;
+        }
+      }
+
+      .filter-panel {
+        background: var(--filter-bg);
+        border: 1px solid var(--filter-border);
+        border-radius: 8px;
+        padding: 1rem;
+        margin: 1rem 0;
+      }
+
+      .filter-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        align-items: flex-end;
+      }
+
+      .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+
+        & label {
+          font-size: 0.75rem;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          margin: 0;
+        }
+
+        & select,
+        & input[type="text"] {
+          padding: 0.3rem 0.5rem;
+          font-size: 0.85rem;
+          margin: 0;
+          height: auto;
+        }
+
+        & input.year-input {
+          width: 5rem;
+        }
+      }
+
+      .letter-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.2rem;
+      }
+
+      .letter-chip {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.8rem;
+        height: 1.8rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        border-radius: 4px;
+        cursor: pointer;
+        background: var(--chip-bg);
+        border: 1px solid transparent;
+        color: var(--pico-color);
+        transition: all 0.15s;
+
+        &:hover {
+          border-color: var(--pico-primary);
+        }
+
+        &.active {
+          background: var(--chip-active);
+          color: #fff;
+        }
+      }
+
+      .gender-btn {
+        padding: 0.3rem 1rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        border-radius: 4px;
+        cursor: pointer;
+        border: 2px solid transparent;
+        background: var(--chip-bg);
+        color: var(--pico-color);
+        transition: all 0.15s;
+
+        &.boys.active {
+          background: oklch(0.45 0.12 250);
+          color: #fff;
+        }
+
+        &.girls.active {
+          background: oklch(0.45 0.15 15);
+          color: #fff;
+        }
+
+        &:not(.active):hover {
+          border-color: var(--pico-primary);
+        }
+      }
+
+      .toggle-group {
+        display: flex;
+        gap: 0.25rem;
+      }
+
+      .toggle-btn {
+        padding: 0.3rem 0.7rem;
+        font-size: 0.8rem;
+        border-radius: 4px;
+        cursor: pointer;
+        background: var(--chip-bg);
+        border: 1px solid transparent;
+        color: var(--pico-color);
+        transition: all 0.15s;
+
+        &:hover {
+          border-color: var(--pico-primary);
+        }
+
+        &.active {
+          background: var(--chip-active);
+          color: #fff;
+        }
+      }
+
+      .stats-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0;
+        font-size: 0.85rem;
+        color: var(--pico-muted-color);
+
+        & .count {
+          font-weight: 600;
+          color: var(--pico-color);
+        }
+      }
+
+      .clear-btn {
+        font-size: 0.8rem;
+        cursor: pointer;
+        background: none;
+        border: none;
+        color: var(--pico-primary);
+        text-decoration: underline;
+        padding: 0;
+
+        &:hover {
+          color: var(--pico-primary-hover);
+        }
+      }
+
+      #table-container {
+        margin-bottom: 2rem;
+      }
+
+      .loading {
+        text-align: center;
+        padding: 3rem;
+        color: var(--pico-muted-color);
+      }
+
+      .letter-chips-toggle {
+        display: none;
+        font-size: 0.75rem;
+        cursor: pointer;
+        background: none;
+        border: none;
+        color: var(--pico-primary);
+        text-decoration: underline;
+        padding: 0.2rem 0 0;
+      }
+
+      @media (max-width: 768px) {
+        .filter-panel {
+          padding: 0.75rem;
+        }
+
+        .filter-row {
+          gap: 0.5rem;
+        }
+
+        .letter-chips {
+          max-height: 3.8rem;
+          overflow: hidden;
+
+          &.expanded {
+            max-height: none;
+          }
+        }
+
+        .letter-chips-toggle {
+          display: inline-block;
+        }
+
+        nav.top-nav .nav-links {
+          font-size: 0.8rem;
+        }
+      }
+
+      /* Tabulator dark mode overrides */
+      [data-theme="dark"] {
+        & .tabulator {
+          background-color: var(--pico-background-color);
+          color: var(--pico-color);
+          border-color: var(--filter-border);
+
+          & .tabulator-header {
+            background-color: color-mix(
+              in oklch,
+              var(--pico-background-color) 85%,
+              white
+            );
+            color: var(--pico-color);
+            border-color: var(--filter-border);
+
+            & .tabulator-col {
+              background-color: color-mix(
+                in oklch,
+                var(--pico-background-color) 85%,
+                white
+              );
+              border-color: var(--filter-border);
+
+              & .tabulator-col-content {
+                color: var(--pico-color);
+              }
+            }
+          }
+
+          & .tabulator-tableholder .tabulator-table .tabulator-row {
+            background-color: var(--pico-background-color);
+            color: var(--pico-color);
+
+            &:hover {
+              background-color: color-mix(
+                in oklch,
+                var(--pico-background-color) 75%,
+                white
+              );
+            }
+
+            & .tabulator-cell {
+              border-color: var(--filter-border);
+            }
+
+            &.tabulator-row-even {
+              background-color: color-mix(
+                in oklch,
+                var(--pico-background-color) 92%,
+                white
+              );
+            }
+          }
+
+          & .tabulator-footer {
+            background-color: color-mix(
+              in oklch,
+              var(--pico-background-color) 85%,
+              white
+            );
+            color: var(--pico-color);
+            border-color: var(--filter-border);
+
+            & .tabulator-page {
+              color: var(--pico-color);
+              border-color: var(--filter-border);
+
+              &.active {
+                background-color: var(--pico-primary);
+                color: #fff;
+              }
+            }
+          }
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="top-nav">
+      <h1>Baby Names</h1>
+      <div class="nav-links">
+        <a href="https://github.com/dxdc/babynames">GitHub</a>
+        <a href="data/boys.csv" download>Boys CSV</a>
+        <a href="data/girls.csv" download>Girls CSV</a>
+        <a href="data/all-names.csv" download>All CSV</a>
+        <button
+          id="theme-toggle"
+          class="toggle-btn"
+          title="Toggle dark mode"
+          aria-label="Toggle dark mode"
+        >
+          Dark
+        </button>
+      </div>
+    </nav>
+
+    <main class="container-fluid" style="padding: 0 1rem">
+      <div class="filter-panel">
+        <div class="filter-row">
+          <div class="filter-group">
+            <label>Gender</label>
+            <div class="toggle-group">
+              <button class="gender-btn boys active" data-gender="M">
+                Boys
+              </button>
+              <button class="gender-btn girls" data-gender="F">Girls</button>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <label>Search</label>
+            <input
+              type="text"
+              id="name-search"
+              placeholder="Name..."
+              aria-label="Search by name"
+              style="width: 8rem"
+            />
+          </div>
+
+          <div class="filter-group">
+            <label>Rank</label>
+            <select id="rank-filter" aria-label="Filter by rank">
+              <option value="">All</option>
+              <option value="100">Top 100</option>
+              <option value="500">Top 500</option>
+              <option value="1000">Top 1,000</option>
+              <option value="5000">Top 5,000</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label>Syllables</label>
+            <select id="syllable-filter" aria-label="Filter by syllable count">
+              <option value="">All</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4+</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label>Active After</label>
+            <input
+              type="text"
+              inputmode="numeric"
+              pattern="[0-9]*"
+              class="year-input"
+              id="year-min"
+              placeholder="1880"
+              maxlength="4"
+              aria-label="Show names still used after this year"
+            />
+          </div>
+
+          <div class="filter-group">
+            <label>Active Before</label>
+            <input
+              type="text"
+              inputmode="numeric"
+              pattern="[0-9]*"
+              class="year-input"
+              id="year-max"
+              placeholder="2023"
+              maxlength="4"
+              aria-label="Show names that existed before this year"
+            />
+          </div>
+
+          <div class="filter-group">
+            <label>Biblical</label>
+            <div class="toggle-group">
+              <button class="toggle-btn filter-toggle" data-filter="biblical">
+                Biblical
+              </button>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <label>Unisex</label>
+            <div class="toggle-group">
+              <button class="toggle-btn filter-toggle" data-filter="unisex">
+                Unisex
+              </button>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <label>&nbsp;</label>
+            <button class="clear-btn" id="clear-filters">Clear All</button>
+          </div>
+        </div>
+
+        <div class="filter-group" style="margin-top: 0.75rem">
+          <label>Starting Letter</label>
+          <div class="letter-chips" id="letter-chips"></div>
+        </div>
+      </div>
+
+      <div class="stats-bar">
+        <span
+          >Showing <span class="count" id="shown-count">0</span> of
+          <span class="count" id="total-count">0</span> names</span
+        >
+      </div>
+
+      <div id="table-container">
+        <div class="loading" id="loading" role="status" aria-live="polite">
+          Loading baby names...
+        </div>
+      </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/tabulator-tables@6.4.0/dist/js/tabulator.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.5.3/papaparse.min.js"></script>
+    <script src="grid.js"></script>
+  </body>
+</html>

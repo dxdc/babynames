@@ -1,9 +1,9 @@
 {
   "name": "babynames",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Baby names",
   "scripts": {
-    "format": "prettier --write *.md docs/*.{js,html}",
+    "format": "prettier --write *.md *.{js,html}",
     "spellcheck": "mdspell -r -n *.md"
   },
   "keywords": [
