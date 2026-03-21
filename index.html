@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="Browse and filter US baby names from 1880-2023, phonetically de-duplicated using the CMU Pronouncing Dictionary. Search by gender, popularity rank, syllables, year range, starting letter, biblical, and unisex names. Free downloadable CSV datasets."
+      content="Browse and filter US baby names from 1880–present, phonetically de-duplicated using the CMU Pronouncing Dictionary. Search by gender, popularity rank, syllables, year range, starting letter, biblical, unisex, palindrome, and alliteration names. Free downloadable CSV datasets."
     />
     <meta
       name="keywords"
       content="baby names, US baby names, SSA baby names, popular baby names, name popularity, baby name search, name finder, biblical names, unisex names"
     />
-    <title>Baby Names - US Baby Name Search &amp; Explorer (1880-2023)</title>
+    <title>Baby Names – US Baby Name Search &amp; Explorer</title>
     <link
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/@picocss/pico@2.1.1/css/pico.min.css"
@@ -190,6 +190,7 @@
       .toggle-group {
         display: flex;
         gap: 0.25rem;
+        flex-wrap: wrap;
       }
 
       .toggle-btn {
@@ -259,6 +260,12 @@
         color: var(--pico-primary);
         text-decoration: underline;
         padding: 0.2rem 0 0;
+      }
+
+      .letter-hint {
+        font-size: 0.7rem;
+        color: var(--pico-muted-color);
+        margin-top: 0.2rem;
       }
 
       @media (max-width: 768px) {
@@ -453,26 +460,44 @@
               pattern="[0-9]*"
               class="year-input"
               id="year-max"
-              placeholder="2023"
+              placeholder="Year"
               maxlength="4"
               aria-label="Show names that existed before this year"
             />
           </div>
 
           <div class="filter-group">
-            <label>Biblical</label>
+            <label>Traits</label>
             <div class="toggle-group">
-              <button class="toggle-btn filter-toggle" data-filter="biblical">
+              <button
+                class="toggle-btn filter-toggle"
+                data-filter="biblical"
+                aria-pressed="false"
+              >
                 Biblical
               </button>
-            </div>
-          </div>
-
-          <div class="filter-group">
-            <label>Unisex</label>
-            <div class="toggle-group">
-              <button class="toggle-btn filter-toggle" data-filter="unisex">
+              <button
+                class="toggle-btn filter-toggle"
+                data-filter="unisex"
+                aria-pressed="false"
+              >
                 Unisex
+              </button>
+              <button
+                class="toggle-btn filter-toggle"
+                data-filter="palindrome"
+                aria-pressed="false"
+                title="Name reads the same forwards and backwards (e.g., Anna, Ava)"
+              >
+                Palindrome
+              </button>
+              <button
+                class="toggle-btn filter-toggle"
+                data-filter="alliteration"
+                aria-pressed="false"
+                title="Name contains repeated phonemes (e.g., Lila, Mimi)"
+              >
+                Alliteration
               </button>
             </div>
           </div>
@@ -484,7 +509,10 @@
         </div>
 
         <div class="filter-group" style="margin-top: 0.75rem">
-          <label>Starting Letter</label>
+          <label
+            >Starting Letter
+            <span class="letter-hint">(click multiple to combine)</span></label
+          >
           <div class="letter-chips" id="letter-chips"></div>
         </div>
       </div>

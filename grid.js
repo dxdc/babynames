@@ -9,21 +9,27 @@ const DATA_URLS = {
 const dataCache = {};
 let allData = [];
 let table = null;
+let tableReady = false;
 let currentGender = "M";
+let dataMaxYear = null;
 let activeFilters = {
-  letter: null,
+  letters: [],
   biblical: false,
   unisex: false,
+  palindrome: false,
+  alliteration: false,
 };
 
 // ---------------------------------------------------------------
-// Table setup
+// Table setup — waits for tableBuilt before applying filters
 // ---------------------------------------------------------------
 
-function initTable() {
+function initTable(data, onReady) {
+  document.getElementById("loading").style.display = "none";
+
   table = new Tabulator("#table-container", {
     height: "70vh",
-    data: [],
+    data: data,
     layout: "fitColumns",
     responsiveLayout: "collapse",
     placeholder: "No matching names found",
@@ -183,6 +189,42 @@ function initTable() {
       updateStats();
     },
   });
+
+  // Wait for Tabulator to finish building before calling any methods
+  table.on("tableBuilt", function () {
+    tableReady = true;
+    if (onReady) onReady();
+  });
+}
+
+// ---------------------------------------------------------------
+// Dynamic year detection
+// ---------------------------------------------------------------
+
+function detectMaxYear(data) {
+  var maxYear = 0;
+  for (var i = 0; i < data.length; i++) {
+    var ym = Number(data[i].year_max);
+    if (ym > maxYear) maxYear = ym;
+  }
+  return maxYear || new Date().getFullYear();
+}
+
+function updateYearReferences(maxYear) {
+  document.getElementById("year-max").placeholder = String(maxYear);
+  document.title =
+    "Baby Names \u2013 US Baby Name Search & Explorer (1880\u2013" +
+    maxYear +
+    ")";
+  var metaDesc = document.querySelector('meta[name="description"]');
+  if (metaDesc) {
+    metaDesc.setAttribute(
+      "content",
+      "Browse and filter US baby names from 1880\u2013" +
+        maxYear +
+        ", phonetically de-duplicated using the CMU Pronouncing Dictionary. Search by gender, popularity rank, syllables, year range, starting letter, biblical, unisex, palindrome, and alliteration names. Free downloadable CSV datasets.",
+    );
+  }
 }
 
 // ---------------------------------------------------------------
@@ -192,16 +234,20 @@ function initTable() {
 function loadData(gender) {
   currentGender = gender;
 
-  // Return cached data if available
   if (dataCache[gender]) {
     allData = dataCache[gender];
-    if (!table) {
-      initTable();
-    }
-    table.setData(allData);
     document.getElementById("total-count").textContent =
       allData.length.toLocaleString();
-    applyFilters();
+
+    if (!table) {
+      initTable(allData, function () {
+        applyFilters();
+      });
+    } else if (tableReady) {
+      table.setData(allData).then(function () {
+        applyFilters();
+      });
+    }
     return;
   }
 
@@ -216,16 +262,24 @@ function loadData(gender) {
     complete: function (results) {
       allData = results.data;
       dataCache[gender] = allData;
-      document.getElementById("loading").style.display = "none";
 
-      if (!table) {
-        initTable();
+      if (!dataMaxYear) {
+        dataMaxYear = detectMaxYear(allData);
+        updateYearReferences(dataMaxYear);
       }
 
-      table.setData(allData);
       document.getElementById("total-count").textContent =
         allData.length.toLocaleString();
-      applyFilters();
+
+      if (!table) {
+        initTable(allData, function () {
+          applyFilters();
+        });
+      } else if (tableReady) {
+        table.setData(allData).then(function () {
+          applyFilters();
+        });
+      }
     },
     error: function () {
       document.getElementById("loading").textContent =
@@ -235,74 +289,89 @@ function loadData(gender) {
 }
 
 // ---------------------------------------------------------------
-// Filtering
+// Filtering — single custom function for Tabulator 6.x compat
 // ---------------------------------------------------------------
 
 function applyFilters() {
-  if (!table) return;
+  if (!table || !tableReady) return;
 
-  const filters = [];
-
-  // Name search (case-insensitive, also searches spelling variants)
   const search = document.getElementById("name-search").value.trim();
-  if (search) {
-    const searchLower = search.toLowerCase();
-    filters.push({
-      field: "name",
-      type: function (value, rowData) {
-        if (String(value).toLowerCase().includes(searchLower)) return true;
-        var variants = rowData.spelling_variants;
-        return variants && String(variants).toLowerCase().includes(searchLower);
-      },
-    });
-  }
-
-  // Rank
+  const searchLower = search ? search.toLowerCase() : "";
   const rankVal = document.getElementById("rank-filter").value;
-  if (rankVal) {
-    filters.push({ field: "rank", type: "<=", value: Number(rankVal) });
-  }
-
-  // Syllables
+  const rankNum = rankVal ? Number(rankVal) : 0;
   const syllVal = document.getElementById("syllable-filter").value;
-  if (syllVal === "4") {
-    filters.push({ field: "syllables", type: ">=", value: 4 });
-  } else if (syllVal) {
-    filters.push({ field: "syllables", type: "=", value: Number(syllVal) });
-  }
-
-  // Active After: name was still in use after this year (year_max >= value)
+  const syllNum = syllVal ? Number(syllVal) : 0;
   const yearMin = document.getElementById("year-min").value;
-  if (yearMin) {
-    filters.push({ field: "year_max", type: ">=", value: Number(yearMin) });
-  }
-
-  // Active Before: name existed before this year (year_min <= value)
+  const yearMinNum = yearMin ? Number(yearMin) : 0;
   const yearMax = document.getElementById("year-max").value;
-  if (yearMax) {
-    filters.push({ field: "year_min", type: "<=", value: Number(yearMax) });
+  const yearMaxNum = yearMax ? Number(yearMax) : 0;
+  const letterFilters = activeFilters.letters;
+  const biblicalFilter = activeFilters.biblical;
+  const unisexFilter = activeFilters.unisex;
+  const palindromeFilter = activeFilters.palindrome;
+  const alliterationFilter = activeFilters.alliteration;
+
+  const hasAnyFilter =
+    searchLower ||
+    rankNum ||
+    syllNum ||
+    yearMinNum ||
+    yearMaxNum ||
+    letterFilters.length > 0 ||
+    biblicalFilter ||
+    unisexFilter ||
+    palindromeFilter ||
+    alliterationFilter;
+
+  if (!hasAnyFilter) {
+    table.clearFilter(true);
+    return;
   }
 
-  // Starting letter
-  if (activeFilters.letter) {
-    filters.push({
-      field: "first_letter",
-      type: "=",
-      value: activeFilters.letter,
-    });
-  }
+  table.setFilter(function (data) {
+    // Name search (case-insensitive, also searches spelling variants)
+    if (searchLower) {
+      var nameMatch = String(data.name).toLowerCase().includes(searchLower);
+      if (!nameMatch) {
+        var variants = data.spelling_variants;
+        if (
+          !variants ||
+          !String(variants).toLowerCase().includes(searchLower)
+        ) {
+          return false;
+        }
+      }
+    }
 
-  // Biblical
-  if (activeFilters.biblical) {
-    filters.push({ field: "biblical", type: "=", value: 1 });
-  }
+    // Rank
+    if (rankNum && data.rank > rankNum) return false;
 
-  // Unisex
-  if (activeFilters.unisex) {
-    filters.push({ field: "unisex", type: "=", value: 1 });
-  }
+    // Syllables
+    if (syllVal === "4") {
+      if (data.syllables < 4) return false;
+    } else if (syllNum) {
+      if (data.syllables !== syllNum) return false;
+    }
 
-  table.setFilter(filters);
+    // Active After: name was still in use after this year
+    if (yearMinNum && data.year_max < yearMinNum) return false;
+
+    // Active Before: name existed before this year
+    if (yearMaxNum && data.year_min > yearMaxNum) return false;
+
+    // Starting letters (multi-select)
+    if (letterFilters.length > 0 && letterFilters.indexOf(data.first_letter) === -1) {
+      return false;
+    }
+
+    // Boolean toggles
+    if (biblicalFilter && data.biblical != 1) return false;
+    if (unisexFilter && data.unisex != 1) return false;
+    if (palindromeFilter && data.is_palindrome != 1) return false;
+    if (alliterationFilter && data.alliteration != 1) return false;
+
+    return true;
+  });
 }
 
 function updateStats() {
@@ -338,7 +407,7 @@ document.getElementById("name-search").addEventListener("input", function () {
   document.getElementById(id).addEventListener("change", applyFilters);
 });
 
-// Year inputs: strip non-digits on input, validate and clamp on blur
+// Year inputs
 var YEAR_MIN = 1880;
 var YEAR_MAX = new Date().getFullYear();
 
@@ -376,7 +445,7 @@ function validateYearRange() {
   });
 });
 
-// Letter chips
+// Letter chips — multi-select
 (function () {
   var container = document.getElementById("letter-chips");
   for (var i = 65; i <= 90; i++) {
@@ -388,6 +457,7 @@ function validateYearRange() {
     chip.tabIndex = 0;
     chip.setAttribute("role", "button");
     chip.setAttribute("aria-label", "Filter by letter " + letter);
+    chip.setAttribute("aria-pressed", "false");
     chip.addEventListener("keydown", function (e) {
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
@@ -396,15 +466,17 @@ function validateYearRange() {
     });
     chip.addEventListener("click", function () {
       var clickedLetter = this.dataset.letter;
-      if (activeFilters.letter === clickedLetter) {
-        activeFilters.letter = null;
+      var idx = activeFilters.letters.indexOf(clickedLetter);
+      if (idx !== -1) {
+        // Deselect
+        activeFilters.letters.splice(idx, 1);
         this.classList.remove("active");
+        this.setAttribute("aria-pressed", "false");
       } else {
-        document.querySelectorAll(".letter-chip").forEach(function (c) {
-          c.classList.remove("active");
-        });
-        activeFilters.letter = clickedLetter;
+        // Select (add to multi-select)
+        activeFilters.letters.push(clickedLetter);
         this.classList.add("active");
+        this.setAttribute("aria-pressed", "true");
       }
       applyFilters();
     });
@@ -427,12 +499,13 @@ function validateYearRange() {
   container.parentNode.appendChild(toggle);
 })();
 
-// Toggle buttons (Biblical, Unisex)
+// Toggle buttons (Biblical, Unisex, Palindrome, Alliteration)
 document.querySelectorAll(".filter-toggle").forEach(function (btn) {
   btn.addEventListener("click", function () {
     var filter = btn.dataset.filter;
     activeFilters[filter] = !activeFilters[filter];
     btn.classList.toggle("active");
+    btn.setAttribute("aria-pressed", String(activeFilters[filter]));
     applyFilters();
   });
 });
@@ -444,13 +517,16 @@ document.getElementById("clear-filters").addEventListener("click", function () {
   document.getElementById("syllable-filter").value = "";
   document.getElementById("year-min").value = "";
   document.getElementById("year-max").value = "";
-  activeFilters.letter = null;
+  activeFilters.letters = [];
   activeFilters.biblical = false;
   activeFilters.unisex = false;
+  activeFilters.palindrome = false;
+  activeFilters.alliteration = false;
   document
     .querySelectorAll(".letter-chip, .filter-toggle")
     .forEach(function (el) {
       el.classList.remove("active");
+      el.setAttribute("aria-pressed", "false");
     });
   applyFilters();
 });
@@ -492,9 +568,12 @@ function saveStateToHash() {
   if (ymin) params.set("ymin", ymin);
   var ymax = document.getElementById("year-max").value;
   if (ymax) params.set("ymax", ymax);
-  if (activeFilters.letter) params.set("letter", activeFilters.letter);
+  if (activeFilters.letters.length > 0)
+    params.set("letters", activeFilters.letters.sort().join(","));
   if (activeFilters.biblical) params.set("biblical", "1");
   if (activeFilters.unisex) params.set("unisex", "1");
+  if (activeFilters.palindrome) params.set("palindrome", "1");
+  if (activeFilters.alliteration) params.set("alliteration", "1");
 
   var hash = params.toString();
   history.replaceState(null, "", hash ? "#" + hash : location.pathname);
@@ -525,25 +604,44 @@ function loadStateFromHash() {
     document.getElementById("year-min").value = params.get("ymin");
   if (params.get("ymax"))
     document.getElementById("year-max").value = params.get("ymax");
-  if (params.get("letter") && isValidLetter(params.get("letter"))) {
-    activeFilters.letter = params.get("letter");
+
+  // Multi-select letters (new format: letters=A,B,C)
+  var lettersParam = params.get("letters");
+  if (lettersParam) {
+    var letters = lettersParam.split(",").filter(isValidLetter);
+    activeFilters.letters = letters;
+    letters.forEach(function (l) {
+      var chip = document.querySelector('.letter-chip[data-letter="' + l + '"]');
+      if (chip) {
+        chip.classList.add("active");
+        chip.setAttribute("aria-pressed", "true");
+      }
+    });
+  }
+  // Backward compat: single letter param
+  if (!lettersParam && params.get("letter") && isValidLetter(params.get("letter"))) {
+    var singleLetter = params.get("letter");
+    activeFilters.letters = [singleLetter];
     var chip = document.querySelector(
-      '.letter-chip[data-letter="' + activeFilters.letter + '"]',
+      '.letter-chip[data-letter="' + singleLetter + '"]',
     );
-    if (chip) chip.classList.add("active");
+    if (chip) {
+      chip.classList.add("active");
+      chip.setAttribute("aria-pressed", "true");
+    }
   }
-  if (params.get("biblical")) {
-    activeFilters.biblical = true;
-    document
-      .querySelector('.filter-toggle[data-filter="biblical"]')
-      .classList.add("active");
-  }
-  if (params.get("unisex")) {
-    activeFilters.unisex = true;
-    document
-      .querySelector('.filter-toggle[data-filter="unisex"]')
-      .classList.add("active");
-  }
+
+  // Boolean toggles
+  ["biblical", "unisex", "palindrome", "alliteration"].forEach(function (key) {
+    if (params.get(key)) {
+      activeFilters[key] = true;
+      var btn = document.querySelector('.filter-toggle[data-filter="' + key + '"]');
+      if (btn) {
+        btn.classList.add("active");
+        btn.setAttribute("aria-pressed", "true");
+      }
+    }
+  });
 }
 
 // Save state whenever filters change
