@@ -201,38 +201,79 @@ def add_pronunciations(df: pl.DataFrame) -> pl.DataFrame:
 
 
 def build_spelling_variants(df: pl.DataFrame) -> pl.DataFrame:
-    """Map names that share any pronunciation to each other as spelling variants.
+    """Group names that share a pronunciation as spelling variants.
+
+    For names with multiple pronunciations, each name is assigned to the
+    pronunciation cluster with the most members — i.e., the pronunciation
+    shared by the most other names. This prevents multi-pronunciation names
+    from bridging unrelated families while still catching legitimate merges.
+
+    For example:
+    - Meighan [M-EY1-G-AH0-N, M-IY1-AH0-N] picks M-EY1-G-AH0-N (shared
+      by Megan, Magan = 3 members) over M-IY1-AH0-N (shared by Mian = 2),
+      so it merges with Megan instead of bridging Megan to Mian.
+    - Aisling [EY1-S-L-IH0-NG, AE1-SH-L-IH0-NG] picks AE1-SH-L-IH0-NG
+      (shared by Aislinn = 2 members) over EY1-S-L-IH0-NG (only Aisling = 1),
+      so it correctly merges with Aislinn.
+
+    Since each name maps to exactly one "best" pronunciation, a simple dict
+    yields the groups directly — no transitive closure is needed.
 
     Creates two columns:
-    - spelling_variants: other names with shared pronunciation (excludes self)
-    - variant_group: all names in the group (includes self, used for dedup)
+    - spelling_variants: other names in the same group (excludes self)
+    - variant_group: integer group ID (used as merge key)
     """
-    # Build pronunciation -> names index
-    pronunciation_to_names: dict[str, set[str]] = {}
-    for name, pronunciations in zip(
-        df["name"].to_list(), df["pronunciations"].to_list(), strict=True
-    ):
-        for pronunciation in pronunciations:
-            if pronunciation:
-                pronunciation_to_names.setdefault(pronunciation, set()).add(name)
-
     names: list[str] = df["name"].to_list()
     pronunciations_list: list[PronunciationList] = df["pronunciations"].to_list()
 
-    variants: list[str] = []
-    groups: list[str] = []
+    # Build pronunciation -> names index using ALL pronunciations
+    pron_to_names: dict[str, set[str]] = {}
     for name, pronunciations in zip(names, pronunciations_list, strict=True):
-        all_related: set[str] = set()
-        for pronunciation in pronunciations:
-            if pronunciation in pronunciation_to_names:
-                all_related.update(pronunciation_to_names[pronunciation])
-        groups.append(" ".join(sorted(all_related)))
-        all_related.discard(name)
-        variants.append(" ".join(sorted(all_related)))
+        for pron in pronunciations:
+            if pron:
+                pron_to_names.setdefault(pron, set()).add(name)
+
+    # For each name, pick the pronunciation whose cluster has the most members.
+    # This selects the "most shared" pronunciation as the grouping key.
+    # Ties are broken by pronunciation order (first in list wins).
+    name_to_best_pron: dict[str, str] = {}
+    for name, pronunciations in zip(names, pronunciations_list, strict=True):
+        if not pronunciations:
+            name_to_best_pron[name] = ""
+            continue
+        best_pron = pronunciations[0]
+        best_size = len(pron_to_names.get(best_pron, set()))
+        for pron in pronunciations[1:]:
+            size = len(pron_to_names.get(pron, set()))
+            if size > best_size:
+                best_pron = pron
+                best_size = size
+        name_to_best_pron[name] = best_pron
+
+    # Build groups from best-pronunciation assignments
+    best_pron_to_group: dict[str, set[str]] = {}
+    for name, pron in name_to_best_pron.items():
+        if pron:
+            best_pron_to_group.setdefault(pron, set()).add(name)
+
+    # Assign stable integer group IDs
+    pron_to_id: dict[str, int] = {}
+    next_id = 0
+    variant_ids: list[int] = []
+    variant_strs: list[str] = []
+    for name in names:
+        pron = name_to_best_pron[name]
+        if pron not in pron_to_id:
+            pron_to_id[pron] = next_id
+            next_id += 1
+        variant_ids.append(pron_to_id[pron])
+        group = best_pron_to_group.get(pron, set())
+        others = sorted(group - {name})
+        variant_strs.append(" ".join(others))
 
     return df.with_columns(
-        pl.Series("spelling_variants", variants),
-        pl.Series("variant_group", groups),
+        pl.Series("spelling_variants", variant_strs),
+        pl.Series("variant_group", variant_ids),
     )
 
 
@@ -244,7 +285,7 @@ def merge_spelling_variants(df: pl.DataFrame) -> pl.DataFrame:
     """
     log.info("Merging spelling variants")
 
-    merged: dict[tuple[str, str], dict] = {}
+    merged: dict[tuple[int, str], dict] = {}
 
     for row in df.iter_rows(named=True):
         key = (row["variant_group"], row["sex"])
@@ -264,8 +305,6 @@ def merge_spelling_variants(df: pl.DataFrame) -> pl.DataFrame:
             }
         else:
             entry = merged[key]
-            # Explicitly pick the spelling with the highest individual count;
-            # use its year_peak since it dominates the group's popularity
             if row["total_count"] > entry["_best_count"]:
                 entry["name"] = row["name"]
                 entry["spelling_variants"] = row["spelling_variants"]
