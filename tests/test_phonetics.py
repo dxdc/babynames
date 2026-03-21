@@ -1,93 +1,77 @@
 """Tests for phonetic helper functions."""
 
 from src.babynames import (
-    alliteration_in_word,
-    alliteration_in_word_first_letter,
-    phones_in_word,
-    stresses_in_word,
-    syllable_count,
-    syllables_in_word,
+    count_syllables,
+    extract_stress_pattern,
+    get_pronunciations,
+    get_stress_patterns,
+    get_syllable_count,
+    has_initial_phoneme_repeat,
+    has_repeated_phoneme,
 )
 
 
-class TestPhonesInWord:
-    def test_common_name(self):
-        phones = phones_in_word("Mary")
-        assert len(phones) >= 1
-        assert all(isinstance(p, str) for p in phones)
-        # Mary should have phonemes
-        assert any("M" in p for p in phones)
+class TestGetPronunciations:
+    def test_common_name(self) -> None:
+        pronunciations = get_pronunciations("Mary")
+        assert len(pronunciations) >= 1
+        assert all(isinstance(p, str) for p in pronunciations)
+        assert any("M" in p for p in pronunciations)
 
-    def test_unknown_name_wordbreak(self):
-        # A name that might not be in CMU dict directly
-        phones = phones_in_word("Zzyzx")
-        # Should return a list (possibly empty for very unusual words)
-        assert isinstance(phones, list)
+    def test_compound_name_fallback(self) -> None:
+        pronunciations = get_pronunciations("Zzyzx")
+        assert isinstance(pronunciations, list)
 
-    def test_john(self):
-        phones = phones_in_word("John")
-        assert len(phones) >= 1
-        assert any("JH" in p for p in phones)
+    def test_john(self) -> None:
+        pronunciations = get_pronunciations("John")
+        assert len(pronunciations) >= 1
+        assert any("JH" in p for p in pronunciations)
 
-    def test_case_insensitive(self):
-        phones_upper = phones_in_word("MARY")
-        phones_lower = phones_in_word("mary")
-        assert phones_upper == phones_lower
+    def test_case_insensitive(self) -> None:
+        assert get_pronunciations("MARY") == get_pronunciations("mary")
 
 
-class TestStressesInWord:
-    def test_monosyllabic(self):
-        phones = ["JH AA1 N"]  # John
-        stresses = stresses_in_word(phones)
-        assert stresses == ["1"]
+class TestStressPatterns:
+    def test_monosyllabic(self) -> None:
+        assert extract_stress_pattern("JH AA1 N") == "1"
 
-    def test_multisyllabic(self):
-        phones = ["M EH1 R IY0"]  # Mary
-        stresses = stresses_in_word(phones)
-        assert stresses == ["10"]
+    def test_disyllabic(self) -> None:
+        assert extract_stress_pattern("M EH1 R IY0") == "10"
 
-    def test_empty(self):
-        assert stresses_in_word([]) == []
+    def test_empty(self) -> None:
+        assert extract_stress_pattern("") == ""
 
-
-class TestSyllableCount:
-    def test_monosyllabic(self):
-        assert syllable_count("JH AA1 N") == 1
-
-    def test_disyllabic(self):
-        assert syllable_count("M EH1 R IY0") == 2
-
-    def test_empty(self):
-        assert syllable_count("") == 0
+    def test_multiple_pronunciations(self) -> None:
+        patterns = get_stress_patterns(["JH AA1 N", "M EH1 R IY0"])
+        assert patterns == ["1", "10"]
 
 
-class TestSyllablesInWord:
-    def test_monosyllabic(self):
-        assert syllables_in_word(["JH AA1 N"]) == 1
+class TestSyllableCounting:
+    def test_monosyllabic(self) -> None:
+        assert count_syllables("JH AA1 N") == 1
 
-    def test_disyllabic(self):
-        assert syllables_in_word(["M EH1 R IY0"]) == 2
+    def test_disyllabic(self) -> None:
+        assert count_syllables("M EH1 R IY0") == 2
 
-    def test_empty(self):
-        assert syllables_in_word([]) == 0
+    def test_empty(self) -> None:
+        assert count_syllables("") == 0
 
-    def test_multiple_pronunciations(self):
-        # Average of pronunciations
-        result = syllables_in_word(["M EH1 R IY0", "M AA1 R IY0"])
-        assert result == 2
+    def test_average_across_pronunciations(self) -> None:
+        assert get_syllable_count(["M EH1 R IY0", "M AA1 R IY0"]) == 2
+
+    def test_empty_list(self) -> None:
+        assert get_syllable_count([]) == 0
 
 
 class TestAlliteration:
-    def test_no_alliteration(self):
-        assert alliteration_in_word(["JH AA1 N"]) is None
+    def test_no_repeated_phoneme(self) -> None:
+        assert not has_repeated_phoneme(["JH AA1 N"])
 
-    def test_alliteration(self):
-        # A phone where some element repeats
-        assert alliteration_in_word(["B AE1 B"]) == 1
+    def test_repeated_phoneme(self) -> None:
+        assert has_repeated_phoneme(["B AE1 B"])
 
-    def test_first_letter_alliteration(self):
-        # First phoneme repeats
-        assert alliteration_in_word_first_letter(["B AE1 B"]) == 2
+    def test_initial_repeat(self) -> None:
+        assert has_initial_phoneme_repeat(["B AE1 B"])
 
-    def test_first_letter_no_alliteration(self):
-        assert alliteration_in_word_first_letter(["JH AA1 N"]) is None
+    def test_no_initial_repeat(self) -> None:
+        assert not has_initial_phoneme_repeat(["JH AA1 N"])

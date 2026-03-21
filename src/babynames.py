@@ -8,9 +8,7 @@ and enriches with features like syllable count, stress patterns, and biblical st
 import argparse
 import logging
 import re
-from collections.abc import Callable
 from functools import lru_cache
-from itertools import chain
 from itertools import product as iterprod
 from pathlib import Path
 from statistics import mean
@@ -20,8 +18,27 @@ import polars as pl
 
 log = logging.getLogger(__name__)
 
-# Load CMU Pronouncing Dictionary
-ARPABET: dict[str, list[list[str]]] = cmudict.dict()
+# ---------------------------------------------------------------------------
+# Type aliases
+# ---------------------------------------------------------------------------
+
+# With Python 3.12+ these can use the `type` statement instead:
+#   type Phonemes = list[str]
+from typing import TypeAlias
+
+Phonemes: TypeAlias = list[str]  # e.g. ["AH0", "B", "IY1"]
+Pronunciation: TypeAlias = str  # ARPABET string, e.g. "AH0 B IY1"
+PronunciationList: TypeAlias = list[Pronunciation]
+ArpabetDict: TypeAlias = dict[str, list[Phonemes]]
+
+# ---------------------------------------------------------------------------
+# CMU Pronouncing Dictionary
+# ---------------------------------------------------------------------------
+
+ARPABET: ArpabetDict = cmudict.dict()
+
+PRONUNCIATION_SEPARATOR = " | "
+STRESS_SEPARATOR = " | "
 
 
 # ---------------------------------------------------------------------------
@@ -30,61 +47,80 @@ ARPABET: dict[str, list[list[str]]] = cmudict.dict()
 
 
 @lru_cache(maxsize=None)
-def wordbreak(s: str) -> list[list[str]]:
-    """Recursively break a word into CMU-dict sub-words and combine pronunciations."""
-    s = s.lower()
-    if s in ARPABET:
-        return ARPABET[s]
-    middle = len(s) / 2
-    partition = sorted(range(len(s)), key=lambda x: (x - middle) ** 2 - x)
-    for i in partition:
-        pre, suf = s[:i], s[i:]
-        if pre in ARPABET and wordbreak(suf):
-            return [x + y for x, y in iterprod(ARPABET[pre], wordbreak(suf))]
+def split_into_subwords(word: str) -> list[Phonemes]:
+    """Recursively split a word into CMU-dict sub-words and combine phonemes.
+
+    Tries partitions starting near the middle of the word, preferring
+    longer prefixes. Returns combined phoneme lists for all valid splits.
+    """
+    word = word.lower()
+    if word in ARPABET:
+        return ARPABET[word]
+    midpoint = len(word) / 2
+    # Try split points ordered by distance from middle (prefer balanced splits)
+    split_points = sorted(range(len(word)), key=lambda i: (i - midpoint) ** 2 - i)
+    for i in split_points:
+        prefix, suffix = word[:i], word[i:]
+        if prefix in ARPABET and split_into_subwords(suffix):
+            return [
+                left + right
+                for left, right in iterprod(ARPABET[prefix], split_into_subwords(suffix))
+            ]
     return []
 
 
-def phones_in_word(word: str) -> list[str]:
-    """Get list of phonetic pronunciations for a word as ARPABET strings."""
-    lower = word.lower()
+def get_pronunciations(name: str) -> PronunciationList:
+    """Get all known ARPABET pronunciations for a name.
+
+    First checks the CMU dictionary directly, then falls back to
+    recursive sub-word splitting for compound or unusual names.
+    """
+    lower = name.lower()
     if lower in ARPABET:
         return [" ".join(phonemes) for phonemes in ARPABET[lower]]
-    return [" ".join(x) for x in wordbreak(word)]
+    return [" ".join(phonemes) for phonemes in split_into_subwords(name)]
 
 
-def stresses_in_word(phones: list[str]) -> list[str]:
-    """Extract stress patterns (digits 0-2) from ARPABET phone strings."""
-    return [re.sub(r"[^0-2]", "", phone) for phone in phones]
+def extract_stress_pattern(pronunciation: Pronunciation) -> str:
+    """Extract the stress pattern (digits 0-2) from an ARPABET pronunciation.
+
+    Example: "M EH1 R IY0" -> "10"
+    """
+    return re.sub(r"[^0-2]", "", pronunciation)
 
 
-def syllable_count(phone_str: str) -> int:
-    """Count syllables in an ARPABET phone string (count of stress digits)."""
-    return len(re.sub(r"[^0-2]", "", phone_str))
+def get_stress_patterns(pronunciations: PronunciationList) -> list[str]:
+    """Extract stress patterns for all pronunciations."""
+    return [extract_stress_pattern(p) for p in pronunciations]
 
 
-def syllables_in_word(phones: list[str]) -> int:
-    """Average syllable count across all pronunciations of a word."""
-    if phones:
-        return int(round(mean(syllable_count(p) for p in phones), 1))
+def count_syllables(pronunciation: Pronunciation) -> int:
+    """Count syllables in an ARPABET pronunciation (number of stress digits)."""
+    return len(extract_stress_pattern(pronunciation))
+
+
+def get_syllable_count(pronunciations: PronunciationList) -> int:
+    """Average syllable count across all pronunciations, rounded to nearest int."""
+    if pronunciations:
+        return int(round(mean(count_syllables(p) for p in pronunciations), 1))
     return 0
 
 
-def alliteration_in_word(phones: list[str]) -> int | None:
-    """Check if any phoneme repeats within any pronunciation."""
-    for phone in phones:
-        parts = phone.split()
-        if any(parts.count(p) > 1 for p in parts):
-            return 1
-    return None
+def has_repeated_phoneme(pronunciations: PronunciationList) -> bool:
+    """Check if any phoneme appears more than once in any pronunciation."""
+    return any(
+        any(parts.count(phoneme) > 1 for phoneme in parts)
+        for parts in (p.split() for p in pronunciations)
+    )
 
 
-def alliteration_in_word_first_letter(phones: list[str]) -> int | None:
+def has_initial_phoneme_repeat(pronunciations: PronunciationList) -> bool:
     """Check if the first phoneme repeats later in any pronunciation."""
-    for phone in phones:
-        parts = phone.split()
+    for pronunciation in pronunciations:
+        parts = pronunciation.split()
         if parts and parts.count(parts[0]) > 1:
-            return 2
-    return None
+            return True
+    return False
 
 
 # ---------------------------------------------------------------------------
@@ -93,30 +129,33 @@ def alliteration_in_word_first_letter(phones: list[str]) -> int | None:
 
 
 def load_ssa_data(data_dir: Path) -> pl.DataFrame:
-    """Load all SSA baby name year-of-birth files into a single DataFrame."""
+    """Load all SSA baby name year-of-birth files into a single DataFrame.
+
+    Each file is named yobYYYY.txt with format: name,sex,count
+    """
     source_files = sorted(data_dir.glob("yob*.txt"))
     if not source_files:
         raise FileNotFoundError(f"No yob*.txt files found in {data_dir}")
 
     log.info("Loading %d SSA data files from %s", len(source_files), data_dir)
-    frames = []
-    for f in source_files:
-        year = int(f.stem.replace("yob", ""))
-        df = pl.read_csv(
-            f,
+    frames: list[pl.DataFrame] = []
+    for filepath in source_files:
+        year = int(filepath.stem.replace("yob", ""))
+        frame = pl.read_csv(
+            filepath,
             has_header=False,
-            new_columns=["name", "sex", "n"],
+            new_columns=["name", "sex", "count"],
         ).with_columns(pl.lit(year).alias("year"))
-        frames.append(df)
+        frames.append(frame)
 
     return pl.concat(frames)
 
 
-def load_biblical_names(path: Path) -> pl.DataFrame:
-    """Load biblical names CSV (single 'name' column)."""
-    log.info("Loading biblical names from %s", path)
-    df = pl.read_csv(path, encoding="utf8-lossy")
-    return df.with_columns(pl.lit(1).alias("biblical"))
+def load_biblical_names(filepath: Path) -> pl.DataFrame:
+    """Load biblical names CSV and add a boolean marker column."""
+    log.info("Loading biblical names from %s", filepath)
+    names = pl.read_csv(filepath, encoding="utf8-lossy")
+    return names.with_columns(pl.lit(1).alias("biblical"))
 
 
 # ---------------------------------------------------------------------------
@@ -124,238 +163,268 @@ def load_biblical_names(path: Path) -> pl.DataFrame:
 # ---------------------------------------------------------------------------
 
 
-def compute_popular_years(df: pl.DataFrame) -> pl.DataFrame:
-    """For each name+sex, find the year with the highest count."""
-    max_counts = df.group_by(["name", "sex"]).agg(pl.col("n").max().alias("n_max"))
-    with_max = df.join(max_counts, on=["name", "sex"])
-    popular = (
-        with_max.filter(pl.col("n") == pl.col("n_max"))
-        .group_by(["name", "sex"])
-        .agg(pl.col("year").max().alias("year_pop"))
+def find_peak_popularity_years(raw_data: pl.DataFrame) -> pl.DataFrame:
+    """For each name+sex, find the year with the highest single-year count.
+
+    When tied, the latest year wins.
+    """
+    max_counts = raw_data.group_by(["name", "sex"]).agg(
+        pl.col("count").max().alias("count_max")
     )
-    return popular
-
-
-def aggregate_by_name(df: pl.DataFrame) -> pl.DataFrame:
-    """Aggregate SSA data: sum counts, find year min/max per name+sex."""
+    with_max = raw_data.join(max_counts, on=["name", "sex"])
     return (
-        df.group_by(["name", "sex"])
+        with_max.filter(pl.col("count") == pl.col("count_max"))
+        .group_by(["name", "sex"])
+        .agg(pl.col("year").max().alias("year_peak"))
+    )
+
+
+def aggregate_counts(raw_data: pl.DataFrame) -> pl.DataFrame:
+    """Sum counts across all years per name+sex; track year range."""
+    return (
+        raw_data.group_by(["name", "sex"])
         .agg(
             pl.col("year").min().alias("year_min"),
             pl.col("year").max().alias("year_max"),
-            pl.col("n").sum().alias("n_sum"),
+            pl.col("count").sum().alias("total_count"),
         )
-        .sort(["sex", "n_sum", "name"], descending=[False, True, False])
+        .sort(["sex", "total_count", "name"], descending=[False, True, False])
     )
 
 
-def extract_phonetics(df: pl.DataFrame) -> pl.DataFrame:
-    """Add phonetic pronunciation column to DataFrame."""
-    log.info("Extracting phonetic pronunciations for %d names", df.height)
-    names = df["name"].to_list()
-    phones = [phones_in_word(n) for n in names]
-    return df.with_columns(pl.Series("phones", phones))
+def add_pronunciations(df: pl.DataFrame) -> pl.DataFrame:
+    """Add a column of ARPABET pronunciations for each name."""
+    log.info("Extracting pronunciations for %d names", df.height)
+    names: list[str] = df["name"].to_list()
+    pronunciations = [get_pronunciations(name) for name in names]
+    return df.with_columns(pl.Series("pronunciations", pronunciations))
 
 
-def build_alt_spellings(df: pl.DataFrame) -> pl.DataFrame:
-    """Build alternative spellings map based on shared phonetic pronunciations."""
-    # Explode phones to map each pronunciation -> set of names
-    exploded = df.select("name", "phones").explode("phones")
+def build_spelling_variants(df: pl.DataFrame) -> pl.DataFrame:
+    """Map names that share any pronunciation to each other as spelling variants.
 
-    phones_map: dict[str, set[str]] = {}
-    for row in exploded.iter_rows():
-        name, phone = row
-        if phone:
-            phones_map.setdefault(phone, set()).add(name)
+    Creates two columns:
+    - spelling_variants: other names with shared pronunciation (excludes self)
+    - variant_group: all names in the group (includes self, used for dedup)
+    """
+    # Build pronunciation -> names index
+    pronunciation_to_names: dict[str, set[str]] = {}
+    for name, pronunciations in zip(
+        df["name"].to_list(), df["pronunciations"].to_list()
+    ):
+        for pronunciation in pronunciations:
+            if pronunciation:
+                pronunciation_to_names.setdefault(pronunciation, set()).add(name)
 
-    # For each name, collect all names that share any pronunciation
-    def get_alt_spellings(name: str, phones: list[str]) -> str:
-        alts: set[str] = set()
-        for phone in phones:
-            if phone in phones_map:
-                alts.update(phones_map[phone])
-        alts.discard(name)
-        return " ".join(sorted(alts))
+    names: list[str] = df["name"].to_list()
+    pronunciations_list: list[PronunciationList] = df["pronunciations"].to_list()
 
-    def get_full_alt_spellings(name: str, phones: list[str]) -> str:
-        alts: set[str] = set()
-        for phone in phones:
-            if phone in phones_map:
-                alts.update(phones_map[phone])
-        return " ".join(sorted(alts))
-
-    names = df["name"].to_list()
-    phones_lists = df["phones"].to_list()
-
-    alt_spellings = [get_alt_spellings(n, p) for n, p in zip(names, phones_lists)]
-    full_alt_spellings = [get_full_alt_spellings(n, p) for n, p in zip(names, phones_lists)]
+    variants: list[str] = []
+    groups: list[str] = []
+    for name, pronunciations in zip(names, pronunciations_list):
+        all_related: set[str] = set()
+        for pronunciation in pronunciations:
+            if pronunciation in pronunciation_to_names:
+                all_related.update(pronunciation_to_names[pronunciation])
+        groups.append(" ".join(sorted(all_related)))
+        all_related.discard(name)
+        variants.append(" ".join(sorted(all_related)))
 
     return df.with_columns(
-        pl.Series("alt_spellings", alt_spellings),
-        pl.Series("full_alt_spellings", full_alt_spellings),
+        pl.Series("spelling_variants", variants),
+        pl.Series("variant_group", groups),
     )
 
 
-def deduplicate_by_pronunciation(df: pl.DataFrame) -> pl.DataFrame:
-    """Combine names with identical pronunciations, keeping most popular spelling."""
-    log.info("Deduplicating names by pronunciation")
+def merge_spelling_variants(df: pl.DataFrame) -> pl.DataFrame:
+    """Merge rows that share a variant_group, keeping the most popular spelling.
 
-    # Group by full_alt_spellings + sex, aggregate
-    # Convert to Python for the complex aggregation
-    groups: dict[tuple[str, str], dict] = {}
+    Sums counts, takes min/max of years, unions pronunciations.
+    """
+    log.info("Merging spelling variants")
+
+    merged: dict[tuple[str, str], dict] = {}
 
     for row in df.iter_rows(named=True):
-        key = (row["full_alt_spellings"], row["sex"])
-        if key not in groups:
-            groups[key] = {
+        key = (row["variant_group"], row["sex"])
+        if key not in merged:
+            merged[key] = {
                 "name": row["name"],
-                "alt_spellings": row["alt_spellings"],
-                "n_sum": row["n_sum"],
+                "spelling_variants": row["spelling_variants"],
+                "total_count": row["total_count"],
                 "year_min": row["year_min"],
                 "year_max": row["year_max"],
-                "year_pop": row["year_pop"],
+                "year_peak": row["year_peak"],
                 "biblical": row["biblical"],
-                "palindrome": row.get("palindrome"),
-                "phones": set(row["phones"]) if row["phones"] else set(),
+                "is_palindrome": row.get("is_palindrome"),
+                "pronunciations": set(row["pronunciations"] or []),
                 "sex": row["sex"],
             }
         else:
-            g = groups[key]
-            g["n_sum"] += row["n_sum"]
-            g["year_min"] = min(g["year_min"], row["year_min"])
-            g["year_max"] = max(g["year_max"], row["year_max"])
-            g["year_pop"] = max(g["year_pop"], row["year_pop"]) if row["year_pop"] else g["year_pop"]
+            entry = merged[key]
+            entry["total_count"] += row["total_count"]
+            entry["year_min"] = min(entry["year_min"], row["year_min"])
+            entry["year_max"] = max(entry["year_max"], row["year_max"])
+            if row["year_peak"] is not None:
+                entry["year_peak"] = (
+                    max(entry["year_peak"], row["year_peak"])
+                    if entry["year_peak"] is not None
+                    else row["year_peak"]
+                )
             if row["biblical"]:
-                g["biblical"] = 1
-            if row.get("palindrome"):
-                g["palindrome"] = 1
-            if row["phones"]:
-                g["phones"].update(row["phones"])
+                entry["biblical"] = 1
+            if row.get("is_palindrome"):
+                entry["is_palindrome"] = 1
+            if row["pronunciations"]:
+                entry["pronunciations"].update(row["pronunciations"])
 
     records = []
-    for g in groups.values():
-        g["phones"] = list(g["phones"])
-        records.append(g)
+    for entry in merged.values():
+        entry["pronunciations"] = sorted(entry["pronunciations"])
+        records.append(entry)
 
     result = pl.DataFrame(records)
-    return result.sort(["sex", "n_sum", "name"], descending=[False, True, False])
+    return result.sort(["sex", "total_count", "name"], descending=[False, True, False])
 
 
-def compute_features(df: pl.DataFrame) -> pl.DataFrame:
-    """Compute derived features: first_letter, stresses, syllables, alliteration."""
-    log.info("Computing derived features")
-    phones_lists = df["phones"].to_list()
-    names = df["name"].to_list()
-
-    first_letters = [n[0] for n in names]
-    stresses = [stresses_in_word(p) for p in phones_lists]
-    syllables = [syllables_in_word(p) for p in phones_lists]
-    allit = [alliteration_in_word(p) for p in phones_lists]
-    allit_first = [alliteration_in_word_first_letter(p) for p in phones_lists]
+def compute_name_features(df: pl.DataFrame) -> pl.DataFrame:
+    """Compute derived linguistic features from pronunciations."""
+    log.info("Computing linguistic features")
+    pronunciations_list: list[PronunciationList] = df["pronunciations"].to_list()
+    names: list[str] = df["name"].to_list()
 
     return df.with_columns(
-        pl.Series("first_letter", first_letters),
-        pl.Series("stresses", stresses),
-        pl.Series("syllables", syllables),
-        pl.Series("alliteration", allit, dtype=pl.Int64),
-        pl.Series("alliteration_first", allit_first, dtype=pl.Int64),
+        pl.Series("first_letter", [name[0] for name in names]),
+        pl.Series("stresses", [get_stress_patterns(p) for p in pronunciations_list]),
+        pl.Series("syllables", [get_syllable_count(p) for p in pronunciations_list]),
+        pl.Series(
+            "alliteration",
+            [1 if has_repeated_phoneme(p) else None for p in pronunciations_list],
+            dtype=pl.Int64,
+        ),
+        pl.Series(
+            "alliteration_first",
+            [1 if has_initial_phoneme_repeat(p) else None for p in pronunciations_list],
+            dtype=pl.Int64,
+        ),
     )
 
 
-def classify_unisex(df: pl.DataFrame, min_count: int = 15000, min_year: int = 1970) -> pl.DataFrame:
-    """Mark names as unisex if used by both genders after min_year with min_count each."""
-    candidates = df.filter((pl.col("year_max") > min_year) & (pl.col("n_sum") > min_count))
-    unisex_names = (
+def classify_unisex_names(
+    df: pl.DataFrame, *, min_count: int = 15000, min_year: int = 1970
+) -> pl.DataFrame:
+    """Flag names used by both genders after min_year with at least min_count each."""
+    candidates = df.filter(
+        (pl.col("year_max") > min_year) & (pl.col("total_count") > min_count)
+    )
+    unisex_names: set[str] = set(
         candidates.group_by("name")
         .agg(pl.col("sex").n_unique().alias("sex_count"))
         .filter(pl.col("sex_count") > 1)["name"]
         .to_list()
     )
-    unisex_set = set(unisex_names)
-    is_unisex = [1 if n in unisex_set else None for n in df["name"].to_list()]
-    return df.with_columns(pl.Series("unisex", is_unisex, dtype=pl.Int64))
+    return df.with_columns(
+        pl.Series(
+            "unisex",
+            [1 if name in unisex_names else None for name in df["name"].to_list()],
+            dtype=pl.Int64,
+        )
+    )
 
 
-def add_palindromes(df: pl.DataFrame) -> pl.DataFrame:
-    """Mark palindrome names."""
-    names = df["name"].to_list()
-    palindromes = [1 if n.lower() == n.lower()[::-1] else None for n in names]
-    return df.with_columns(pl.Series("palindrome", palindromes, dtype=pl.Int64))
+def flag_palindromes(df: pl.DataFrame) -> pl.DataFrame:
+    """Flag names that read the same forwards and backwards."""
+    names: list[str] = df["name"].to_list()
+    return df.with_columns(
+        pl.Series(
+            "is_palindrome",
+            [1 if n.lower() == n.lower()[::-1] else None for n in names],
+            dtype=pl.Int64,
+        )
+    )
 
 
 # ---------------------------------------------------------------------------
 # Export
 # ---------------------------------------------------------------------------
 
+# Columns in output order
+OUTPUT_COLUMNS: list[str] = [
+    "name",
+    "spelling_variants",
+    "total_count",
+    "year_min",
+    "year_max",
+    "year_peak",
+    "biblical",
+    "is_palindrome",
+    "pronunciations",
+    "first_letter",
+    "stresses",
+    "syllables",
+    "alliteration",
+    "alliteration_first",
+    "unisex",
+]
+
+
+def serialize_list_columns(frame: pl.DataFrame) -> pl.DataFrame:
+    """Convert list columns to pipe-separated strings for unambiguous CSV output.
+
+    Multiple pronunciations: "M EH1 R IY0 | M AA1 R IY0"
+    Multiple stress patterns: "10 | 10"
+    """
+    for col_name in frame.columns:
+        dtype = frame[col_name].dtype
+        if dtype == pl.List(pl.String):
+            frame = frame.with_columns(
+                pl.col(col_name).list.join(PRONUNCIATION_SEPARATOR).alias(col_name)
+            )
+        elif str(dtype).startswith("List"):
+            frame = frame.with_columns(
+                pl.col(col_name)
+                .cast(pl.List(pl.String))
+                .list.join(STRESS_SEPARATOR)
+                .alias(col_name)
+            )
+    return frame
+
 
 def export_csvs(df: pl.DataFrame, output_dir: Path) -> None:
-    """Export all-names.csv, boys.csv, and girls.csv."""
+    """Write all-names.csv, boys.csv, and girls.csv."""
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Column order for output
-    output_cols = [
-        "name",
-        "alt_spellings",
-        "n_sum",
-        "year_min",
-        "year_max",
-        "year_pop",
-        "biblical",
-        "palindrome",
-        "phones",
-        "first_letter",
-        "stresses",
-        "syllables",
-        "alliteration",
-        "alliteration_first",
-        "unisex",
-    ]
-
-    def stringify_lists(frame: pl.DataFrame) -> pl.DataFrame:
-        """Convert list columns to space-separated strings for CSV output."""
-        for col_name in frame.columns:
-            if frame[col_name].dtype == pl.List(pl.String):
-                frame = frame.with_columns(
-                    pl.col(col_name).list.join(" ").alias(col_name)
-                )
-            elif str(frame[col_name].dtype).startswith("List"):
-                frame = frame.with_columns(
-                    pl.col(col_name).cast(pl.List(pl.String)).list.join(" ").alias(col_name)
-                )
-        return frame
-
-    all_cols = ["sex"] + output_cols
+    all_cols = ["sex"] + OUTPUT_COLUMNS
     all_names = df.select([c for c in all_cols if c in df.columns])
-    all_names = stringify_lists(all_names)
+    all_names = serialize_list_columns(all_names)
     all_names.write_csv(output_dir / "all-names.csv")
     log.info("Wrote %s (%d rows)", output_dir / "all-names.csv", all_names.height)
 
-    for sex, label in [("M", "boys"), ("F", "girls")]:
-        gender_df = df.filter(pl.col("sex") == sex).drop("sex")
+    for sex_code, filename in [("M", "boys"), ("F", "girls")]:
+        gender_df = df.filter(pl.col("sex") == sex_code).drop("sex")
 
-        # Add rank and cumulative percentage
         gender_df = gender_df.with_columns(
-            pl.col("n_sum")
+            pl.col("total_count")
             .rank(method="dense", descending=True)
             .cast(pl.Int64)
             .alias("rank")
         )
-        total = gender_df["n_sum"].sum()
+        total = gender_df["total_count"].sum()
         gender_df = gender_df.with_columns(
-            (100 * (pl.col("n_sum").cum_sum() / total))
+            (100 * (pl.col("total_count").cum_sum() / total))
             .round(1)
-            .alias("n_percent")
+            .alias("cumulative_pct")
         )
 
-        # Reorder: rank first, then n_percent after n_sum
-        final_cols = ["rank", "name", "alt_spellings", "n_sum", "n_percent"]
-        final_cols += [c for c in output_cols if c not in ("name", "alt_spellings", "n_sum")]
+        final_cols = ["rank", "name", "spelling_variants", "total_count", "cumulative_pct"]
+        final_cols += [
+            c for c in OUTPUT_COLUMNS if c not in ("name", "spelling_variants", "total_count")
+        ]
         final_cols = [c for c in final_cols if c in gender_df.columns]
-        gender_df = gender_df.select(final_cols)
-        gender_df = stringify_lists(gender_df)
+        gender_df = serialize_list_columns(gender_df.select(final_cols))
 
-        gender_df.write_csv(output_dir / f"{label}.csv")
-        log.info("Wrote %s (%d rows)", output_dir / f"{label}.csv", gender_df.height)
+        gender_df.write_csv(output_dir / f"{filename}.csv")
+        log.info("Wrote %s (%d rows)", output_dir / f"{filename}.csv", gender_df.height)
 
 
 # ---------------------------------------------------------------------------
@@ -396,35 +465,25 @@ def main() -> None:
         format="%(asctime)s %(levelname)s %(message)s",
     )
 
-    # Load data
-    df = load_ssa_data(args.data_dir)
-    df_bible = load_biblical_names(args.biblical)
-    popular_years = compute_popular_years(df)
+    # Load source data
+    raw_data = load_ssa_data(args.data_dir)
+    biblical_names = load_biblical_names(args.biblical)
+    peak_years = find_peak_popularity_years(raw_data)
 
-    # Aggregate by name+sex
-    df = aggregate_by_name(df)
+    # Aggregate across years
+    df = aggregate_counts(raw_data)
 
-    # Join biblical names
-    df = df.join(df_bible.select("name", "biblical"), on="name", how="left")
+    # Enrich with metadata
+    df = df.join(biblical_names.select("name", "biblical"), on="name", how="left")
+    df = add_pronunciations(df)
+    df = build_spelling_variants(df)
+    df = df.join(peak_years, on=["name", "sex"], how="left")
+    df = flag_palindromes(df)
 
-    # Extract phonetics and build alt spellings
-    df = extract_phonetics(df)
-    df = build_alt_spellings(df)
-
-    # Join popular years
-    df = df.join(popular_years, on=["name", "sex"], how="left")
-
-    # Add palindromes
-    df = add_palindromes(df)
-
-    # Deduplicate by pronunciation
-    df = deduplicate_by_pronunciation(df)
-
-    # Compute derived features
-    df = compute_features(df)
-
-    # Classify unisex names
-    df = classify_unisex(df)
+    # Deduplicate and compute features
+    df = merge_spelling_variants(df)
+    df = compute_name_features(df)
+    df = classify_unisex_names(df)
 
     # Export
     export_csvs(df, args.output_dir)

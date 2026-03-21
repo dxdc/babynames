@@ -4,163 +4,156 @@ import polars as pl
 import pytest
 
 from src.babynames import (
-    add_palindromes,
-    aggregate_by_name,
-    build_alt_spellings,
-    classify_unisex,
-    compute_features,
-    compute_popular_years,
-    extract_phonetics,
+    add_pronunciations,
+    aggregate_counts,
+    build_spelling_variants,
+    classify_unisex_names,
+    compute_name_features,
+    find_peak_popularity_years,
+    flag_palindromes,
     load_biblical_names,
     load_ssa_data,
 )
 
 
 class TestLoadSSAData:
-    def test_loads_files(self, ssa_dir):
+    def test_loads_files(self, ssa_dir) -> None:
         df = load_ssa_data(ssa_dir)
         assert df.height > 0
-        assert set(df.columns) == {"name", "sex", "n", "year"}
+        assert set(df.columns) == {"name", "sex", "count", "year"}
 
-    def test_has_expected_names(self, ssa_dir):
+    def test_has_expected_names(self, ssa_dir) -> None:
         df = load_ssa_data(ssa_dir)
         names = df["name"].unique().to_list()
         assert "Liam" in names
         assert "Olivia" in names
 
-    def test_has_both_years(self, ssa_dir):
+    def test_has_both_years(self, ssa_dir) -> None:
         df = load_ssa_data(ssa_dir)
         years = df["year"].unique().sort().to_list()
         assert years == [2020, 2021]
 
-    def test_missing_dir_raises(self, tmp_path):
+    def test_missing_dir_raises(self, tmp_path) -> None:
         with pytest.raises(FileNotFoundError):
             load_ssa_data(tmp_path / "nonexistent")
 
 
 class TestLoadBiblicalNames:
-    def test_loads(self, biblical_path):
+    def test_loads(self, biblical_path) -> None:
         df = load_biblical_names(biblical_path)
         assert "name" in df.columns
         assert "biblical" in df.columns
         assert df.height > 0
 
-    def test_has_expected_names(self, biblical_path):
+    def test_has_expected_names(self, biblical_path) -> None:
         df = load_biblical_names(biblical_path)
         names = df["name"].to_list()
         assert "John" in names
         assert "Mary" in names
 
 
-class TestComputePopularYears:
-    def test_returns_year_pop(self, ssa_dir):
+class TestFindPeakPopularityYears:
+    def test_returns_year_peak(self, ssa_dir) -> None:
         df = load_ssa_data(ssa_dir)
-        popular = compute_popular_years(df)
-        assert "year_pop" in popular.columns
-        # Liam's most popular year should be 2021 (higher count)
-        liam = popular.filter(
-            (pl.col("name") == "Liam") & (pl.col("sex") == "M")
-        )
-        assert liam["year_pop"][0] == 2021
+        peak = find_peak_popularity_years(df)
+        assert "year_peak" in peak.columns
+        liam = peak.filter((pl.col("name") == "Liam") & (pl.col("sex") == "M"))
+        assert liam["year_peak"][0] == 2021
 
 
-class TestAggregateByName:
-    def test_aggregation(self, ssa_dir):
+class TestAggregateCounts:
+    def test_aggregation(self, ssa_dir) -> None:
         df = load_ssa_data(ssa_dir)
-        agg = aggregate_by_name(df)
-        assert "n_sum" in agg.columns
+        agg = aggregate_counts(df)
+        assert "total_count" in agg.columns
         assert "year_min" in agg.columns
         assert "year_max" in agg.columns
 
-        # Liam across 2020+2021
         liam = agg.filter((pl.col("name") == "Liam") & (pl.col("sex") == "M"))
-        assert liam["n_sum"][0] == 19659 + 20272
+        assert liam["total_count"][0] == 19659 + 20272
         assert liam["year_min"][0] == 2020
         assert liam["year_max"][0] == 2021
 
-    def test_sorted_by_count_desc(self, ssa_dir):
+    def test_sorted_by_count_desc(self, ssa_dir) -> None:
         df = load_ssa_data(ssa_dir)
-        agg = aggregate_by_name(df)
+        agg = aggregate_counts(df)
         boys = agg.filter(pl.col("sex") == "M")
-        counts = boys["n_sum"].to_list()
+        counts = boys["total_count"].to_list()
         assert counts == sorted(counts, reverse=True)
 
 
-class TestExtractPhonetics:
-    def test_adds_phones_column(self, ssa_dir):
+class TestAddPronunciations:
+    def test_adds_column(self, ssa_dir) -> None:
         df = load_ssa_data(ssa_dir)
-        agg = aggregate_by_name(df)
-        result = extract_phonetics(agg)
-        assert "phones" in result.columns
+        agg = aggregate_counts(df)
+        result = add_pronunciations(agg)
+        assert "pronunciations" in result.columns
 
-    def test_john_has_phonetics(self, ssa_dir):
+    def test_john_has_pronunciations(self, ssa_dir) -> None:
         df = load_ssa_data(ssa_dir)
-        agg = aggregate_by_name(df)
-        result = extract_phonetics(agg)
+        agg = aggregate_counts(df)
+        result = add_pronunciations(agg)
         john = result.filter(pl.col("name") == "John")
-        phones = john["phones"][0]
-        assert len(phones) > 0
+        pronunciations = john["pronunciations"][0]
+        assert len(pronunciations) > 0
 
 
-class TestBuildAltSpellings:
-    def test_john_jon_are_alternates(self, ssa_dir):
+class TestBuildSpellingVariants:
+    def test_john_jon_are_variants(self, ssa_dir) -> None:
         df = load_ssa_data(ssa_dir)
-        agg = aggregate_by_name(df)
-        phonetic = extract_phonetics(agg)
-        result = build_alt_spellings(phonetic)
+        agg = aggregate_counts(df)
+        with_pron = add_pronunciations(agg)
+        result = build_spelling_variants(with_pron)
         john = result.filter((pl.col("name") == "John") & (pl.col("sex") == "M"))
-        alts = john["alt_spellings"][0]
-        assert "Jon" in alts
+        variants = john["spelling_variants"][0]
+        assert "Jon" in variants
 
 
-class TestAddPalindromes:
-    def test_hannah_is_palindrome(self, ssa_dir):
+class TestFlagPalindromes:
+    def test_hannah_is_palindrome(self, ssa_dir) -> None:
         df = load_ssa_data(ssa_dir)
-        agg = aggregate_by_name(df)
-        result = add_palindromes(agg)
+        agg = aggregate_counts(df)
+        result = flag_palindromes(agg)
         hannah = result.filter(pl.col("name") == "Hannah")
-        assert hannah["palindrome"][0] == 1
+        assert hannah["is_palindrome"][0] == 1
 
-    def test_john_not_palindrome(self, ssa_dir):
+    def test_john_not_palindrome(self, ssa_dir) -> None:
         df = load_ssa_data(ssa_dir)
-        agg = aggregate_by_name(df)
-        result = add_palindromes(agg)
+        agg = aggregate_counts(df)
+        result = flag_palindromes(agg)
         john = result.filter((pl.col("name") == "John") & (pl.col("sex") == "M"))
-        assert john["palindrome"][0] is None
+        assert john["is_palindrome"][0] is None
 
 
-class TestClassifyUnisex:
-    def test_jordan_is_unisex(self, ssa_dir):
+class TestClassifyUnisexNames:
+    def test_jordan_is_unisex(self, ssa_dir) -> None:
         df = load_ssa_data(ssa_dir)
-        agg = aggregate_by_name(df)
-        # Use very low thresholds for test data
-        result = classify_unisex(agg, min_count=100, min_year=2019)
+        agg = aggregate_counts(df)
+        result = classify_unisex_names(agg, min_count=100, min_year=2019)
         jordan = result.filter(pl.col("name") == "Jordan")
-        # Jordan appears in both M and F
-        unisex_vals = jordan["unisex"].to_list()
-        assert any(v == 1 for v in unisex_vals)
+        assert any(v == 1 for v in jordan["unisex"].to_list())
 
-    def test_liam_not_unisex(self, ssa_dir):
+    def test_liam_not_unisex(self, ssa_dir) -> None:
         df = load_ssa_data(ssa_dir)
-        agg = aggregate_by_name(df)
-        result = classify_unisex(agg, min_count=100, min_year=2019)
+        agg = aggregate_counts(df)
+        result = classify_unisex_names(agg, min_count=100, min_year=2019)
         liam = result.filter(pl.col("name") == "Liam")
         assert liam["unisex"][0] is None
 
 
-class TestComputeFeatures:
-    def test_adds_all_feature_columns(self, ssa_dir):
+class TestComputeNameFeatures:
+    def test_adds_all_feature_columns(self, ssa_dir) -> None:
         df = load_ssa_data(ssa_dir)
-        agg = aggregate_by_name(df)
-        phonetic = extract_phonetics(agg)
-        result = compute_features(phonetic)
-        expected_cols = {"first_letter", "stresses", "syllables", "alliteration", "alliteration_first"}
-        assert expected_cols.issubset(set(result.columns))
+        agg = aggregate_counts(df)
+        with_pron = add_pronunciations(agg)
+        result = compute_name_features(with_pron)
+        expected = {"first_letter", "stresses", "syllables", "alliteration", "alliteration_first"}
+        assert expected.issubset(set(result.columns))
 
-    def test_first_letter_correct(self, ssa_dir):
+    def test_first_letter_correct(self, ssa_dir) -> None:
         df = load_ssa_data(ssa_dir)
-        agg = aggregate_by_name(df)
-        phonetic = extract_phonetics(agg)
-        result = compute_features(phonetic)
+        agg = aggregate_counts(df)
+        with_pron = add_pronunciations(agg)
+        result = compute_name_features(with_pron)
         john = result.filter((pl.col("name") == "John") & (pl.col("sex") == "M"))
         assert john["first_letter"][0] == "J"

@@ -3,18 +3,18 @@ name = "babynames"
 version = "2.0.0"
 description = "Baby name analysis using SSA data with phonetic deduplication"
 license = "MIT"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 dependencies = [
     "polars>=1.0",
     "nltk>=3.8",
-    "pronouncing>=0.2",
+    "cmudict>=1.0",
 ]
 
 [project.scripts]
 babynames = "src.babynames:main"
 
 [tool.ruff]
-target-version = "py311"
+target-version = "py312"
 line-length = 100
 
 [tool.ruff.lint]
