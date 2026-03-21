@@ -360,7 +360,10 @@ function applyFilters() {
     if (yearMaxNum && data.year_min > yearMaxNum) return false;
 
     // Starting letters (multi-select)
-    if (letterFilters.length > 0 && letterFilters.indexOf(data.first_letter) === -1) {
+    if (
+      letterFilters.length > 0 &&
+      letterFilters.indexOf(data.first_letter) === -1
+    ) {
       return false;
     }
 
@@ -611,7 +614,9 @@ function loadStateFromHash() {
     var letters = lettersParam.split(",").filter(isValidLetter);
     activeFilters.letters = letters;
     letters.forEach(function (l) {
-      var chip = document.querySelector('.letter-chip[data-letter="' + l + '"]');
+      var chip = document.querySelector(
+        '.letter-chip[data-letter="' + l + '"]',
+      );
       if (chip) {
         chip.classList.add("active");
         chip.setAttribute("aria-pressed", "true");
@@ -619,7 +624,11 @@ function loadStateFromHash() {
     });
   }
   // Backward compat: single letter param
-  if (!lettersParam && params.get("letter") && isValidLetter(params.get("letter"))) {
+  if (
+    !lettersParam &&
+    params.get("letter") &&
+    isValidLetter(params.get("letter"))
+  ) {
     var singleLetter = params.get("letter");
     activeFilters.letters = [singleLetter];
     var chip = document.querySelector(
@@ -635,7 +644,9 @@ function loadStateFromHash() {
   ["biblical", "unisex", "palindrome", "alliteration"].forEach(function (key) {
     if (params.get(key)) {
       activeFilters[key] = true;
-      var btn = document.querySelector('.filter-toggle[data-filter="' + key + '"]');
+      var btn = document.querySelector(
+        '.filter-toggle[data-filter="' + key + '"]',
+      );
       if (btn) {
         btn.classList.add("active");
         btn.setAttribute("aria-pressed", "true");
