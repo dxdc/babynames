@@ -1,0 +1,37 @@
+name: Generate CSVs
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install polars nltk cmudict
+      - run: python -c "import nltk; nltk.download('cmudict')"
+      - name: Generate CSVs
+        working-directory: src
+        run: python babynames.py --verbose --output-dir ..
+      - name: Copy CSVs to docs
+        run: cp boys.csv girls.csv docs/
+      - name: Check for changes
+        id: diff
+        run: |
+          git diff --stat
+          echo "changed=$(git diff --name-only | wc -l)" >> "$GITHUB_OUTPUT"
+      - name: Commit updated CSVs
+        if: steps.diff.outputs.changed != '0'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add *.csv docs/*.csv
+          git commit -m "chore: regenerate CSV output"
+          git push
