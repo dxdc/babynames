@@ -1,0 +1,896 @@
+// Baby Names - Swipe Mode
+// Tinder-style name swiping with multi-person sharing and comparison
+//
+// Sharing model: everyone is a peer. Anyone can:
+//  1. Share their picks (generates a URL with name + liked/maybe ranks)
+//  2. Load anyone else's picks (paste their URL, keyed by name — re-pasting updates)
+//  3. Share the deck (frozen filter state so everyone swipes the same list)
+//  4. Export/import JSON for backup across browsers/devices
+//
+// Picks URLs always reflect current state, so re-sharing gives updated picks.
+
+const swipe = (() => {
+  "use strict";
+
+  // ---------------------------------------------------------------
+  // Constants
+  // ---------------------------------------------------------------
+
+  const SECS_PER_CARD = 4;
+  const STORAGE_PREFIX = "bn_swipe_";
+
+  // ---------------------------------------------------------------
+  // Mutable state
+  // ---------------------------------------------------------------
+
+  let deck = [];
+  let deckHash = "";
+  let currentIndex = 0;
+  let liked = {};
+  let maybe = {};
+  let passed = {};
+  let actionHistory = [];
+  let voterName = "";
+  let otherVoters = [];
+  let sessionId = "";
+
+  // ---------------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------------
+
+  const $ = (id) => document.getElementById(id);
+
+  function hashStr(s) {
+    let h = 0;
+    for (let i = 0; i < s.length; i++) {
+      h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+    }
+    return Math.abs(h).toString(36).slice(0, 6);
+  }
+
+  const buildDeckHash = (rows) =>
+    hashStr(rows.map((r) => `${r.rank}:${r.name}`).join(","));
+
+  function formatTime(count) {
+    const mins = Math.ceil((count * SECS_PER_CARD) / 60);
+    if (mins < 2) return "~1 min";
+    if (mins < 60) return `~${mins} min`;
+    return `~${(mins / 60).toFixed(1)} hrs`;
+  }
+
+  const reviewedCount = () =>
+    Object.keys(liked).length +
+    Object.keys(maybe).length +
+    Object.keys(passed).length;
+
+  const isReviewed = (rank) => !!liked[rank] || !!maybe[rank] || !!passed[rank];
+
+  const getGender = () =>
+    typeof getCurrentGender === "function" ? getCurrentGender() : "M";
+
+  // ---------------------------------------------------------------
+  // Encode / decode for sharing
+  // ---------------------------------------------------------------
+
+  function encodeSession() {
+    return btoa(
+      JSON.stringify({
+        v: deckHash,
+        g: getGender(),
+        ranks: deck.map((d) => d.rank),
+      }),
+    );
+  }
+
+  function encodePicks() {
+    return btoa(
+      JSON.stringify({
+        v: deckHash,
+        n: voterName,
+        l: Object.keys(liked).map(Number),
+        m: Object.keys(maybe).map(Number),
+      }),
+    );
+  }
+
+  function decodePicks(encoded) {
+    try {
+      return JSON.parse(atob(encoded));
+    } catch {
+      return null;
+    }
+  }
+
+  // ---------------------------------------------------------------
+  // Screen management
+  // ---------------------------------------------------------------
+
+  const SCREENS = [
+    "swipe-intro",
+    "swipe-cards",
+    "swipe-complete",
+    "swipe-results",
+  ];
+
+  function showScreen(id) {
+    for (const s of SCREENS) {
+      $(s).style.display = s === id ? "" : "none";
+    }
+  }
+
+  // ---------------------------------------------------------------
+  // DOM setup
+  // ---------------------------------------------------------------
+
+  function init() {
+    $("swipe-launch").addEventListener("click", openSwipe);
+    $("swipe-close").addEventListener("click", closeSwipe);
+    $("swipe-start-btn").addEventListener("click", startSwiping);
+    $("swipe-start-fresh").addEventListener("click", startFresh);
+    $("swipe-results-btn").addEventListener("click", showResults);
+
+    $("swipe-pass").addEventListener("click", () => act("pass"));
+    $("swipe-maybe").addEventListener("click", () => act("maybe"));
+    $("swipe-like").addEventListener("click", () => act("like"));
+    $("swipe-undo").addEventListener("click", undo);
+    $("swipe-peek").addEventListener("click", showResults);
+
+    $("complete-share-btn").addEventListener("click", sharePicks);
+    $("complete-results-btn").addEventListener("click", showResults);
+
+    $("results-close").addEventListener("click", closeSwipe);
+    $("results-back").addEventListener("click", () => {
+      if (currentIndex < deck.length) showScreen("swipe-cards");
+      else if (reviewedCount() >= deck.length) showScreen("swipe-complete");
+      else showScreen("swipe-intro");
+    });
+
+    $("share-deck-btn").addEventListener("click", shareDeck);
+    $("share-picks-btn").addEventListener("click", sharePicks);
+    $("export-btn").addEventListener("click", exportData);
+    $("import-btn").addEventListener("click", () => $("import-file").click());
+    $("import-file").addEventListener("change", importData);
+    $("add-voter-btn").addEventListener("click", showAddVoter);
+    $("add-voter-go").addEventListener("click", loadVoterPicks);
+
+    $("voter-name-input").addEventListener("change", function () {
+      voterName = this.value.trim();
+      saveSession();
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if ($("swipe-overlay").style.display === "none") return;
+      if ($("swipe-cards").style.display === "none") return;
+      if (e.key === "ArrowLeft") act("pass");
+      else if (e.key === "ArrowUp") act("maybe");
+      else if (e.key === "ArrowRight") act("like");
+      else if (e.key === "z" && (e.ctrlKey || e.metaKey)) undo();
+    });
+
+    setupGestures();
+  }
+
+  // ---------------------------------------------------------------
+  // Open / close
+  // ---------------------------------------------------------------
+
+  function openSwipe() {
+    deck = typeof getSwipeDeck === "function" ? getSwipeDeck() : [];
+    if (!deck.length) return;
+
+    deckHash = buildDeckHash(deck);
+    sessionId = `${STORAGE_PREFIX}${getGender()}_${deckHash}`;
+
+    loadSession();
+    $("swipe-overlay").style.display = "";
+    showIntro();
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeSwipe() {
+    $("swipe-overlay").style.display = "none";
+    for (const s of SCREENS) $(s).style.display = "none";
+    document.body.style.overflow = "";
+  }
+
+  // ---------------------------------------------------------------
+  // Intro screen
+  // ---------------------------------------------------------------
+
+  function showIntro() {
+    showScreen("swipe-intro");
+
+    const total = deck.length;
+    const reviewed = reviewedCount();
+    const remaining = total - reviewed;
+
+    $("swipe-deck-count").textContent = total.toLocaleString();
+    $("swipe-time-est").textContent = formatTime(remaining);
+    $("voter-name-input").value = voterName;
+
+    const resumeEl = $("swipe-resume-info");
+    const freshBtn = $("swipe-start-fresh");
+    if (reviewed > 0) {
+      const likedN = Object.keys(liked).length;
+      const maybeN = Object.keys(maybe).length;
+      resumeEl.textContent = `${reviewed} reviewed · ${likedN} liked · ${maybeN} maybe · ${remaining} remaining`;
+      resumeEl.style.display = "";
+      freshBtn.style.display = "";
+      advanceToNext();
+    } else {
+      resumeEl.style.display = "none";
+      freshBtn.style.display = "none";
+      currentIndex = 0;
+    }
+
+    const votersNote = $("swipe-voters-note");
+    if (otherVoters.length) {
+      const names = otherVoters.map((v) => v.name || "Anonymous");
+      votersNote.textContent = `${names.join(", ")} also shared picks — compare in Results`;
+      votersNote.style.display = "";
+    } else {
+      votersNote.style.display = "none";
+    }
+
+    $("storage-warning").style.display = "";
+  }
+
+  function advanceToNext() {
+    currentIndex = 0;
+    while (currentIndex < deck.length && isReviewed(deck[currentIndex].rank)) {
+      currentIndex++;
+    }
+  }
+
+  function startFresh() {
+    liked = {};
+    maybe = {};
+    passed = {};
+    actionHistory = [];
+    currentIndex = 0;
+    saveSession();
+    startSwiping();
+  }
+
+  function startSwiping() {
+    showScreen("swipe-cards");
+    advanceToNext();
+    if (currentIndex >= deck.length) {
+      showResults();
+      return;
+    }
+    renderCard();
+  }
+
+  // ---------------------------------------------------------------
+  // Card rendering
+  // ---------------------------------------------------------------
+
+  function renderCard() {
+    if (currentIndex >= deck.length) {
+      showComplete();
+      return;
+    }
+
+    const d = deck[currentIndex];
+    const card = $("swipe-card");
+
+    $("card-name").textContent = d.name;
+
+    // Variant chips
+    const varEl = $("card-variants");
+    varEl.innerHTML = "";
+    const allSpellings = [d.name];
+    if (d.spelling_variants) {
+      for (const v of d.spelling_variants.split(" ")) {
+        if (v) allSpellings.push(v);
+      }
+    }
+    if (allSpellings.length > 1) {
+      allSpellings.forEach((v, i) => {
+        const chip = document.createElement("span");
+        chip.className = `variant-chip${i === 0 ? " selected" : ""}`;
+        chip.textContent = v;
+        chip.dataset.spelling = v;
+        chip.addEventListener("click", () => {
+          varEl
+            .querySelectorAll(".variant-chip")
+            .forEach((c) => c.classList.remove("selected"));
+          chip.classList.add("selected");
+        });
+        varEl.appendChild(chip);
+      });
+    }
+
+    // Stats
+    const parts = [
+      `#${d.rank}`,
+      `${Number(d.total_count).toLocaleString()} babies`,
+      `${d.year_min}–${d.year_max}`,
+      `peaked ${d.year_peak}`,
+    ];
+    if (d.syllables) parts.push(`${d.syllables} syl`);
+    if (d.unisex_pct != null) {
+      const sym = d.unisex_dominant === "M" ? "♂" : "♀";
+      parts.push(`${d.unisex_pct}% unisex ${sym}`);
+    }
+    $("card-stats").textContent = parts.join(" · ");
+
+    // Progress
+    const total = deck.length;
+    const reviewed = reviewedCount();
+    $("swipe-progress-bar").style.width =
+      `${((reviewed / total) * 100).toFixed(1)}%`;
+    $("swipe-progress-text").textContent = `${reviewed} / ${total}`;
+
+    $("swipe-undo").style.visibility = actionHistory.length
+      ? "visible"
+      : "hidden";
+
+    // Reset + entrance animation
+    card.style.boxShadow = "";
+    card.style.transition = "transform 0.3s ease, opacity 0.25s ease";
+    card.classList.remove("card-exit-left", "card-exit-right", "card-exit-up");
+    card.style.transform = "scale(0.92) translateY(20px)";
+    card.style.opacity = "0.5";
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        card.style.transform = "";
+        card.style.opacity = "1";
+      });
+    });
+  }
+
+  function getSelectedSpelling() {
+    const sel = $("card-variants").querySelector(".variant-chip.selected");
+    return sel ? sel.dataset.spelling : deck[currentIndex].name;
+  }
+
+  // ---------------------------------------------------------------
+  // Actions
+  // ---------------------------------------------------------------
+
+  function act(action) {
+    if (currentIndex >= deck.length) return;
+
+    const d = deck[currentIndex];
+    const spelling = getSelectedSpelling();
+    const card = $("swipe-card");
+    const dir = action === "pass" ? "left" : action === "like" ? "right" : "up";
+
+    card.classList.add(`card-exit-${dir}`);
+
+    // Flash feedback
+    const flash = $("swipe-flash");
+    const flashMap = {
+      like: ["green", "♥"],
+      pass: ["red", "✗"],
+      maybe: ["amber", "★"],
+    };
+    const [cls, icon] = flashMap[action];
+    flash.className = `swipe-flash flash-${cls}`;
+    flash.textContent = icon;
+    flash.style.display = "";
+    setTimeout(() => {
+      flash.style.display = "none";
+    }, 400);
+
+    actionHistory.push({ rank: d.rank, action, spelling });
+
+    if (action === "like") {
+      liked[d.rank] = { name: d.name, spelling };
+      delete maybe[d.rank];
+      delete passed[d.rank];
+    } else if (action === "maybe") {
+      maybe[d.rank] = { name: d.name, spelling };
+      delete liked[d.rank];
+      delete passed[d.rank];
+    } else {
+      passed[d.rank] = true;
+      delete liked[d.rank];
+      delete maybe[d.rank];
+    }
+
+    saveSession();
+    setTimeout(() => {
+      currentIndex++;
+      advanceToNext();
+      renderCard();
+    }, 280);
+  }
+
+  function undo() {
+    if (!actionHistory.length) return;
+    const last = actionHistory.pop();
+    delete liked[last.rank];
+    delete maybe[last.rank];
+    delete passed[last.rank];
+    for (let i = 0; i < deck.length; i++) {
+      if (deck[i].rank === last.rank) {
+        currentIndex = i;
+        break;
+      }
+    }
+    saveSession();
+    renderCard();
+  }
+
+  // ---------------------------------------------------------------
+  // Completion
+  // ---------------------------------------------------------------
+
+  function showComplete() {
+    showScreen("swipe-complete");
+
+    const likedN = Object.keys(liked).length;
+    const maybeN = Object.keys(maybe).length;
+    $("complete-summary").textContent = `${likedN} liked · ${maybeN} maybe`;
+
+    const flash = $("swipe-flash");
+    flash.className = "swipe-flash flash-complete";
+    flash.textContent = "🎉";
+    flash.style.display = "";
+    setTimeout(() => {
+      flash.style.display = "none";
+    }, 1200);
+  }
+
+  // ---------------------------------------------------------------
+  // Results / shortlist
+  // ---------------------------------------------------------------
+
+  function showResults() {
+    showScreen("swipe-results");
+
+    $("results-liked-count").textContent = Object.keys(liked).length;
+    $("results-maybe-count").textContent = Object.keys(maybe).length;
+
+    renderResultList($("results-liked"), liked, "liked");
+    renderResultList($("results-maybe"), maybe, "maybe");
+
+    if (otherVoters.length) {
+      $("compare-section").style.display = "";
+      renderComparison();
+    } else {
+      $("compare-section").style.display = "none";
+    }
+  }
+
+  function renderResultList(container, items, cls) {
+    container.innerHTML = "";
+    const ranks = Object.keys(items)
+      .map(Number)
+      .sort((a, b) => a - b);
+
+    if (!ranks.length) {
+      container.innerHTML = '<div class="result-empty">None yet</div>';
+      return;
+    }
+
+    for (const rank of ranks) {
+      const item = items[rank];
+      const row = document.createElement("div");
+      row.className = `result-row ${cls}`;
+
+      const nameSpan = document.createElement("span");
+      nameSpan.className = "result-name";
+      nameSpan.textContent = item.spelling || item.name;
+      if (item.spelling && item.spelling !== item.name) {
+        nameSpan.textContent += ` (${item.name})`;
+      }
+
+      const rankSpan = document.createElement("span");
+      rankSpan.className = "result-rank";
+      rankSpan.textContent = `#${rank}`;
+
+      const removeBtn = document.createElement("button");
+      removeBtn.className = "result-remove";
+      removeBtn.textContent = "×";
+      removeBtn.addEventListener("click", () => {
+        delete items[rank];
+        saveSession();
+        showResults();
+      });
+
+      row.append(nameSpan, rankSpan, removeBtn);
+      container.appendChild(row);
+    }
+  }
+
+  // ---------------------------------------------------------------
+  // Sharing — fully bidirectional
+  //
+  // Any participant can share and load at any time, mid-session or
+  // after finishing. Re-sharing generates a fresh URL with current
+  // picks. Loading someone's updated URL replaces their old data.
+  // ---------------------------------------------------------------
+
+  function shareDeck() {
+    const encoded = encodeSession();
+    const url = `${location.origin}${location.pathname}#swipe=${encoded}`;
+    copyToClipboard(url, "share-deck-btn");
+  }
+
+  function sharePicks() {
+    if (!voterName) {
+      const name = prompt(
+        "Enter your name (so others know whose picks these are):",
+      );
+      if (!name) return;
+      voterName = name.trim();
+      saveSession();
+      const nameInput = $("voter-name-input");
+      if (nameInput) nameInput.value = voterName;
+    }
+    const encoded = encodePicks();
+    const url = `${location.origin}${location.pathname}#picks=${encoded}`;
+    const btnId =
+      $("swipe-complete").style.display !== "none"
+        ? "complete-share-btn"
+        : "share-picks-btn";
+    copyToClipboard(url, btnId);
+  }
+
+  function copyToClipboard(text, btnId) {
+    navigator.clipboard.writeText(text).then(
+      () => {
+        const btn = $(btnId);
+        const orig = btn.textContent;
+        btn.textContent = "Copied!";
+        setTimeout(() => {
+          btn.textContent = orig;
+        }, 2000);
+      },
+      () => prompt("Copy this link:", text),
+    );
+  }
+
+  // ---------------------------------------------------------------
+  // Load other voters' picks
+  // ---------------------------------------------------------------
+
+  function showAddVoter() {
+    const row = $("add-voter-input-row");
+    row.style.display = row.style.display === "none" ? "" : "none";
+    $("add-voter-url").value = "";
+    $("add-voter-url").focus();
+  }
+
+  function loadVoterPicks() {
+    const input = $("add-voter-url").value.trim();
+    if (!input) return;
+
+    try {
+      const hashPart = input.includes("#") ? input.split("#")[1] : input;
+      const encoded = hashPart.startsWith("picks=")
+        ? hashPart.slice(6)
+        : hashPart;
+      const data = decodePicks(encoded);
+      if (!data || (!data.l && !data.m)) throw new Error("bad data");
+
+      const voter = { name: data.n || "Partner", liked: {}, maybe: {} };
+      for (const r of data.l || []) voter.liked[r] = true;
+      for (const r of data.m || []) voter.maybe[r] = true;
+
+      // Replace existing voter with same name (allows updating picks)
+      otherVoters = otherVoters.filter((v) => v.name !== voter.name);
+      otherVoters.push(voter);
+
+      saveSession();
+      $("add-voter-input-row").style.display = "none";
+      showResults();
+    } catch {
+      alert("Could not read picks. Make sure you paste the full link.");
+    }
+  }
+
+  // ---------------------------------------------------------------
+  // Comparison — N-way, grouped by consensus level
+  // ---------------------------------------------------------------
+
+  function renderComparison() {
+    const container = $("compare-results");
+    container.innerHTML = "";
+
+    const deckByRank = {};
+    for (const d of deck) deckByRank[d.rank] = d;
+
+    const allVoters = [
+      { name: voterName || "You", liked, maybe },
+      ...otherVoters,
+    ];
+    const voterCount = allVoters.length;
+
+    // Tally votes per rank
+    const rankVotes = {};
+    for (const voter of allVoters) {
+      for (const r of Object.keys(voter.liked || {})) {
+        if (!rankVotes[r]) rankVotes[r] = { likes: 0, maybes: 0, voters: [] };
+        rankVotes[r].likes++;
+        rankVotes[r].voters.push(voter.name);
+      }
+      for (const r of Object.keys(voter.maybe || {})) {
+        if (!rankVotes[r]) rankVotes[r] = { likes: 0, maybes: 0, voters: [] };
+        rankVotes[r].maybes++;
+        if (!rankVotes[r].voters.includes(voter.name)) {
+          rankVotes[r].voters.push(voter.name);
+        }
+      }
+    }
+
+    const everyone = [];
+    const most = [];
+    const some = [];
+
+    for (const [r, rv] of Object.entries(rankVotes)) {
+      const d = deckByRank[Number(r)];
+      if (!d) continue;
+      const entry = { rank: Number(r), name: d.name, ...rv };
+      if (rv.likes === voterCount) everyone.push(entry);
+      else if (rv.likes + rv.maybes >= voterCount) most.push(entry);
+      else if (rv.voters.length > 1) some.push(entry);
+    }
+
+    const byRank = (a, b) => a.rank - b.rank;
+    everyone.sort(byRank);
+    most.sort(byRank);
+    some.sort(byRank);
+
+    function addSection(title, emoji, items, cls) {
+      if (!items.length) return;
+      const h = document.createElement("h4");
+      h.textContent = `${emoji} ${title} (${items.length})`;
+      container.appendChild(h);
+      for (const item of items) {
+        const row = document.createElement("div");
+        row.className = `result-row ${cls}`;
+        const nameSpan = document.createElement("span");
+        nameSpan.className = "result-name";
+        nameSpan.textContent = item.name;
+        const votersSpan = document.createElement("span");
+        votersSpan.className = "result-voters";
+        votersSpan.textContent = item.voters.join(", ");
+        const rankSpan = document.createElement("span");
+        rankSpan.className = "result-rank";
+        rankSpan.textContent = `#${item.rank}`;
+        row.append(nameSpan, votersSpan, rankSpan);
+        container.appendChild(row);
+      }
+    }
+
+    addSection("Everyone loves", "💛", everyone, "both");
+    addSection("Strong contenders", "💙", most, "liked");
+    addSection("Worth discussing", "💜", some, "maybe");
+
+    if (!everyone.length && !most.length && !some.length) {
+      container.innerHTML =
+        '<div class="result-empty">No overlap yet — need at least 2 people\'s picks to compare</div>';
+    }
+  }
+
+  // ---------------------------------------------------------------
+  // Export / Import
+  // ---------------------------------------------------------------
+
+  function exportData() {
+    const data = {
+      version: deckHash,
+      gender: getGender(),
+      voter: voterName,
+      liked,
+      maybe,
+      passed: Object.keys(passed).map(Number),
+      otherVoters,
+      timestamp: new Date().toISOString(),
+      deckSize: deck.length,
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `babynames-picks-${voterName || "export"}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function importData(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (data.liked) liked = data.liked;
+        if (data.maybe) maybe = data.maybe;
+        if (data.passed) {
+          passed = {};
+          for (const r of data.passed) passed[r] = true;
+        }
+        if (data.voter) voterName = data.voter;
+        if (data.otherVoters) otherVoters = data.otherVoters;
+        saveSession();
+        if (data.version && data.version !== deckHash) {
+          alert(
+            "Note: This export was created with a different version of the data. Some names may not match.",
+          );
+        }
+        showIntro();
+      } catch {
+        alert("Could not read file. Make sure it's a valid export.");
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  }
+
+  // ---------------------------------------------------------------
+  // Gestures (touch + mouse drag on card)
+  // ---------------------------------------------------------------
+
+  function setupGestures() {
+    let startX = 0;
+    let startY = 0;
+    let dx = 0;
+    let dy = 0;
+    let dragging = false;
+    const threshold = 80;
+
+    function onStart(e) {
+      if ($("swipe-cards").style.display === "none") return;
+      dragging = true;
+      const pt = e.touches ? e.touches[0] : e;
+      startX = pt.clientX;
+      startY = pt.clientY;
+      dx = 0;
+      dy = 0;
+      $("swipe-card").style.transition = "none";
+    }
+
+    function onMove(e) {
+      if (!dragging) return;
+      const pt = e.touches ? e.touches[0] : e;
+      dx = pt.clientX - startX;
+      dy = pt.clientY - startY;
+      const card = $("swipe-card");
+      card.style.transform = `translate(${dx}px,${dy}px) rotate(${dx * 0.08}deg)`;
+      if (dx > 30) card.style.boxShadow = "0 0 40px rgba(76,175,80,0.5)";
+      else if (dx < -30) card.style.boxShadow = "0 0 40px rgba(239,83,80,0.5)";
+      else if (dy < -30) card.style.boxShadow = "0 0 40px rgba(255,193,7,0.5)";
+      else card.style.boxShadow = "";
+      e.preventDefault();
+    }
+
+    function onEnd() {
+      if (!dragging) return;
+      dragging = false;
+      const card = $("swipe-card");
+      card.style.transition = "transform 0.3s ease, opacity 0.25s ease";
+      card.style.boxShadow = "";
+      if (dx > threshold) act("like");
+      else if (dx < -threshold) act("pass");
+      else if (dy < -threshold) act("maybe");
+      else card.style.transform = "";
+    }
+
+    document.addEventListener("mousedown", (e) => {
+      if (e.target.closest("#swipe-card")) onStart(e);
+    });
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onEnd);
+    document.addEventListener(
+      "touchstart",
+      (e) => {
+        if (e.target.closest("#swipe-card")) onStart(e);
+      },
+      { passive: false },
+    );
+    document.addEventListener("touchmove", onMove, { passive: false });
+    document.addEventListener("touchend", onEnd);
+  }
+
+  // ---------------------------------------------------------------
+  // Persistence (localStorage)
+  // ---------------------------------------------------------------
+
+  function saveSession() {
+    try {
+      localStorage.setItem(
+        sessionId,
+        JSON.stringify({ liked, maybe, passed, voter: voterName, otherVoters }),
+      );
+    } catch {
+      /* storage full or unavailable */
+    }
+  }
+
+  function loadSession() {
+    liked = {};
+    maybe = {};
+    passed = {};
+    voterName = "";
+    otherVoters = [];
+    actionHistory = [];
+    currentIndex = 0;
+    try {
+      const raw = localStorage.getItem(sessionId);
+      if (!raw) return;
+      const data = JSON.parse(raw);
+      liked = data.liked || {};
+      maybe = data.maybe || {};
+      passed = data.passed || {};
+      voterName = data.voter || "";
+      otherVoters = data.otherVoters || [];
+    } catch {
+      /* corrupt data, start fresh */
+    }
+  }
+
+  // ---------------------------------------------------------------
+  // URL parameter detection (incoming shared links)
+  // ---------------------------------------------------------------
+
+  function checkUrlParams() {
+    const hash = location.hash.slice(1);
+    if (!hash) return;
+    const params = new URLSearchParams(hash);
+
+    if (params.get("swipe")) {
+      // Shared deck link — currently used for version detection only.
+      // Full deck reconstruction would require loading CSV + applying filters,
+      // which is better handled by sharing filter state in the main URL hash.
+      try {
+        JSON.parse(atob(params.get("swipe")));
+      } catch {
+        /* ignore malformed */
+      }
+      params.delete("swipe");
+      const clean = params.toString();
+      window.history.replaceState(
+        null,
+        "",
+        clean ? `#${clean}` : location.pathname,
+      );
+    }
+
+    if (params.get("picks")) {
+      try {
+        const picks = decodePicks(params.get("picks"));
+        if (picks) {
+          const voter = { name: picks.n || "Partner", liked: {}, maybe: {} };
+          for (const r of picks.l || []) voter.liked[r] = true;
+          for (const r of picks.m || []) voter.maybe[r] = true;
+          // Will merge into session when swipe opens
+          otherVoters = otherVoters.filter((v) => v.name !== voter.name);
+          otherVoters.push(voter);
+        }
+      } catch {
+        /* ignore malformed */
+      }
+      params.delete("picks");
+      const clean = params.toString();
+      window.history.replaceState(
+        null,
+        "",
+        clean ? `#${clean}` : location.pathname,
+      );
+    }
+  }
+
+  // ---------------------------------------------------------------
+  // Bootstrap
+  // ---------------------------------------------------------------
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => {
+      init();
+      checkUrlParams();
+    });
+  } else {
+    init();
+    checkUrlParams();
+  }
+
+  return { open: openSwipe, close: closeSwipe };
+})();

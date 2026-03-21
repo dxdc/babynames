@@ -12,6 +12,28 @@
       content="baby names, US baby names, SSA baby names, popular baby names, name popularity, baby name search, name finder, biblical names, unisex names"
     />
     <title>Baby Names – US Baby Name Search &amp; Explorer</title>
+    <link rel="canonical" href="https://dxdc.github.io/babynames/" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👶</text></svg>"
+    />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta
+      property="og:title"
+      content="Baby Names – US Baby Name Search &amp; Explorer"
+    />
+    <meta
+      property="og:description"
+      content="Browse and filter 100k+ US baby names from 1880–present. Phonetically de-duplicated, with swipe mode for couples."
+    />
+    <meta property="og:url" content="https://dxdc.github.io/babynames/" />
+    <meta
+      property="og:image"
+      content="https://dxdc.github.io/babynames/images/graph.png"
+    />
+
     <link
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/@picocss/pico@2.1.1/css/pico.min.css"
@@ -362,6 +384,552 @@
           border: 1px solid var(--filter-border);
         }
       }
+      /* Swipe launch button */
+      .swipe-launch-btn {
+        padding: 0.3rem 0.8rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        border-radius: 4px;
+        cursor: pointer;
+        border: none;
+        background: var(--girls-color);
+        color: #fff;
+        transition: opacity 0.15s;
+        &:hover {
+          opacity: 0.85;
+        }
+      }
+
+      /* Swipe overlay */
+      .swipe-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 200;
+        background: var(--pico-background-color);
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+      }
+
+      .swipe-close-btn {
+        position: absolute;
+        top: 0.75rem;
+        right: 1rem;
+        z-index: 210;
+        font-size: 1.8rem;
+        line-height: 1;
+        background: none;
+        border: none;
+        color: var(--pico-muted-color);
+        cursor: pointer;
+        &:hover {
+          color: var(--pico-color);
+        }
+      }
+
+      .swipe-screen {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      /* Intro */
+      .swipe-intro-content {
+        text-align: center;
+        max-width: 400px;
+        padding: 2rem;
+      }
+      .swipe-intro-content h2 {
+        font-size: 2rem;
+        margin-bottom: 0.25rem;
+      }
+      .swipe-subtitle {
+        color: var(--pico-muted-color);
+        margin-bottom: 1.5rem;
+        font-size: 0.95rem;
+      }
+      .swipe-estimate {
+        display: flex;
+        gap: 2rem;
+        justify-content: center;
+        margin-bottom: 1.5rem;
+      }
+      .estimate-row {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .estimate-num {
+        font-size: 1.8rem;
+        font-weight: 700;
+      }
+      .estimate-label {
+        font-size: 0.8rem;
+        color: var(--pico-muted-color);
+      }
+      .swipe-resume-info {
+        font-size: 0.85rem;
+        color: var(--pico-muted-color);
+        margin-bottom: 1rem;
+      }
+      .swipe-partner-note {
+        font-size: 0.85rem;
+        color: var(--girls-color);
+        margin-bottom: 1rem;
+        font-weight: 600;
+      }
+      .swipe-intro-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: center;
+      }
+      .swipe-action-btn {
+        padding: 0.6rem 1.5rem;
+        border-radius: 6px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        min-width: 200px;
+      }
+      .swipe-action-btn.primary {
+        background: var(--chip-active);
+        color: #fff;
+      }
+      .swipe-action-btn.primary:hover {
+        opacity: 0.9;
+      }
+      .swipe-action-btn.secondary {
+        background: var(--chip-bg);
+        color: var(--pico-color);
+      }
+      .swipe-action-btn.secondary:hover {
+        opacity: 0.8;
+      }
+      .swipe-hint {
+        display: flex;
+        gap: 2rem;
+        justify-content: center;
+        margin-top: 1.5rem;
+        font-size: 0.8rem;
+        color: var(--pico-muted-color);
+      }
+
+      /* Card area */
+      .swipe-progress {
+        padding: 1rem 1.5rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+      .swipe-progress-track {
+        flex: 1;
+        height: 4px;
+        background: var(--chip-bg);
+        border-radius: 2px;
+      }
+      .swipe-progress-fill {
+        height: 100%;
+        background: var(--chip-active);
+        border-radius: 2px;
+        transition: width 0.3s;
+      }
+      .swipe-progress-label {
+        font-size: 0.8rem;
+        color: var(--pico-muted-color);
+        white-space: nowrap;
+      }
+
+      .swipe-card-area {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        user-select: none;
+        touch-action: none;
+      }
+
+      .swipe-card {
+        width: 100%;
+        max-width: 380px;
+        min-height: 240px;
+        padding: 2.5rem 2rem;
+        background: var(--filter-bg);
+        border: 1px solid var(--filter-border);
+        border-radius: 16px;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        cursor: grab;
+        transition:
+          transform 0.25s,
+          opacity 0.25s,
+          box-shadow 0.15s;
+      }
+      .swipe-card:active {
+        cursor: grabbing;
+      }
+
+      .card-name {
+        font-size: 2.8rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        line-height: 1.1;
+      }
+      .card-variants {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+        justify-content: center;
+      }
+      .variant-chip {
+        padding: 0.2rem 0.6rem;
+        font-size: 0.8rem;
+        border-radius: 12px;
+        background: var(--chip-bg);
+        color: var(--pico-muted-color);
+        cursor: pointer;
+        border: 1px solid transparent;
+        transition: all 0.15s;
+      }
+      .variant-chip:hover {
+        border-color: var(--pico-primary);
+      }
+      .variant-chip.selected {
+        background: var(--chip-active);
+        color: #fff;
+        border-color: transparent;
+      }
+      .card-stats {
+        font-size: 0.8rem;
+        color: var(--pico-muted-color);
+        line-height: 1.5;
+      }
+
+      .card-exit-left {
+        transform: translateX(-120%) rotate(-15deg) !important;
+        opacity: 0 !important;
+      }
+      .card-exit-right {
+        transform: translateX(120%) rotate(15deg) !important;
+        opacity: 0 !important;
+      }
+      .card-exit-up {
+        transform: translateY(-120%) !important;
+        opacity: 0 !important;
+      }
+
+      /* Action buttons */
+      .swipe-actions {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        padding: 1rem 1.5rem 2rem;
+        align-items: center;
+      }
+      .swipe-btn {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        border: 2px solid;
+        font-size: 1.4rem;
+        cursor: pointer;
+        background: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition:
+          transform 0.15s,
+          background 0.15s;
+      }
+      .swipe-btn:hover {
+        transform: scale(1.1);
+      }
+      .swipe-btn.pass {
+        border-color: #ef5350;
+        color: #ef5350;
+      }
+      .swipe-btn.pass:hover {
+        background: rgba(239, 83, 80, 0.1);
+      }
+      .swipe-btn.maybe {
+        border-color: #ffc107;
+        color: #ffc107;
+      }
+      .swipe-btn.maybe:hover {
+        background: rgba(255, 193, 7, 0.1);
+      }
+      .swipe-btn.like {
+        border-color: #4caf50;
+        color: #4caf50;
+        width: 64px;
+        height: 64px;
+        font-size: 1.6rem;
+      }
+      .swipe-btn.like:hover {
+        background: rgba(76, 175, 80, 0.1);
+      }
+      .swipe-btn.undo {
+        width: 40px;
+        height: 40px;
+        border-color: var(--pico-muted-color);
+        color: var(--pico-muted-color);
+        font-size: 1rem;
+      }
+
+      /* Results */
+      .swipe-results-content {
+        width: 100%;
+        max-width: 500px;
+        padding: 2rem 1.5rem;
+        margin: 0 auto;
+      }
+      .swipe-results-content h2 {
+        text-align: center;
+        margin-bottom: 1.5rem;
+      }
+      .results-section {
+        margin-bottom: 1.5rem;
+      }
+      .results-section h3 {
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+      }
+      .results-count {
+        font-size: 0.85rem;
+        color: var(--pico-muted-color);
+      }
+      .results-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+      }
+      .result-row {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.4rem 0.6rem;
+        border-radius: 6px;
+        font-size: 0.9rem;
+      }
+      .result-row.liked {
+        background: rgba(76, 175, 80, 0.08);
+      }
+      .result-row.maybe {
+        background: rgba(255, 193, 7, 0.08);
+      }
+      .result-row.both {
+        background: rgba(255, 215, 0, 0.15);
+      }
+      .result-row.partner {
+        background: rgba(156, 39, 176, 0.08);
+      }
+      .result-name {
+        flex: 1;
+        font-weight: 500;
+      }
+      .result-rank {
+        font-size: 0.8rem;
+        color: var(--pico-muted-color);
+      }
+      .result-remove {
+        background: none;
+        border: none;
+        color: var(--pico-muted-color);
+        cursor: pointer;
+        font-size: 1.1rem;
+        padding: 0 0.25rem;
+        &:hover {
+          color: #ef5350;
+        }
+      }
+      .result-empty {
+        color: var(--pico-muted-color);
+        font-size: 0.9rem;
+        font-style: italic;
+        padding: 0.5rem 0;
+      }
+      .results-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin: 1.5rem 0;
+        align-items: center;
+      }
+      .results-actions input {
+        width: 100%;
+        padding: 0.5rem;
+        font-size: 0.9rem;
+      }
+      .results-nav {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: center;
+        margin-top: 1rem;
+      }
+      #compare-section h3 {
+        margin-top: 1.5rem;
+      }
+      #compare-section h4 {
+        font-size: 0.95rem;
+        margin: 1rem 0 0.5rem;
+      }
+
+      /* Voter name & storage warning */
+      .swipe-name-row {
+        margin-bottom: 1rem;
+        text-align: left;
+        width: 100%;
+        max-width: 260px;
+      }
+      .swipe-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        display: block;
+        margin-bottom: 0.25rem;
+      }
+      .voter-input {
+        width: 100%;
+        padding: 0.4rem 0.6rem;
+        font-size: 0.9rem;
+        border-radius: 4px;
+        border: 1px solid var(--filter-border);
+        background: var(--filter-bg);
+        color: var(--pico-color);
+      }
+      .storage-warning {
+        font-size: 0.75rem;
+        color: var(--pico-muted-color);
+        margin-top: 1rem;
+        max-width: 320px;
+        line-height: 1.4;
+      }
+
+      /* Flash feedback on swipe */
+      .swipe-flash {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 5rem;
+        z-index: 220;
+        pointer-events: none;
+        animation: flashPop 0.4s ease-out forwards;
+      }
+      .flash-green {
+        color: #4caf50;
+      }
+      .flash-red {
+        color: #ef5350;
+      }
+      .flash-amber {
+        color: #ffc107;
+      }
+      .flash-complete {
+        font-size: 4rem;
+        animation: flashPop 1.2s ease-out forwards;
+      }
+      @keyframes flashPop {
+        0% {
+          opacity: 1;
+          transform: translate(-50%, -50%) scale(0.5);
+        }
+        50% {
+          opacity: 1;
+          transform: translate(-50%, -50%) scale(1.2);
+        }
+        100% {
+          opacity: 0;
+          transform: translate(-50%, -50%) scale(1.5);
+        }
+      }
+
+      /* Results scrollable */
+      .swipe-screen-scroll {
+        overflow-y: auto;
+        align-items: flex-start;
+      }
+
+      /* Comparison voter names */
+      .result-voters {
+        font-size: 0.75rem;
+        color: var(--pico-muted-color);
+      }
+
+      /* Small action buttons */
+      .results-io {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: center;
+      }
+      .swipe-action-btn.small {
+        min-width: auto;
+        padding: 0.4rem 1rem;
+        font-size: 0.85rem;
+      }
+
+      /* Mid-session peek */
+      .swipe-peek-row {
+        text-align: center;
+        padding-bottom: 0.5rem;
+      }
+      .swipe-peek-btn {
+        background: none;
+        border: none;
+        color: var(--pico-muted-color);
+        font-size: 0.8rem;
+        cursor: pointer;
+        text-decoration: underline;
+        &:hover {
+          color: var(--pico-color);
+        }
+      }
+
+      /* Completion screen */
+      .complete-emoji {
+        font-size: 4rem;
+        margin-bottom: 0.5rem;
+      }
+
+      /* Add voter input row */
+      #add-voter-input-row {
+        display: flex;
+        gap: 0.5rem;
+        width: 100%;
+        align-items: center;
+        max-width: 400px;
+      }
+      #add-voter-input-row input {
+        flex: 1;
+      }
+
+      @media (max-width: 480px) {
+        .card-name {
+          font-size: 2.2rem;
+        }
+        .swipe-card {
+          padding: 2rem 1.5rem;
+          min-height: 200px;
+        }
+        .swipe-btn {
+          width: 48px;
+          height: 48px;
+          font-size: 1.2rem;
+        }
+        .swipe-btn.like {
+          width: 56px;
+          height: 56px;
+          font-size: 1.4rem;
+        }
+      }
     </style>
   </head>
   <body>
@@ -575,7 +1143,16 @@
           >Showing <span class="count" id="shown-count">0</span> of
           <span class="count" id="total-count">0</span> names</span
         >
-        <span class="data-info" id="data-info"></span>
+        <div style="display: flex; align-items: center; gap: 0.75rem">
+          <span class="data-info" id="data-info"></span>
+          <button
+            class="swipe-launch-btn"
+            id="swipe-launch"
+            title="Swipe through names one at a time"
+          >
+            ♥ Swipe
+          </button>
+        </div>
       </div>
 
       <div
@@ -589,10 +1166,239 @@
       </div>
 
       <div id="table-container"></div>
+
+      <!-- Swipe Mode Overlay -->
+      <div id="swipe-overlay" class="swipe-overlay" style="display: none">
+        <button
+          class="swipe-close-btn"
+          id="swipe-close"
+          aria-label="Close swipe mode"
+        >
+          ×
+        </button>
+        <div id="swipe-flash" class="swipe-flash" style="display: none"></div>
+
+        <!-- Intro screen -->
+        <div id="swipe-intro" class="swipe-screen">
+          <div class="swipe-intro-content">
+            <h2>♥ Swipe Mode</h2>
+            <p class="swipe-subtitle">
+              Swipe through names one at a time. Like, pass, or save for later.
+            </p>
+            <div class="swipe-estimate">
+              <div class="estimate-row">
+                <span class="estimate-num" id="swipe-deck-count">0</span>
+                <span class="estimate-label">names in deck</span>
+              </div>
+              <div class="estimate-row">
+                <span class="estimate-num" id="swipe-time-est">~0 min</span>
+                <span class="estimate-label">estimated time</span>
+              </div>
+            </div>
+            <div class="swipe-name-row">
+              <label class="swipe-label">Your name</label>
+              <input
+                type="text"
+                id="voter-name-input"
+                placeholder="e.g. Mom, Dad, Grandma…"
+                class="voter-input"
+              />
+            </div>
+            <p
+              id="swipe-resume-info"
+              class="swipe-resume-info"
+              style="display: none"
+            ></p>
+            <p
+              id="swipe-voters-note"
+              class="swipe-partner-note"
+              style="display: none"
+            ></p>
+            <div class="swipe-intro-actions">
+              <button class="swipe-action-btn primary" id="swipe-start-btn">
+                Start Swiping
+              </button>
+              <button
+                class="swipe-action-btn secondary"
+                id="swipe-start-fresh"
+                style="display: none"
+              >
+                Start Fresh
+              </button>
+              <button class="swipe-action-btn secondary" id="swipe-results-btn">
+                View Shortlist
+              </button>
+            </div>
+            <div class="swipe-hint">
+              <span>← Pass</span><span>↑ Maybe</span><span>→ Like</span>
+            </div>
+            <p
+              id="storage-warning"
+              class="storage-warning"
+              style="display: none"
+            >
+              Your picks are saved in this browser only. Use Export to back them
+              up. Private/incognito mode won't save progress.
+            </p>
+          </div>
+        </div>
+
+        <!-- Card screen -->
+        <div id="swipe-cards" class="swipe-screen" style="display: none">
+          <div class="swipe-progress">
+            <div class="swipe-progress-track">
+              <div class="swipe-progress-fill" id="swipe-progress-bar"></div>
+            </div>
+            <span class="swipe-progress-label" id="swipe-progress-text"
+              >0 / 0</span
+            >
+          </div>
+          <div class="swipe-card-area">
+            <div class="swipe-card" id="swipe-card">
+              <div class="card-name" id="card-name"></div>
+              <div class="card-variants" id="card-variants"></div>
+              <div class="card-stats" id="card-stats"></div>
+            </div>
+          </div>
+          <div class="swipe-actions">
+            <button class="swipe-btn pass" id="swipe-pass" title="Pass (←)">
+              ✗
+            </button>
+            <button
+              class="swipe-btn undo"
+              id="swipe-undo"
+              title="Undo (Ctrl+Z)"
+              style="visibility: hidden"
+            >
+              ↩
+            </button>
+            <button class="swipe-btn maybe" id="swipe-maybe" title="Maybe (↑)">
+              ★
+            </button>
+            <button class="swipe-btn like" id="swipe-like" title="Like (→)">
+              ♥
+            </button>
+          </div>
+          <div class="swipe-peek-row">
+            <button class="swipe-peek-btn" id="swipe-peek">
+              View picks so far
+            </button>
+          </div>
+        </div>
+
+        <!-- Completion screen -->
+        <div id="swipe-complete" class="swipe-screen" style="display: none">
+          <div class="swipe-intro-content">
+            <div class="complete-emoji">🎉</div>
+            <h2>All done!</h2>
+            <p class="swipe-subtitle" id="complete-summary"></p>
+            <p class="swipe-subtitle">
+              Share your picks so others can compare, or view your full
+              shortlist.
+            </p>
+            <div class="swipe-intro-actions">
+              <button class="swipe-action-btn primary" id="complete-share-btn">
+                Share My Picks
+              </button>
+              <button
+                class="swipe-action-btn secondary"
+                id="complete-results-btn"
+              >
+                View Shortlist
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Results screen -->
+        <div
+          id="swipe-results"
+          class="swipe-screen swipe-screen-scroll"
+          style="display: none"
+        >
+          <div class="swipe-results-content">
+            <h2>Your Shortlist</h2>
+            <div class="results-section">
+              <h3>
+                ♥ Liked
+                <span class="results-count" id="results-liked-count">0</span>
+              </h3>
+              <div id="results-liked" class="results-list"></div>
+            </div>
+            <div class="results-section">
+              <h3>
+                ★ Maybe
+                <span class="results-count" id="results-maybe-count">0</span>
+              </h3>
+              <div id="results-maybe" class="results-list"></div>
+            </div>
+
+            <div id="compare-section" style="display: none">
+              <h3>Comparison</h3>
+              <div id="compare-results"></div>
+            </div>
+
+            <div class="results-actions">
+              <button class="swipe-action-btn primary" id="share-picks-btn">
+                Share My Picks
+              </button>
+              <button class="swipe-action-btn secondary" id="share-deck-btn">
+                Share This Deck
+              </button>
+              <button class="swipe-action-btn secondary" id="add-voter-btn">
+                Add Someone's Picks
+              </button>
+              <div id="add-voter-input-row" style="display: none">
+                <input
+                  type="text"
+                  id="add-voter-url"
+                  placeholder="Paste their link here…"
+                  class="voter-input"
+                />
+                <button
+                  class="swipe-action-btn primary small"
+                  id="add-voter-go"
+                >
+                  Add
+                </button>
+              </div>
+              <div class="results-io">
+                <button
+                  class="swipe-action-btn secondary small"
+                  id="export-btn"
+                >
+                  Export
+                </button>
+                <button
+                  class="swipe-action-btn secondary small"
+                  id="import-btn"
+                >
+                  Import
+                </button>
+                <input
+                  type="file"
+                  id="import-file"
+                  accept=".json"
+                  style="display: none"
+                />
+              </div>
+            </div>
+            <div class="results-nav">
+              <button class="swipe-action-btn secondary" id="results-back">
+                ← Back
+              </button>
+              <button class="swipe-action-btn secondary" id="results-close">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/tabulator-tables@6.4.0/dist/js/tabulator.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.5.3/papaparse.min.js"></script>
     <script src="grid.js"></script>
+    <script src="swipe.js"></script>
   </body>
 </html>

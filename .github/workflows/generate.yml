@@ -9,6 +9,9 @@ on:
       - "raw/**"
       - "images/generate_graph.py"
 
+permissions:
+  contents: write
+
 jobs:
   generate:
     runs-on: ubuntu-latest

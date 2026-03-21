@@ -2,6 +2,45 @@
 
 All notable changes to this project are documented in this file. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.1.0] - 2026-03-21
+
+### Added
+
+- **Swipe Mode** — Tinder-style card swiping to review names one at a time
+  - Swipe right/left/up (or tap ♥/✗/★, or use arrow keys) for like/pass/maybe
+  - Touch and mouse drag with physics-style rotation and color feedback
+  - Tap variant chips on each card to pick preferred spelling
+  - Time estimate based on filtered deck size (~4 sec/card)
+  - Progress bar, undo (↩ / Ctrl+Z), and mid-session "View picks so far"
+  - Completion screen with summary and share prompt
+- **Multi-person sharing** — everyone is a peer, anyone can share and compare
+  - "Share My Picks" generates a URL encoding name + liked/maybe ranks
+  - "Add Someone's Picks" loads any number of other voters (partner, grandparents, friends)
+  - Re-sharing gives updated picks; re-loading replaces the old data by name
+  - N-way comparison groups names as "Everyone loves" / "Strong contenders" / "Worth discussing"
+- **Session persistence** — picks saved to localStorage, keyed by deck content hash
+  - Resume info on return ("340 reviewed · 12 liked · 5 maybe · 960 remaining")
+  - Start Fresh option to reset
+  - localStorage warning on intro screen
+- **Export/Import** — JSON backup with picks, other voters' data, deck version hash, and timestamp
+  - Survives browser wipes, incognito mode, device changes
+  - Import warns if data version has changed since export
+- **Inline SVG favicon** (👶 emoji)
+- **Open Graph meta tags** (og:title, og:description, og:image) and canonical URL
+- **`.prettierignore`** to exclude data/raw/images from formatting
+
+### Fixed
+
+- **XSS vulnerability** in swipe comparison view — voter names from URL params were rendered via innerHTML; now uses safe textContent via DOM methods
+- **Pages deployed entire 41MB repo** including raw/ SSA data — now builds a `_site/` directory with only web assets (~14MB)
+- **generate.yml missing `permissions: contents: write`** — git push could silently fail
+- **CRLF line endings** in 5 files (.editorconfig, test files) despite .editorconfig specifying LF
+
+### Changed
+
+- `swipe.js` modernized: 0 `var` (all `const`/`let`), arrow functions, template literals, `for...of`, destructuring, `SCREENS` array for screen management
+- CDN versions verified as latest: Pico CSS 2.1.1, Tabulator 6.4.0, PapaParse 5.5.3
+
 ## [2.0.0] - 2026-03-21
 
 Ground-up rewrite of the data pipeline, web viewer, and project infrastructure. **The CSV schema has changed** — see [Breaking Changes](#breaking-changes-200) below.
@@ -41,27 +80,27 @@ Ground-up rewrite of the data pipeline, web viewer, and project infrastructure. 
 
 **CSV columns** — every column has been renamed or restructured:
 
-| v1.x | v2.0 | Notes |
-|---|---|---|
-| `rank` | `rank` | Now integer (was float `1.0`) |
-| `alt_spellings` | `spelling_variants` | Sorted by popularity (was alphabetical) |
-| `n_sum` | `total_count` | Renamed |
-| `n_percent` | `cumulative_pct` | Renamed |
-| `year_pop` | `year_peak` | Renamed |
-| `palindrome` | `is_palindrome` | Renamed |
-| `phones` | `pronunciations` | Pipe-separated ARPABET (was Python list repr) |
-| `stresses` | `stresses` | Pipe-separated (was Python list repr) |
-| `alliteration_first` | `alliteration` | Broadened to any repeated phoneme; old behavior preserved as `alliteration_first` |
-| `unisex` | `unisex_pct` | Minority share 0–50% (was boolean); see also new `unisex_dominant` |
+| v1.x                 | v2.0                | Notes                                                                             |
+| -------------------- | ------------------- | --------------------------------------------------------------------------------- |
+| `rank`               | `rank`              | Now integer (was float `1.0`)                                                     |
+| `alt_spellings`      | `spelling_variants` | Sorted by popularity (was alphabetical)                                           |
+| `n_sum`              | `total_count`       | Renamed                                                                           |
+| `n_percent`          | `cumulative_pct`    | Renamed                                                                           |
+| `year_pop`           | `year_peak`         | Renamed                                                                           |
+| `palindrome`         | `is_palindrome`     | Renamed                                                                           |
+| `phones`             | `pronunciations`    | Pipe-separated ARPABET (was Python list repr)                                     |
+| `stresses`           | `stresses`          | Pipe-separated (was Python list repr)                                             |
+| `alliteration_first` | `alliteration`      | Broadened to any repeated phoneme; old behavior preserved as `alliteration_first` |
+| `unisex`             | `unisex_pct`        | Minority share 0–50% (was boolean); see also new `unisex_dominant`                |
 
 **File layout:**
 
-| v1.x | v2.0 |
-|---|---|
-| `boys.csv`, `girls.csv` | `data/boys.csv`, `data/girls.csv` |
-| `docs/index.html`, `docs/grid.js` | `index.html`, `grid.js` |
-| `src/data/babynames/yob*.txt` | `raw/yob*.txt` |
-| `src/requirements.txt` | `pyproject.toml` |
+| v1.x                              | v2.0                              |
+| --------------------------------- | --------------------------------- |
+| `boys.csv`, `girls.csv`           | `data/boys.csv`, `data/girls.csv` |
+| `docs/index.html`, `docs/grid.js` | `index.html`, `grid.js`           |
+| `src/data/babynames/yob*.txt`     | `raw/yob*.txt`                    |
+| `src/requirements.txt`            | `pyproject.toml`                  |
 
 **Dependencies:** pandas/swifter/numpy/pronouncing → polars/cmudict/g2p-en (optional). Grid.js/Bootstrap → Tabulator/Pico CSS/PapaParse.
 
@@ -87,6 +126,7 @@ Ground-up rewrite of the data pipeline, web viewer, and project infrastructure. 
 - CSV output with rank, name, alternate spellings, counts, year range, biblical flag, pronunciations, syllables, alliteration, and unisex flag
 - SSA data through 2021
 
+[2.1.0]: https://github.com/dxdc/babynames/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/dxdc/babynames/compare/v1.0.2...v2.0.0
 [1.0.2]: https://github.com/dxdc/babynames/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/dxdc/babynames/compare/v1.0.0...v1.0.1

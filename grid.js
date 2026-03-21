@@ -817,3 +817,16 @@ applyFilters = function () {
 // Load state on startup, then load data
 loadStateFromHash();
 loadData(currentGender);
+
+// ---------------------------------------------------------------
+// Public API for swipe mode
+// ---------------------------------------------------------------
+
+function getSwipeDeck() {
+  if (!table || !tableReady) return [];
+  return table.getData("active");
+}
+
+function getCurrentGender() {
+  return currentGender;
+}

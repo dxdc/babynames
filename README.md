@@ -24,6 +24,8 @@ Browse the data using the [interactive web viewer](https://dxdc.github.io/babyna
 
 Filter states are saved in the URL hash for easy sharing. Dark mode is also available.
 
+A **Swipe Mode** (♥ button) lets you review names one at a time — swipe right to like, left to pass, up for maybe. Share your picks with a partner and compare to find names you both love.
+
 The compiled datasets are also available for download:
 
 - [all-names.csv](data/all-names.csv), [boys.csv](data/boys.csv), [girls.csv](data/girls.csv)
@@ -142,6 +144,7 @@ The web viewer (`index.html`) uses [Pico CSS](https://picocss.com/) for styling,
 ```
 ├── index.html              # Web UI entry point
 ├── grid.js                 # Web UI logic (filtering, table, URL state)
+├── swipe.js                # Swipe mode (Tinder-style card swiping)
 ├── images/
 │   ├── generate_graph.py   # Script to regenerate the distribution chart
 │   └── graph.png           # Cumulative name distribution chart
