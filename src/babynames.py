@@ -437,20 +437,20 @@ def main() -> None:
     parser.add_argument(
         "--data-dir",
         type=Path,
-        default=Path("data/babynames"),
-        help="Directory containing yob*.txt SSA files (default: data/babynames)",
+        default=Path("raw"),
+        help="Directory containing yob*.txt SSA files (default: raw)",
     )
     parser.add_argument(
         "--biblical",
         type=Path,
-        default=Path("data/biblical_names.csv"),
-        help="Path to biblical names CSV (default: data/biblical_names.csv)",
+        default=Path("raw/biblical_names.csv"),
+        help="Path to biblical names CSV (default: raw/biblical_names.csv)",
     )
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=Path("../data"),
-        help="Output directory for CSV files (default: ../data)",
+        default=Path("data"),
+        help="Output directory for CSV files (default: data)",
     )
     parser.add_argument(
         "-v",

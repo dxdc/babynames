@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - "src/**"
+      - "raw/**"
 
 jobs:
   generate:
@@ -17,8 +18,7 @@ jobs:
           python-version: "3.12"
       - run: pip install polars cmudict
       - name: Generate CSVs
-        working-directory: src
-        run: python babynames.py --verbose --output-dir ../data
+        run: python src/babynames.py --verbose
       - name: Check for changes
         id: diff
         run: |

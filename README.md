@@ -4,7 +4,7 @@ A tool to help parents find names for their newborns.
 
 Names like Jonathan, Johnathan, Johnathon, Jonothan, and Jonathon are treated as alternative spellings of a single name — so you only review each distinct name once.
 
-Using publicly-available datasets from the United States Social Security Administration, baby names from 1880 to 2024 were collated, de-duplicated by phonetic pronunciation using the [CMU Pronouncing Dictionary](https://en.wikipedia.org/wiki/CMU_Pronouncing_Dictionary), and ordered by popularity.
+Using publicly-available datasets from the United States Social Security Administration, baby names from 1880 to 2023 were collated, de-duplicated by phonetic pronunciation using the [CMU Pronouncing Dictionary](https://en.wikipedia.org/wiki/CMU_Pronouncing_Dictionary), and ordered by popularity.
 
 ## How to Use
 
@@ -30,7 +30,7 @@ Recommendation: Review the list from top to bottom, applying any filters you wis
 
 | Header             | Description                                                                                               |
 | ------------------ | --------------------------------------------------------------------------------------------------------- |
-| rank               | Popularity rank (1880-2024)                                                                               |
+| rank               | Popularity rank (1880-2023)                                                                               |
 | name               | Baby name (most popular spelling)                                                                         |
 | spelling_variants  | Alternative spellings with the same pronunciation, separated by spaces                                    |
 | total_count        | Total babies born in the US with this name (includes alternate spellings)                                 |
@@ -79,11 +79,10 @@ pip install polars cmudict pytest ruff
 
 ### Regenerating CSV Files
 
-The CSV files in `data/` are generated from the SSA source data in `src/data/babynames/`. To regenerate:
+The CSV files in `data/` are generated from the source data in `raw/`. To regenerate:
 
 ```bash
-cd src
-python babynames.py --verbose
+python src/babynames.py --verbose
 ```
 
 This writes `boys.csv`, `girls.csv`, and `all-names.csv` to `data/`.
@@ -119,15 +118,15 @@ The web viewer (`index.html`) uses [Pico CSS](https://picocss.com/) for styling,
 ```
 ├── index.html              # Web UI entry point
 ├── grid.js                 # Web UI logic (filtering, table, URL state)
-├── data/                   # Generated CSV output files
+├── raw/                    # Input data (SSA files + reference data)
+│   ├── yob1880.txt … yob2023.txt  # SSA baby name files
+│   └── biblical_names.csv  # Curated biblical name list
+├── data/                   # Generated output CSVs
 │   ├── boys.csv
 │   ├── girls.csv
 │   └── all-names.csv
 ├── src/
-│   ├── babynames.py        # Main data processing pipeline
-│   └── data/
-│       ├── babynames/      # SSA source data (yob1880.txt - yob2024.txt)
-│       └── biblical_names.csv
+│   └── babynames.py        # Data processing pipeline
 ├── tests/                  # Test suite
 ├── .github/workflows/      # CI, CSV generation, GitHub Pages deployment
 └── pyproject.toml          # Python project config
@@ -138,16 +137,16 @@ The web viewer (`index.html`) uses [Pico CSS](https://picocss.com/) for styling,
 Three GitHub Actions workflows handle automation:
 
 - **CI** (`ci.yml`) — Runs linting (ruff), tests (pytest), and format checks (prettier) on every push and PR to main.
-- **Generate CSVs** (`generate.yml`) — Regenerates CSV files when `src/` changes on main, and auto-commits the result.
+- **Generate CSVs** (`generate.yml`) — Regenerates CSV files when `src/` or `raw/` changes on main, and auto-commits the result.
 - **Deploy Pages** (`pages.yml`) — Deploys to GitHub Pages when web assets or CSV files change on main.
 
 ## Datasets
 
-This project uses two datasets (see `src/data`):
+This project uses two datasets (both in `raw/`):
 
-- **babynames**: For each year from 1880 to 2024, the number of children of each sex given each name. All names with more than 5 uses are given. (Source: [SSA Baby Names](https://www.ssa.gov/oact/babynames/limits.html))
+- **SSA Baby Names** (`raw/yob*.txt`): For each year from 1880 to 2023, the number of children of each sex given each name. All names with more than 5 uses are given. (Source: [SSA Baby Names](https://www.ssa.gov/oact/babynames/limits.html))
 
-- **biblical_names**: A curated, de-duplicated collection of biblical names.
+- **Biblical Names** (`raw/biblical_names.csv`): A curated, de-duplicated collection of biblical names.
 
 ## How to Contribute
 
@@ -165,8 +164,8 @@ Have an idea? Found a bug? Contributions and pull requests are welcome.
 When new SSA data is released (typically in May each year):
 
 1. Download the latest `names.zip` from the [SSA Baby Names](https://www.ssa.gov/oact/babynames/limits.html) page
-2. Extract the new `yobYYYY.txt` file(s) into `src/data/babynames/`
-3. Regenerate the CSVs: `cd src && python babynames.py --verbose`
+2. Extract the new `yobYYYY.txt` file(s) into `raw/`
+3. Regenerate the CSVs: `python src/babynames.py --verbose`
 4. Verify results and commit
 
 ## Credits
