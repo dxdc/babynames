@@ -15,10 +15,10 @@ let dataMaxYear = null;
 let activeFilters = {
   letters: [],
   biblical: false,
-  unisex: false,
   trending: false,
   palindrome: false,
   alliteration: false,
+  hasVariants: false,
 };
 
 // ---------------------------------------------------------------
@@ -123,12 +123,14 @@ function initTable(data, onReady) {
         responsive: 1,
       },
       {
-        title: "Unisex",
-        field: "unisex",
-        width: 70,
+        title: "Unisex%",
+        field: "unisex_ratio",
+        sorter: "number",
+        width: 80,
         headerFilter: false,
         formatter: function (cell) {
-          return cell.getValue() == 1 ? "Y" : "";
+          const val = cell.getValue();
+          return val != null ? val + "%" : "";
         },
         responsive: 1,
       },
@@ -333,10 +335,12 @@ function applyFilters() {
   // Toggle filters
   const letterFilters = activeFilters.letters;
   const biblicalFilter = activeFilters.biblical;
-  const unisexFilter = activeFilters.unisex;
+  const unisexVal = document.getElementById("unisex-filter").value;
+  const unisexMin = unisexVal ? Number(unisexVal) : 0;
   const trendingFilter = activeFilters.trending;
   const palindromeFilter = activeFilters.palindrome;
   const alliterationFilter = activeFilters.alliteration;
+  const hasVariantsFilter = activeFilters.hasVariants;
 
   const hasAnyFilter =
     searchLower ||
@@ -348,10 +352,11 @@ function applyFilters() {
     lastYear ||
     letterFilters.length > 0 ||
     biblicalFilter ||
-    unisexFilter ||
+    unisexMin ||
     trendingFilter ||
     palindromeFilter ||
-    alliterationFilter;
+    alliterationFilter ||
+    hasVariantsFilter;
 
   if (!hasAnyFilter) {
     table.clearFilter(true);
@@ -425,10 +430,15 @@ function applyFilters() {
 
     // Boolean toggles
     if (biblicalFilter && data.biblical != 1) return false;
-    if (unisexFilter && data.unisex != 1) return false;
+    if (
+      unisexMin &&
+      (data.unisex_ratio == null || data.unisex_ratio < unisexMin)
+    )
+      return false;
     if (trendingFilter && data.year_peak < 2010) return false;
     if (palindromeFilter && data.is_palindrome != 1) return false;
     if (alliterationFilter && data.alliteration != 1) return false;
+    if (hasVariantsFilter && !data.spelling_variants) return false;
 
     return true;
   });
@@ -469,6 +479,7 @@ document.getElementById("name-search").addEventListener("input", function () {
   "syllable-filter",
   "length-filter",
   "decade-filter",
+  "unisex-filter",
   "first-dir",
   "last-dir",
 ].forEach(function (id) {
@@ -554,7 +565,7 @@ function clampYear(value, lo, hi) {
   container.parentNode.appendChild(toggle);
 })();
 
-// Toggle buttons (Biblical, Unisex, Trending, Palindrome, Alliteration)
+// Toggle buttons (Biblical, Trending, Palindrome, Alliteration, Has Variants)
 document.querySelectorAll(".filter-toggle").forEach(function (btn) {
   btn.addEventListener("click", function () {
     const filter = btn.dataset.filter;
@@ -572,16 +583,17 @@ document.getElementById("clear-filters").addEventListener("click", function () {
   document.getElementById("syllable-filter").value = "";
   document.getElementById("length-filter").value = "";
   document.getElementById("decade-filter").value = "";
+  document.getElementById("unisex-filter").value = "";
   document.getElementById("first-dir").value = "after";
   document.getElementById("first-year").value = "";
   document.getElementById("last-dir").value = "after";
   document.getElementById("last-year").value = "";
   activeFilters.letters = [];
   activeFilters.biblical = false;
-  activeFilters.unisex = false;
   activeFilters.trending = false;
   activeFilters.palindrome = false;
   activeFilters.alliteration = false;
+  activeFilters.hasVariants = false;
   document
     .querySelectorAll(".letter-chip, .filter-toggle")
     .forEach(function (el) {
@@ -646,10 +658,12 @@ function saveStateToHash() {
   if (activeFilters.letters.length > 0)
     params.set("letters", [...activeFilters.letters].sort().join(","));
   if (activeFilters.biblical) params.set("biblical", "1");
-  if (activeFilters.unisex) params.set("unisex", "1");
+  const unisex = document.getElementById("unisex-filter").value;
+  if (unisex) params.set("unisex", unisex);
   if (activeFilters.trending) params.set("trending", "1");
   if (activeFilters.palindrome) params.set("palindrome", "1");
   if (activeFilters.alliteration) params.set("alliteration", "1");
+  if (activeFilters.hasVariants) params.set("hasVariants", "1");
 
   const hash = params.toString();
   history.replaceState(null, "", hash ? "#" + hash : location.pathname);
@@ -725,8 +739,12 @@ function loadStateFromHash() {
     }
   }
 
+  // Unisex ratio dropdown
+  if (params.get("unisex"))
+    document.getElementById("unisex-filter").value = params.get("unisex");
+
   // Boolean toggles
-  ["biblical", "unisex", "trending", "palindrome", "alliteration"].forEach(
+  ["biblical", "trending", "palindrome", "alliteration", "hasVariants"].forEach(
     function (key) {
       if (params.get(key)) {
         activeFilters[key] = true;

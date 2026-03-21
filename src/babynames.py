@@ -44,6 +44,7 @@ STRESS_SEPARATOR = " | "
 
 
 MAX_PRONUNCIATION_VARIANTS = 10
+MIN_SUBWORD_LENGTH = 2
 
 
 @cache
@@ -51,7 +52,12 @@ def split_into_subwords(word: str) -> list[Phonemes]:
     """Recursively split a word into CMU-dict sub-words and combine phonemes.
 
     Tries partitions starting near the middle of the word, preferring
-    longer prefixes. Returns combined phoneme lists for all valid splits,
+    longer prefixes. Requires both prefix and suffix to be at least
+    MIN_SUBWORD_LENGTH characters to avoid spurious matches against
+    short CMU entries like "ja", "a", "j" which produce garbage phonemes
+    when used as name components.
+
+    Returns combined phoneme lists for all valid splits,
     capped at MAX_PRONUNCIATION_VARIANTS to avoid combinatorial explosion.
     """
     word = word.lower()
@@ -62,6 +68,8 @@ def split_into_subwords(word: str) -> list[Phonemes]:
     split_points = sorted(range(len(word)), key=lambda i: (i - midpoint) ** 2 - i)
     for i in split_points:
         prefix, suffix = word[:i], word[i:]
+        if len(prefix) < MIN_SUBWORD_LENGTH or len(suffix) < MIN_SUBWORD_LENGTH:
+            continue
         if prefix in ARPABET and split_into_subwords(suffix):
             combined = [
                 left + right
@@ -106,6 +114,30 @@ def get_syllable_count(pronunciations: PronunciationList) -> int:
     if pronunciations:
         return round(mean(count_syllables(p) for p in pronunciations))
     return 0
+
+
+def estimate_syllables_from_spelling(name: str) -> int:
+    """Estimate syllable count from spelling when no pronunciation is available.
+
+    Counts vowel groups and applies heuristics for silent-e and consonant-le.
+    Not as accurate as ARPABET-based counting, but far better than returning 0
+    for the ~22% of names that the CMU dictionary doesn't cover.
+    """
+    lower = name.lower()
+    groups = re.findall(r"[aeiouy]+", lower)
+    count = len(groups)
+    # Silent e at end (but not 'ee', 'ie', 'ye' endings)
+    if (
+        lower.endswith("e")
+        and not lower.endswith(("ee", "ie", "ye"))
+        and count > 1
+        and len(lower) > 3
+    ):
+        count -= 1
+    # Consonant-le at end counts as a syllable
+    if lower.endswith("le") and len(lower) > 2 and lower[-3] not in "aeiouy":
+        count += 1
+    return max(count, 1)
 
 
 def has_repeated_phoneme(pronunciations: PronunciationList) -> bool:
@@ -256,13 +288,21 @@ def build_spelling_variants(df: pl.DataFrame) -> pl.DataFrame:
         if pron:
             best_pron_to_group.setdefault(pron, set()).add(name)
 
-    # Assign stable integer group IDs
+    # Assign stable integer group IDs.
+    # Names without pronunciation each get their own unique group
+    # to prevent them from being merged together.
     pron_to_id: dict[str, int] = {}
     next_id = 0
     variant_ids: list[int] = []
     variant_strs: list[str] = []
     for name in names:
         pron = name_to_best_pron[name]
+        if not pron:
+            # No pronunciation — assign a unique group (no merging)
+            variant_ids.append(next_id)
+            next_id += 1
+            variant_strs.append("")
+            continue
         if pron not in pron_to_id:
             pron_to_id[pron] = next_id
             next_id += 1
@@ -332,15 +372,26 @@ def merge_spelling_variants(df: pl.DataFrame) -> pl.DataFrame:
 
 
 def compute_name_features(df: pl.DataFrame) -> pl.DataFrame:
-    """Compute derived linguistic features from pronunciations."""
+    """Compute derived linguistic features from pronunciations.
+
+    For names without ARPABET pronunciations, syllable count is estimated
+    from the spelling using vowel-group heuristics.
+    """
     log.info("Computing linguistic features")
     pronunciations_list: list[PronunciationList] = df["pronunciations"].to_list()
     names: list[str] = df["name"].to_list()
 
+    syllables = []
+    for name, prons in zip(names, pronunciations_list, strict=True):
+        if prons:
+            syllables.append(get_syllable_count(prons))
+        else:
+            syllables.append(estimate_syllables_from_spelling(name))
+
     return df.with_columns(
         pl.Series("first_letter", [name[0] for name in names]),
         pl.Series("stresses", [get_stress_patterns(p) for p in pronunciations_list]),
-        pl.Series("syllables", [get_syllable_count(p) for p in pronunciations_list]),
+        pl.Series("syllables", syllables),
         pl.Series(
             "alliteration",
             [1 if has_repeated_phoneme(p) else None for p in pronunciations_list],
@@ -355,21 +406,49 @@ def compute_name_features(df: pl.DataFrame) -> pl.DataFrame:
 
 
 def classify_unisex_names(
-    df: pl.DataFrame, *, min_count: int = 15000, min_year: int = 1970
+    df: pl.DataFrame,
+    *,
+    min_count: int = 5000,
+    min_year: int = 1970,
 ) -> pl.DataFrame:
-    """Flag names used by both genders after min_year with at least min_count each."""
+    """Compute unisex ratio for names used by both genders.
+
+    For each name that appears in both M and F datasets (with year_max > min_year
+    and total_count > min_count for both), computes the minority/majority gender
+    ratio as a percentage (0–100). Names that don't qualify get null.
+
+    The ratio column lets users filter by their own threshold in the web viewer
+    (e.g., ≥5% for broad inclusion, ≥20% for truly gender-neutral names).
+    """
     candidates = df.filter((pl.col("year_max") > min_year) & (pl.col("total_count") > min_count))
-    unisex_names: set[str] = set(
-        candidates.group_by("name")
-        .agg(pl.col("sex").n_unique().alias("sex_count"))
-        .filter(pl.col("sex_count") > 1)["name"]
-        .to_list()
+
+    # Build name -> {sex: count} mapping
+    name_sex_counts: dict[str, dict[str, int]] = {}
+    for row in candidates.iter_rows(named=True):
+        name_sex_counts.setdefault(row["name"], {})[row["sex"]] = row["total_count"]
+
+    # Compute ratio for names with both genders
+    name_ratios: dict[str, float] = {}
+    for name, sex_counts in name_sex_counts.items():
+        if len(sex_counts) < 2:
+            continue
+        counts = list(sex_counts.values())
+        minority = min(counts)
+        majority = max(counts)
+        name_ratios[name] = round(100 * minority / majority, 1)
+
+    log.info(
+        "Computed unisex ratio for %d names (min count %d, after %d)",
+        len(name_ratios),
+        min_count,
+        min_year,
     )
+
     return df.with_columns(
         pl.Series(
-            "unisex",
-            [1 if name in unisex_names else None for name in df["name"].to_list()],
-            dtype=pl.Int64,
+            "unisex_ratio",
+            [name_ratios.get(name) for name in df["name"].to_list()],
+            dtype=pl.Float64,
         )
     )
 
@@ -406,7 +485,7 @@ OUTPUT_COLUMNS: list[str] = [
     "syllables",
     "alliteration",
     "alliteration_first",
-    "unisex",
+    "unisex_ratio",
 ]
 
 

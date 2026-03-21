@@ -18,7 +18,8 @@ Browse the data using the [interactive web viewer](https://dxdc.github.io/babyna
 - **Peak decade** — when the name was most popular (2020s, 2010s, … 1940s & earlier)
 - **First used / Last used** — each with an after/before direction and year input (e.g., "First used after 1950" finds modern names; "Last used before 1960" finds extinct names)
 - **Starting letter** — A through Z (multi-select: click several letters to combine)
-- **Traits** — Biblical, Unisex, Trending (peaked 2010+), Palindrome, and Alliteration toggles
+- **Unisex** — dropdown to filter by gender-ratio threshold (≥5%, ≥10%, ≥20%, ≥33%)
+- **Traits** — Biblical, Trending (peaked 2010+), Palindrome, Alliteration, and Has Variants toggles
 
 Filter states are saved in the URL hash for easy sharing. Dark mode is also available.
 
@@ -54,7 +55,7 @@ As the chart shows, boys' names are more concentrated (775 names covers 90%), wh
 | syllables          | Number of syllables                                                                                    |
 | alliteration       | Name contains any repeated phoneme (1 = yes)                                                           |
 | alliteration_first | First phoneme repeats later in the name (1 = yes)                                                      |
-| unisex             | Used by both genders with 15,000+ babies each, after 1970 (1 = yes)                                    |
+| unisex_ratio       | Minority/majority gender ratio as a percentage; null if not used by both genders                       |
 
 ## About
 

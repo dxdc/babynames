@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="Browse and filter US baby names from 1880–present, phonetically de-duplicated using the CMU Pronouncing Dictionary. Search by gender, popularity rank, syllables, name length, peak decade, year range, starting letter, biblical, unisex, trending, palindrome, and alliteration. Free downloadable CSV datasets."
+      content="Browse and filter US baby names from 1880–present, phonetically de-duplicated using the CMU Pronouncing Dictionary. Search by gender, popularity rank, syllables, name length, peak decade, year range, starting letter, unisex ratio, biblical, trending, palindrome, alliteration, and spelling variants. Free downloadable CSV datasets."
     />
     <meta
       name="keywords"
@@ -532,6 +532,17 @@
           </div>
 
           <div class="filter-group">
+            <label>Unisex</label>
+            <select id="unisex-filter" aria-label="Filter by unisex ratio">
+              <option value="">All</option>
+              <option value="5">≥5%</option>
+              <option value="10">≥10%</option>
+              <option value="20">≥20%</option>
+              <option value="33">≥33%</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
             <label>Traits</label>
             <div class="toggle-group">
               <button
@@ -540,13 +551,6 @@
                 aria-pressed="false"
               >
                 Biblical
-              </button>
-              <button
-                class="toggle-btn filter-toggle"
-                data-filter="unisex"
-                aria-pressed="false"
-              >
-                Unisex
               </button>
               <button
                 class="toggle-btn filter-toggle"
@@ -572,6 +576,14 @@
               >
                 Alliteration
               </button>
+              <button
+                class="toggle-btn filter-toggle"
+                data-filter="hasVariants"
+                aria-pressed="false"
+                title="Name has alternate spellings (e.g., John → Jon, Jonn)"
+              >
+                Has Variants
+              </button>
             </div>
           </div>
         </div>
@@ -593,7 +605,13 @@
         >
       </div>
 
-      <div class="loading" id="loading" role="status" aria-live="polite">
+      <div
+        class="loading"
+        id="loading"
+        role="status"
+        aria-live="polite"
+        style="display: none"
+      >
         Loading baby names...
       </div>
 
