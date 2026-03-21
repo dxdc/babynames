@@ -1,5 +1,5 @@
 // Baby Names - Tabulator-based data grid
-// Loads CSV data and renders with filtering, sorting, pagination
+// Loads CSV data and renders with filtering, sorting, virtual scrolling
 
 const DATA_URLS = {
   M: "data/boys.csv",
@@ -35,9 +35,6 @@ function initTable(data, onReady) {
     layout: "fitColumns",
     responsiveLayout: "collapse",
     placeholder: "No matching names found",
-    pagination: true,
-    paginationSize: 100,
-    paginationSizeSelector: [50, 100, 250, 500],
     columns: [
       {
         title: "Rank",
@@ -57,21 +54,22 @@ function initTable(data, onReady) {
         title: "Variations",
         field: "spelling_variants",
         sorter: "string",
-        minWidth: 120,
+        minWidth: 140,
         headerFilter: false,
         responsive: 3,
         formatter: function (cell) {
           const val = cell.getValue();
           if (!val) return "";
           const names = val.split(" ");
-          if (names.length <= 3) return val;
-          return (
-            names.slice(0, 3).join(" ") + " +" + (names.length - 3) + " more"
-          );
+          if (names.length <= 5) return val;
+          return names.slice(0, 5).join(", ") + " \u2026+" + (names.length - 5);
         },
         tooltip: function (e, cell) {
           const val = cell.getValue();
-          return val ? val.split(" ").join(", ") : "";
+          if (!val) return "";
+          const names = val.split(" ");
+          if (names.length <= 5) return "";
+          return names.join(", ");
         },
       },
       {
@@ -513,9 +511,13 @@ document.querySelectorAll(".gender-btn").forEach(function (btn) {
       b.classList.remove("active");
     });
     btn.classList.add("active");
+    document.documentElement.setAttribute("data-gender", btn.dataset.gender);
     loadData(btn.dataset.gender);
   });
 });
+
+// Set initial gender attribute
+document.documentElement.setAttribute("data-gender", "M");
 
 // Name search with debouncing
 let searchTimeout;
@@ -729,6 +731,7 @@ function loadStateFromHash() {
       b.classList.toggle("active", b.dataset.gender === "F");
     });
     currentGender = "F";
+    document.documentElement.setAttribute("data-gender", "F");
   }
   if (params.get("q"))
     document.getElementById("name-search").value = params.get("q");

@@ -4,7 +4,7 @@ A tool to help parents find names for their newborns.
 
 Names like Jonathan, Johnathan, Johnathon, Jonothan, and Jonathon are treated as alternative spellings of a single name — so you only review each distinct name once.
 
-Using publicly-available datasets from the United States Social Security Administration, baby names from 1880 to 2024 were collated, de-duplicated by phonetic pronunciation using the [CMU Pronouncing Dictionary](https://en.wikipedia.org/wiki/CMU_Pronouncing_Dictionary), and ordered by popularity.
+Using publicly-available datasets from the United States Social Security Administration, baby names from 1880 to 2024 were collated, de-duplicated by phonetic pronunciation using the [CMU Pronouncing Dictionary](https://en.wikipedia.org/wiki/CMU_Pronouncing_Dictionary), and ordered by popularity. Pronunciations for names not in the CMU dictionary are provided by the [g2p_en](https://github.com/Kyubyong/g2p) neural model when available.
 
 ## How to Use
 
@@ -40,9 +40,9 @@ As the chart shows, boys' names are more concentrated (fewer names to reach 90%)
 
 | Header             | Description                                                                                            |
 | ------------------ | ------------------------------------------------------------------------------------------------------ |
-| rank               | Popularity rank (1880–2024)                                                                            |
+| rank               | Popularity rank within gender                                                                          |
 | name               | Baby name (most popular spelling)                                                                      |
-| spelling_variants  | Alternative spellings with the same pronunciation, separated by spaces                                 |
+| spelling_variants  | Alternative spellings with the same pronunciation, sorted by popularity (most common first)            |
 | total_count        | Total babies born in the US with this name (includes alternate spellings)                              |
 | cumulative_pct     | Cumulative percentage of babies born with this name (includes higher rows)                             |
 | year_min           | Year this name was first used                                                                          |
@@ -50,10 +50,10 @@ As the chart shows, boys' names are more concentrated (fewer names to reach 90%)
 | year_peak          | Most popular year for this name                                                                        |
 | biblical           | Biblical name (1 = yes)                                                                                |
 | is_palindrome      | Name reads the same forwards and backwards (1 = yes)                                                   |
-| pronunciations     | ARPABET phonetic pronunciations, separated by `\|` for multiple variants                               |
+| pronunciations     | ARPABET phonetic pronunciations (CMU dict or g2p_en neural model), separated by `\|`                   |
 | first_letter       | First letter of the name                                                                               |
 | stresses           | Lexical stress pattern (0=unstressed, 1=primary, 2=secondary), separated by `\|` for multiple variants |
-| syllables          | Number of syllables                                                                                    |
+| syllables          | Number of syllables (estimated from spelling if no pronunciation available)                            |
 | alliteration       | Name contains any repeated phoneme (1 = yes)                                                           |
 | alliteration_first | First phoneme repeats later in the name (1 = yes)                                                      |
 | unisex_pct         | Minority gender share as % of total (0–50, where 50 = perfectly balanced); null if single-gender       |
@@ -164,7 +164,7 @@ The web viewer (`index.html`) uses [Pico CSS](https://picocss.com/) for styling,
 Three GitHub Actions workflows handle automation:
 
 - **CI** (`ci.yml`) — Runs linting (ruff), tests (pytest), and format checks (prettier) on every push and PR to main.
-- **Generate CSVs** (`generate.yml`) — Regenerates CSV files when `src/` or `raw/` changes on main, and auto-commits the result.
+- **Generate Data** (`generate.yml`) — Regenerates CSV files and the distribution graph when `src/`, `raw/`, or `images/generate_graph.py` changes on main. Uses g2p_en for neural pronunciation of OOV names. Auto-commits the result.
 - **Deploy Pages** (`pages.yml`) — Deploys to GitHub Pages when web assets or CSV files change on main.
 
 ## Datasets
@@ -192,9 +192,14 @@ When new SSA data is released (typically in May each year):
 
 1. Download the latest `names.zip` from the [SSA Baby Names](https://www.ssa.gov/oact/babynames/limits.html) page
 2. Extract the new `yobYYYY.txt` file(s) into `raw/`
-3. Regenerate the CSVs: `python src/babynames.py --verbose`
-4. Regenerate the graph: `python images/generate_graph.py`
-5. Verify results and commit
+3. Commit and push to main — the **Generate Data** workflow will automatically regenerate CSVs and the graph
+
+To regenerate locally instead:
+
+```bash
+python src/babynames.py --verbose
+python images/generate_graph.py
+```
 
 ## Credits
 

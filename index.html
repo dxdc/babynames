@@ -59,6 +59,14 @@
         --chip-active: var(--pico-primary);
       }
 
+      /* Gender-aware accent color for active chips, toggles, letters */
+      [data-gender="M"] {
+        --chip-active: var(--boys-color);
+      }
+      [data-gender="F"] {
+        --chip-active: var(--girls-color);
+      }
+
       body {
         padding-top: 0;
       }
@@ -341,24 +349,17 @@
               );
             }
           }
+        }
 
-          & .tabulator-footer {
-            background-color: color-mix(
-              in oklch,
-              var(--pico-background-color) 80%,
-              white
-            );
-            color: var(--pico-color);
-            border-color: var(--filter-border);
-            & .tabulator-page {
-              color: var(--pico-color);
-              border-color: var(--filter-border);
-              &.active {
-                background-color: var(--pico-primary);
-                color: #fff;
-              }
-            }
-          }
+        /* Tabulator tooltip in dark mode */
+        & .tabulator-tooltip {
+          background: color-mix(
+            in oklch,
+            var(--pico-background-color) 75%,
+            white
+          );
+          color: var(--pico-color);
+          border: 1px solid var(--filter-border);
         }
       }
     </style>
