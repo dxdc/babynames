@@ -369,13 +369,14 @@
               type="text"
               id="name-search"
               placeholder="Name..."
+              aria-label="Search by name"
               style="width: 8rem"
             />
           </div>
 
           <div class="filter-group">
             <label>Rank</label>
-            <select id="rank-filter">
+            <select id="rank-filter" aria-label="Filter by rank">
               <option value="">All</option>
               <option value="100">Top 100</option>
               <option value="500">Top 500</option>
@@ -386,7 +387,7 @@
 
           <div class="filter-group">
             <label>Syllables</label>
-            <select id="syllable-filter">
+            <select id="syllable-filter" aria-label="Filter by syllable count">
               <option value="">All</option>
               <option value="1">1</option>
               <option value="2">2</option>
@@ -397,12 +398,12 @@
 
           <div class="filter-group">
             <label>Year Min</label>
-            <input type="number" id="year-min" placeholder="1880" min="1880" />
+            <input type="number" id="year-min" placeholder="1880" min="1880" aria-label="Minimum year" />
           </div>
 
           <div class="filter-group">
             <label>Year Max</label>
-            <input type="number" id="year-max" placeholder="2023" max="2100" />
+            <input type="number" id="year-max" placeholder="2023" max="2100" aria-label="Maximum year" />
           </div>
 
           <div class="filter-group">
@@ -443,7 +444,9 @@
       </div>
 
       <div id="table-container">
-        <div class="loading" id="loading">Loading baby names...</div>
+        <div class="loading" id="loading" role="status" aria-live="polite">
+          Loading baby names...
+        </div>
       </div>
     </main>
 

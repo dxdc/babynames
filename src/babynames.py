@@ -102,7 +102,7 @@ def count_syllables(pronunciation: Pronunciation) -> int:
 def get_syllable_count(pronunciations: PronunciationList) -> int:
     """Average syllable count across all pronunciations, rounded to nearest int."""
     if pronunciations:
-        return int(round(mean(count_syllables(p) for p in pronunciations), 1))
+        return round(mean(count_syllables(p) for p in pronunciations))
     return 0
 
 

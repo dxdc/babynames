@@ -198,6 +198,10 @@ function loadData(gender) {
         allData.length.toLocaleString();
       applyFilters();
     },
+    error: function (err) {
+      document.getElementById("loading").textContent =
+        "Failed to load data. Please try refreshing the page.";
+    },
   });
 }
 
@@ -210,10 +214,16 @@ function applyFilters() {
 
   const filters = [];
 
-  // Name search
+  // Name search (case-insensitive via custom function)
   const search = document.getElementById("name-search").value.trim();
   if (search) {
-    filters.push({ field: "name", type: "like", value: search });
+    const searchLower = search.toLowerCase();
+    filters.push({
+      field: "name",
+      type: function (value) {
+        return String(value).toLowerCase().includes(searchLower);
+      },
+    });
   }
 
   // Rank
@@ -315,6 +325,15 @@ document.getElementById("name-search").addEventListener("input", function () {
     chip.className = "letter-chip";
     chip.textContent = letter;
     chip.dataset.letter = letter;
+    chip.tabIndex = 0;
+    chip.role = "button";
+    chip.setAttribute("aria-label", "Filter by letter " + letter);
+    chip.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        chip.click();
+      }
+    });
     chip.addEventListener("click", function () {
       if (activeFilters.letter === letter) {
         activeFilters.letter = null;
