@@ -106,7 +106,7 @@ Velma,F,2491
 Geneva,F,2467
 Elaine,F,2433
 Theresa,F,2426
-Beulah,F,2377
+Beulah,F,2376
 Dolores,F,2365
 Sara,F,2364
 Harriet,F,2360
@@ -5794,7 +5794,7 @@ Clarence,M,7221
 Carl,M,7010
 Louis,M,6966
 Willie,M,6887
-Eugene,M,6866
+Eugene,M,6867
 Earl,M,6533
 Roy,M,6355
 Fred,M,6298
@@ -5832,7 +5832,7 @@ Gerald,M,3157
 Vernon,M,3144
 Herman,M,3109
 Ray,M,3086
-Clyde,M,3068
+Clyde,M,3069
 Lester,M,3068
 Charlie,M,2785
 Philip,M,2700
@@ -6834,6 +6834,7 @@ Prentice,M,44
 Quincy,M,44
 Reese,M,44
 Romie,M,44
+Toney,M,44
 Wayman,M,44
 Willian,M,44
 Ashley,M,43
@@ -6851,7 +6852,6 @@ Olaf,M,43
 Ransom,M,43
 Sampson,M,43
 Titus,M,43
-Toney,M,43
 Willam,M,43
 Arno,M,42
 Author,M,42
@@ -8240,7 +8240,6 @@ Berkeley,M,12
 Bernabe,M,12
 Bernis,M,12
 Branch,M,12
-Brendan,M,12
 Burlin,M,12
 Carnie,M,12
 Casmir,M,12
@@ -8387,10 +8386,10 @@ Berthold,M,11
 Bertil,M,11
 Boniface,M,11
 Brad,M,11
+Brendan,M,11
 Bueford,M,11
 Bufford,M,11
 Burdett,M,11
-Burel,M,11
 Burrel,M,11
 Bynum,M,11
 Camilo,M,11
@@ -8563,6 +8562,7 @@ Brantley,M,10
 Brewster,M,10
 Bryson,M,10
 Burdell,M,10
+Burel,M,10
 Cain,M,10
 Carlson,M,10
 Caroll,M,10

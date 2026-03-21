@@ -343,10 +343,10 @@ Rita,F,40
 Vida,F,40
 Audrey,F,39
 Dena,F,39
-Donna,F,39
 Ellie,F,39
 Nan,F,39
 Catharine,F,38
+Donna,F,38
 Doris,F,38
 Leola,F,38
 Melvina,F,38

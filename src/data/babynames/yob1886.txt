@@ -1450,8 +1450,8 @@ Moses,M,84
 Cecil,M,83
 Melvin,M,83
 Owen,M,83
-Reuben,M,82
 Ollie,M,81
+Reuben,M,81
 Edmund,M,80
 Willard,M,80
 Virgil,M,79

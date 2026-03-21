@@ -218,7 +218,7 @@ Eliza,F,232
 Selma,F,231
 Elma,F,228
 Margie,F,228
-Johnnie,F,227
+Johnnie,F,226
 Maxine,F,219
 Muriel,F,219
 Lila,F,218

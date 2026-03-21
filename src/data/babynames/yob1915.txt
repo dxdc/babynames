@@ -940,7 +940,6 @@ Gaynell,F,50
 Jonnie,F,50
 Lahoma,F,50
 Louis,F,50
-Onie,F,50
 Veta,F,50
 Afton,F,49
 Alexandra,F,49
@@ -951,6 +950,7 @@ Gerda,F,49
 Herminia,F,49
 Libbie,F,49
 Meredith,F,49
+Onie,F,49
 Reatha,F,49
 Rozella,F,49
 Sandra,F,49
@@ -5007,7 +5007,7 @@ Samuel,M,4351
 Herbert,M,4341
 Eugene,M,4321
 Alfred,M,4231
-Michael,M,4080
+Michael,M,4079
 Leonard,M,3993
 Elmer,M,3802
 Andrew,M,3573
@@ -5128,7 +5128,7 @@ Karl,M,715
 Marshall,M,715
 August,M,709
 Sylvester,M,706
-Patrick,M,705
+Patrick,M,704
 Clayton,M,699
 Calvin,M,694
 Clinton,M,681
@@ -5833,7 +5833,6 @@ Lafayette,M,51
 Lawerence,M,51
 Melton,M,51
 Bryan,M,50
-Burley,M,50
 Elliot,M,50
 Gaston,M,50
 Gerhard,M,50
@@ -5846,6 +5845,7 @@ Sammy,M,50
 Waldemar,M,50
 Artie,M,49
 Axel,M,49
+Burley,M,49
 Burnell,M,49
 Doris,M,49
 Ernesto,M,49

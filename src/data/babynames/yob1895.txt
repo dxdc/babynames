@@ -1822,7 +1822,7 @@ Walter,M,2015
 Arthur,M,1666
 Fred,M,1483
 Albert,M,1391
-Clarence,M,1325
+Clarence,M,1326
 Willie,M,1071
 Roy,M,1028
 Paul,M,933
@@ -2017,8 +2017,8 @@ Dock,M,68
 Harley,M,68
 Silas,M,68
 Karl,M,67
-Bruce,M,66
 Pete,M,66
+Bruce,M,65
 Irvin,M,65
 Jeff,M,65
 Jimmie,M,65
@@ -2529,7 +2529,6 @@ Henery,M,10
 Ida,M,10
 Isham,M,10
 Jodie,M,10
-Jonathan,M,10
 June,M,10
 Lamar,M,10
 Larkin,M,10
@@ -2574,6 +2573,7 @@ Isreal,M,9
 Ivey,M,9
 Jennings,M,9
 Joesph,M,9
+Jonathan,M,9
 Jonnie,M,9
 Lawerence,M,9
 Lawson,M,9

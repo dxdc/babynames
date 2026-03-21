@@ -7,7 +7,7 @@ Virginia,F,19032
 Mildred,F,17880
 Betty,F,17638
 Frances,F,15993
-Elizabeth,F,15801
+Elizabeth,F,15800
 Anna,F,14476
 Evelyn,F,14278
 Doris,F,13152
@@ -515,9 +515,9 @@ Faith,F,190
 Gertie,F,190
 Valerie,F,190
 William,F,189
-Lauretta,F,188
 Veda,F,188
 Agatha,F,187
+Lauretta,F,187
 Lura,F,184
 Theodora,F,184
 Gene,F,183
@@ -1119,6 +1119,7 @@ Izetta,F,47
 Jesusa,F,47
 Johnny,F,47
 Olene,F,47
+Onie,F,47
 Raymond,F,47
 Venus,F,47
 Vilma,F,47
@@ -1130,7 +1131,6 @@ Corrie,F,46
 Eldred,F,46
 Emmaline,F,46
 Hermina,F,46
-Onie,F,46
 Serena,F,46
 Zetta,F,46
 Alexandra,F,45
@@ -1382,7 +1382,6 @@ Ethelda,F,34
 Ethlyn,F,34
 Evon,F,34
 Garnette,F,34
-Gina,F,34
 Henriette,F,34
 Ilda,F,34
 Kaye,F,34
@@ -1415,6 +1414,7 @@ Elta,F,33
 Floretta,F,33
 Gena,F,33
 Genevia,F,33
+Gina,F,33
 Helon,F,33
 Ilo,F,33
 Jocelyn,F,33
@@ -1548,6 +1548,7 @@ Betsey,F,29
 Carla,F,29
 Clementina,F,29
 Cuba,F,29
+Elene,F,29
 Enes,F,29
 Erin,F,29
 Evangelina,F,29
@@ -1581,7 +1582,6 @@ Clella,F,28
 Dannie,F,28
 Docia,F,28
 Dorothey,F,28
-Elene,F,28
 Elia,F,28
 Elnor,F,28
 Eura,F,28
@@ -5471,6 +5471,7 @@ Inetha,F,5
 Inocencia,F,5
 Inus,F,5
 Iowa,F,5
+Irie,F,5
 Irna,F,5
 Irving,F,5
 Iula,F,5
@@ -5881,7 +5882,7 @@ Richard,M,16376
 Thomas,M,15308
 Harold,M,13811
 Donald,M,13776
-Paul,M,13168
+Paul,M,13169
 Walter,M,13004
 Raymond,M,12645
 Henry,M,11411
@@ -5889,11 +5890,11 @@ Jack,M,10757
 Arthur,M,10527
 Albert,M,10158
 Harry,M,9731
-Kenneth,M,8960
+Kenneth,M,8959
 Ralph,M,8860
 Warren,M,7798
 David,M,7765
-Eugene,M,7718
+Eugene,M,7717
 Howard,M,7713
 Clarence,M,7332
 Louis,M,7247
@@ -5908,7 +5909,7 @@ Lawrence,M,5977
 Ernest,M,5697
 Leonard,M,5650
 Anthony,M,5239
-Stanley,M,5232
+Stanley,M,5231
 Herbert,M,5217
 Alfred,M,4925
 Samuel,M,4754

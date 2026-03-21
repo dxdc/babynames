@@ -61,7 +61,7 @@ Myrtle,F,3049
 Nellie,F,2952
 Betty,F,2933
 Kathryn,F,2901
-Jessie,F,2861
+Jessie,F,2860
 Stella,F,2771
 Willie,F,2759
 Minnie,F,2718
@@ -131,7 +131,7 @@ Susie,F,1165
 Flora,F,1152
 June,F,1148
 Muriel,F,1133
-Naomi,F,1128
+Naomi,F,1129
 Maria,F,1117
 Olga,F,1107
 Mable,F,1081
@@ -1022,7 +1022,6 @@ Serena,F,35
 Zena,F,35
 Alvena,F,34
 Atha,F,34
-Carl,F,34
 Hazelle,F,34
 Hermine,F,34
 Janis,F,34
@@ -1034,6 +1033,7 @@ Vertie,F,34
 Vlasta,F,34
 Aimee,F,33
 Alida,F,33
+Carl,F,33
 Clair,F,33
 Clifford,F,33
 Colleen,F,33
@@ -4206,7 +4206,7 @@ Zudora,F,5
 Zuella,F,5
 John,M,37947
 William,M,29753
-James,M,26263
+James,M,26262
 Robert,M,21188
 Joseph,M,18829
 George,M,17602

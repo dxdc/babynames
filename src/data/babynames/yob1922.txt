@@ -1,10 +1,10 @@
 Mary,F,72176
-Dorothy,F,37715
+Dorothy,F,37716
 Helen,F,32510
 Margaret,F,26862
 Ruth,F,23633
 Betty,F,20894
-Virginia,F,19145
+Virginia,F,19144
 Mildred,F,16412
 Elizabeth,F,15243
 Frances,F,15054
@@ -29,7 +29,7 @@ Eleanor,F,7852
 Edna,F,7622
 Annie,F,7476
 Thelma,F,7254
-Ethel,F,7245
+Ethel,F,7246
 Lucille,F,7151
 Edith,F,7136
 Lois,F,6946
@@ -139,7 +139,7 @@ Dora,F,1807
 Hattie,F,1780
 Cora,F,1762
 Anita,F,1761
-Lula,F,1758
+Lula,F,1759
 Madeline,F,1732
 Carolyn,F,1706
 Marilyn,F,1698
@@ -1272,7 +1272,6 @@ Annamay,F,38
 Ara,F,38
 Ardys,F,38
 Dorine,F,38
-Elene,F,38
 Exie,F,38
 Garnette,F,38
 Lelah,F,38
@@ -1288,6 +1287,7 @@ Annamarie,F,37
 Arvella,F,37
 Becky,F,37
 Celesta,F,37
+Elene,F,37
 Elfrieda,F,37
 Eola,F,37
 Estela,F,37
@@ -4532,7 +4532,6 @@ Carman,F,6
 Carmina,F,6
 Carrine,F,6
 Catherina,F,6
-Cathy,F,6
 Cecillia,F,6
 Celena,F,6
 Celie,F,6
@@ -5131,6 +5130,7 @@ Carolin,F,5
 Casimera,F,5
 Catheline,F,5
 Cathren,F,5
+Cathy,F,5
 Cecilie,F,5
 Ceclia,F,5
 Cellia,F,5
@@ -5789,7 +5789,7 @@ Zylpha,F,5
 Zylphia,F,5
 John,M,57281
 Robert,M,53796
-William,M,51113
+William,M,51112
 James,M,49803
 Charles,M,28839
 George,M,27350
@@ -5800,14 +5800,14 @@ Frank,M,16013
 Thomas,M,15261
 Donald,M,14913
 Harold,M,13593
-Paul,M,12923
+Paul,M,12922
 Walter,M,12631
 Raymond,M,12129
 Henry,M,11207
 Jack,M,10847
 Arthur,M,10114
 Albert,M,9896
-Kenneth,M,9257
+Kenneth,M,9258
 Harry,M,9077
 Ralph,M,8484
 David,M,7865
@@ -5839,12 +5839,12 @@ Russell,M,3965
 Melvin,M,3908
 Leo,M,3901
 Edwin,M,3827
-Andrew,M,3802
+Andrew,M,3803
 Elmer,M,3738
 Leroy,M,3671
 Marvin,M,3580
 Peter,M,3545
-Gerald,M,3542
+Gerald,M,3541
 Lloyd,M,3364
 Frederick,M,3353
 Floyd,M,3221
@@ -6038,7 +6038,7 @@ Boyd,M,508
 Erwin,M,508
 Roscoe,M,505
 Troy,M,502
-Tommy,M,497
+Tommy,M,498
 Freddie,M,496
 Larry,M,491
 Neil,M,489
@@ -9361,6 +9361,7 @@ Brantley,M,7
 Bryon,M,7
 Bryson,M,7
 Burdett,M,7
+Burel,M,7
 Burle,M,7
 Bynum,M,7
 Calloway,M,7
@@ -9700,7 +9701,6 @@ Brother,M,6
 Brownlow,M,6
 Bunnie,M,6
 Burch,M,6
-Burel,M,6
 Burnace,M,6
 Burnes,M,6
 Burnham,M,6

@@ -235,8 +235,8 @@ Ernestine,F,425
 Helene,F,425
 Teresa,F,424
 Margie,F,423
-Joan,F,412
 Elaine,F,411
+Joan,F,411
 Reba,F,410
 Annette,F,408
 Nannie,F,402

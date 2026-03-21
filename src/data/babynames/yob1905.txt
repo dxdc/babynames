@@ -344,7 +344,7 @@ Leta,F,98
 Lettie,F,98
 Lura,F,98
 Hulda,F,97
-Leota,F,96
+Leota,F,95
 Blanch,F,94
 Willa,F,92
 Yvonne,F,92
@@ -2270,8 +2270,8 @@ Howard,M,735
 Francis,M,685
 Herbert,M,681
 Lawrence,M,669
-Andrew,M,620
 Sam,M,620
+Andrew,M,619
 Elmer,M,602
 Eugene,M,593
 Alfred,M,591

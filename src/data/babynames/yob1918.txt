@@ -2,7 +2,7 @@ Mary,F,67365
 Helen,F,36148
 Dorothy,F,32030
 Margaret,F,27139
-Ruth,F,25534
+Ruth,F,25535
 Mildred,F,17258
 Virginia,F,16421
 Frances,F,16131
@@ -1068,7 +1068,6 @@ Elois,F,47
 Laurie,F,47
 Lorean,F,47
 Margarite,F,47
-Marlene,F,47
 Raymond,F,47
 Selina,F,47
 Arletta,F,46
@@ -1081,6 +1080,7 @@ Etha,F,46
 Flo,F,46
 Leocadia,F,46
 Mabelle,F,46
+Marlene,F,46
 Mertie,F,46
 Peggie,F,46
 Rilla,F,46
@@ -9581,7 +9581,6 @@ Lumir,M,6
 Luz,M,6
 Mancil,M,6
 March,M,6
-Margarita,M,6
 Marine,M,6
 Marlan,M,6
 Marwood,M,6
@@ -10151,6 +10150,7 @@ Marce,M,5
 Marcellous,M,5
 Marcy,M,5
 Marden,M,5
+Margarita,M,5
 Marguerite,M,5
 Marin,M,5
 Marl,M,5

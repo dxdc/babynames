@@ -1,7 +1,7 @@
 Mary,F,14275
 Helen,F,6129
 Anna,F,5098
-Margaret,F,5046
+Margaret,F,5045
 Ruth,F,4517
 Elizabeth,F,3724
 Marie,F,3469
@@ -2106,7 +2106,7 @@ Roy,M,975
 Carl,M,910
 Joe,M,895
 Louis,M,889
-Richard,M,863
+Richard,M,862
 Earl,M,837
 Jack,M,831
 Ralph,M,807

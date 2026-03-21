@@ -2922,6 +2922,7 @@ Hermie,F,10
 Hideko,F,10
 Ilma,F,10
 Ilva,F,10
+Iolanda,F,10
 Iverna,F,10
 Jeanine,F,10
 Jeannetta,F,10
@@ -3134,7 +3135,6 @@ Hyla,F,9
 Iantha,F,9
 Iline,F,9
 Inger,F,9
-Iolanda,F,9
 Irva,F,9
 Ivadell,F,9
 Ivalee,F,9
@@ -5297,8 +5297,8 @@ Wesley,M,1026
 Willis,M,990
 Rudolph,M,988
 Jerome,M,985
+Tom,M,971
 Emil,M,970
-Tom,M,970
 Wilson,M,912
 Otis,M,908
 Nathan,M,904
@@ -5656,8 +5656,8 @@ Clay,M,133
 Hal,M,133
 Salvador,M,133
 Gustave,M,132
-Lincoln,M,131
 Porter,M,131
+Lincoln,M,130
 Major,M,130
 Albin,M,128
 Antone,M,127
@@ -6172,6 +6172,7 @@ Therman,M,41
 Wheeler,M,41
 Wyman,M,41
 Boleslaw,M,40
+Burley,M,40
 Christ,M,40
 Cleon,M,40
 Elizabeth,M,40
@@ -6188,7 +6189,6 @@ Wardell,M,40
 Arnie,M,39
 Art,M,39
 Aurelio,M,39
-Burley,M,39
 Caleb,M,39
 Cedric,M,39
 Fidel,M,39

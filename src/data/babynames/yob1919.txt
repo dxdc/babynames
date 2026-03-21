@@ -1,8 +1,8 @@
 Mary,F,65836
 Helen,F,33706
-Dorothy,F,31734
+Dorothy,F,31733
 Margaret,F,26238
-Ruth,F,24563
+Ruth,F,24562
 Mildred,F,17300
 Virginia,F,15636
 Elizabeth,F,15287
@@ -5623,7 +5623,7 @@ Marvin,M,2997
 Frederick,M,2932
 Vernon,M,2929
 Charlie,M,2891
-Clyde,M,2885
+Clyde,M,2884
 Victor,M,2751
 Ray,M,2722
 Gerald,M,2689
@@ -6051,7 +6051,7 @@ Fay,M,148
 Anderson,M,147
 Jefferson,M,146
 Gale,M,145
-Isiah,M,144
+Isiah,M,145
 Kelly,M,144
 Ezra,M,143
 Harmon,M,143

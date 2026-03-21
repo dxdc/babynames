@@ -4,7 +4,7 @@ Emma,F,2367
 Elizabeth,F,2255
 Minnie,F,2035
 Margaret,F,1881
-Bertha,F,1681
+Bertha,F,1682
 Ida,F,1634
 Annie,F,1589
 Clara,F,1548
