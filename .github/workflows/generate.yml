@@ -15,8 +15,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install polars nltk cmudict
-      - run: python -c "import nltk; nltk.download('cmudict')"
+      - run: pip install polars cmudict
       - name: Generate CSVs
         working-directory: src
         run: python babynames.py --verbose --output-dir ..

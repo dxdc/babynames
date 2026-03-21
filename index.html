@@ -18,15 +18,31 @@
       }
 
       [data-theme="dark"] {
-        --filter-bg: color-mix(in oklch, var(--pico-background-color) 85%, white);
-        --filter-border: color-mix(in oklch, var(--pico-color) 25%, transparent);
+        --filter-bg: color-mix(
+          in oklch,
+          var(--pico-background-color) 85%,
+          white
+        );
+        --filter-border: color-mix(
+          in oklch,
+          var(--pico-color) 25%,
+          transparent
+        );
         --chip-bg: color-mix(in oklch, var(--pico-background-color) 75%, white);
         --chip-active: var(--pico-primary);
       }
 
       [data-theme="light"] {
-        --filter-bg: color-mix(in oklch, var(--pico-background-color) 95%, black);
-        --filter-border: color-mix(in oklch, var(--pico-color) 15%, transparent);
+        --filter-bg: color-mix(
+          in oklch,
+          var(--pico-background-color) 95%,
+          black
+        );
+        --filter-border: color-mix(
+          in oklch,
+          var(--pico-color) 15%,
+          transparent
+        );
         --chip-bg: color-mix(in oklch, var(--pico-background-color) 90%, black);
         --chip-active: var(--pico-primary);
       }
@@ -397,13 +413,25 @@
           </div>
 
           <div class="filter-group">
-            <label>Year Min</label>
-            <input type="number" id="year-min" placeholder="1880" min="1880" aria-label="Minimum year" />
+            <label>Active After</label>
+            <input
+              type="number"
+              id="year-min"
+              placeholder="1880"
+              min="1880"
+              aria-label="Show names still used after this year"
+            />
           </div>
 
           <div class="filter-group">
-            <label>Year Max</label>
-            <input type="number" id="year-max" placeholder="2023" max="2100" aria-label="Maximum year" />
+            <label>Active Before</label>
+            <input
+              type="number"
+              id="year-max"
+              placeholder="2023"
+              max="2100"
+              aria-label="Show names that existed before this year"
+            />
           </div>
 
           <div class="filter-group">

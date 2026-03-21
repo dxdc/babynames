@@ -240,16 +240,16 @@ function applyFilters() {
     filters.push({ field: "syllables", type: "=", value: Number(syllVal) });
   }
 
-  // Year min
+  // Active After: name was still in use after this year (year_max >= value)
   const yearMin = document.getElementById("year-min").value;
   if (yearMin) {
-    filters.push({ field: "year_min", type: ">=", value: Number(yearMin) });
+    filters.push({ field: "year_max", type: ">=", value: Number(yearMin) });
   }
 
-  // Year max
+  // Active Before: name existed before this year (year_min <= value)
   const yearMax = document.getElementById("year-max").value;
   if (yearMax) {
-    filters.push({ field: "year_max", type: "<=", value: Number(yearMax) });
+    filters.push({ field: "year_min", type: "<=", value: Number(yearMax) });
   }
 
   // Starting letter
@@ -277,8 +277,7 @@ function applyFilters() {
 function updateStats() {
   if (!table) return;
   const shown = table.getDataCount("active");
-  document.getElementById("shown-count").textContent =
-    shown.toLocaleString();
+  document.getElementById("shown-count").textContent = shown.toLocaleString();
 }
 
 // ---------------------------------------------------------------
@@ -288,11 +287,9 @@ function updateStats() {
 // Gender buttons
 document.querySelectorAll(".gender-btn").forEach(function (btn) {
   btn.addEventListener("click", function () {
-    document
-      .querySelectorAll(".gender-btn")
-      .forEach(function (b) {
-        b.classList.remove("active");
-      });
+    document.querySelectorAll(".gender-btn").forEach(function (b) {
+      b.classList.remove("active");
+    });
     btn.classList.add("active");
     loadData(btn.dataset.gender);
   });
@@ -306,15 +303,15 @@ document.getElementById("name-search").addEventListener("input", function () {
 });
 
 // Dropdowns and number inputs
-["rank-filter", "syllable-filter", "year-min", "year-max"].forEach(function (
-  id,
-) {
-  document.getElementById(id).addEventListener("change", applyFilters);
-  document.getElementById(id).addEventListener("input", function () {
-    clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(applyFilters, 300);
-  });
-});
+["rank-filter", "syllable-filter", "year-min", "year-max"].forEach(
+  function (id) {
+    document.getElementById(id).addEventListener("change", applyFilters);
+    document.getElementById(id).addEventListener("input", function () {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(applyFilters, 300);
+    });
+  },
+);
 
 // Letter chips
 (function () {
@@ -339,11 +336,9 @@ document.getElementById("name-search").addEventListener("input", function () {
         activeFilters.letter = null;
         chip.classList.remove("active");
       } else {
-        document
-          .querySelectorAll(".letter-chip")
-          .forEach(function (c) {
-            c.classList.remove("active");
-          });
+        document.querySelectorAll(".letter-chip").forEach(function (c) {
+          c.classList.remove("active");
+        });
         activeFilters.letter = letter;
         chip.classList.add("active");
       }

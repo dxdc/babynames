@@ -19,6 +19,7 @@ src = ["src", "tests"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "B", "SIM"]
+ignore = ["UP040"]  # TypeAlias -> type keyword; requires Python 3.12+ runtime
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

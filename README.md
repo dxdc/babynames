@@ -1,72 +1,60 @@
 # baby names
 
-This project was designed as a tool to help parents find names for their newborns.
+A tool to help parents find names for their newborns.
 
-With this list: Jonathan, Johnathan, Johnathon, Jonothan, Jonathon are now just considered alternative spellings for a single "name".
+Names like Jonathan, Johnathan, Johnathon, Jonothan, and Jonathon are treated as alternative spellings of a single name — so you only review each distinct name once.
 
-Using publicly-available datasets from the United States Social Security Administration, lists of baby names between the years of 1880 and 2023 were collated, de-duplicated by phonetic
-pronunciation using the [CMU Pronouncing Dictionary](https://en.wikipedia.org/wiki/CMU_Pronouncing_Dictionary), and then ordered by popularity.
+Using publicly-available datasets from the United States Social Security Administration, baby names from 1880 to 2023 were collated, de-duplicated by phonetic pronunciation using the [CMU Pronouncing Dictionary](https://en.wikipedia.org/wiki/CMU_Pronouncing_Dictionary), and ordered by popularity.
 
 ## How to Use
 
-The source code for this project is included, as are the compiled datasets:
+Browse the data using the [interactive web viewer](https://dxdc.github.io/babynames/), which supports filtering by:
 
-- [all-names.csv](all-names.csv), as well as [boys.csv](boys.csv) and [girls.csv](girls.csv)
+- **Gender** — boys or girls
+- **Name search** — case-insensitive substring match
+- **Rank** — top 100, 500, 1,000, or 5,000
+- **Syllable count** — 1, 2, 3, or 4+
+- **Year range** — "Active After" / "Active Before" (overlap-based, so classic names aren't excluded)
+- **Starting letter** — A through Z
+- **Biblical** and **Unisex** toggles
 
-You can also browse the data using the [interactive web viewer](https://dxdc.github.io/babynames/), which supports filtering by gender, rank, syllable count, starting letter, year range, biblical status, and unisex classification. Filter states are saved in the URL hash for easy sharing.
+Filter states are saved in the URL hash for easy sharing. Dark mode is also available.
 
-Recommendation: Review this list in order from top to bottom, applying any filters you wish.
+The compiled datasets are also available for download:
 
-The following columns are provided:
+- [all-names.csv](all-names.csv), [boys.csv](boys.csv), [girls.csv](girls.csv)
 
-| Header             | Description                                                                                                    |
-| ------------------ | -------------------------------------------------------------------------------------------------------------- |
-| rank               | Popularity index (1880-2023)                                                                                   |
-| name               | Baby name (most popular spelling)                                                                              |
-| spelling_variants  | Alternative spellings with the same pronunciation, separated by spaces                                         |
-| total_count        | Total number of babies born in the United States with this name (includes alternate spellings)                  |
-| cumulative_pct     | Cumulative percentage of babies born with this name (includes higher rows)                                     |
-| year_min           | Year this name was first used                                                                                  |
-| year_max           | Year this name was last used                                                                                   |
-| year_peak          | Most popular year for this name                                                                                |
-| biblical           | Biblical name (1 = yes)                                                                                        |
-| is_palindrome      | Name reads the same forwards and backwards (1 = yes)                                                           |
-| pronunciations     | ARPABET phonetic pronunciations, separated by ` \| ` for multiple variants                                     |
-| first_letter       | First letter of the name                                                                                       |
-| stresses           | Lexical stress pattern (0=unstressed, 1=primary, 2=secondary), separated by ` \| ` for multiple variants      |
-| syllables          | Number of syllables                                                                                            |
-| alliteration       | Name contains any repeated phoneme (1 = yes)                                                                   |
-| alliteration_first | First phoneme repeats later in the name (1 = yes)                                                              |
-| unisex             | Used by both genders with 15,000+ babies each, after 1970 (1 = yes)                                           |
+Recommendation: Review the list from top to bottom, applying any filters you wish. A few thousand names covers 90-95% of the most common names.
 
-## Observations
+### CSV Columns
 
-Reviewing a few thousand names is probably sufficient to find one that is relatively "normal", and encompasses 90-95% of the most common names.
-Unless you happen to be looking for a highly unique or specific name, that is a very reasonable number of options for review.
+| Header             | Description                                                                                               |
+| ------------------ | --------------------------------------------------------------------------------------------------------- |
+| rank               | Popularity rank (1880-2023)                                                                               |
+| name               | Baby name (most popular spelling)                                                                         |
+| spelling_variants  | Alternative spellings with the same pronunciation, separated by spaces                                    |
+| total_count        | Total babies born in the US with this name (includes alternate spellings)                                 |
+| cumulative_pct     | Cumulative percentage of babies born with this name (includes higher rows)                                |
+| year_min           | Year this name was first used                                                                             |
+| year_max           | Year this name was last used                                                                              |
+| year_peak          | Most popular year for this name                                                                           |
+| biblical           | Biblical name (1 = yes)                                                                                   |
+| is_palindrome      | Name reads the same forwards and backwards (1 = yes)                                                      |
+| pronunciations     | ARPABET phonetic pronunciations, separated by ` \| ` for multiple variants                                |
+| first_letter       | First letter of the name                                                                                  |
+| stresses           | Lexical stress pattern (0=unstressed, 1=primary, 2=secondary), separated by ` \| ` for multiple variants |
+| syllables          | Number of syllables                                                                                       |
+| alliteration       | Name contains any repeated phoneme (1 = yes)                                                              |
+| alliteration_first | First phoneme repeats later in the name (1 = yes)                                                         |
+| unisex             | Used by both genders with 15,000+ babies each, after 1970 (1 = yes)                                      |
 
 ## About
 
-Baby books are outdated. Mostly, they consist of name lists that expectant parents need to review with little or no context / direction. That is highly inefficient.
-
-Topics like:
-
-- Name popularity
-- Alternative spellings
-- Biblical names
-- Number of syllables
-- Starting letters
-- Old-fashioned names
-- Unisex names
-
-and more, are not considered.
-
-Furthermore, the datasets these baby books are using don't necessarily reflect reality, and reviewing similar lists of names from different resources multiple times is a waste of time.
-
-No helpful resources could be identified, so this project was created.
+Baby books are outdated — mostly name lists with no context for popularity, spelling variations, or historical trends. This project was created to fill that gap.
 
 ## Development
 
-Requires Python 3.12+ and the following dependencies:
+Requires Python 3.12+ with [Polars](https://pola.rs/) for data processing and the [cmudict](https://pypi.org/project/cmudict/) package for phonetic lookups.
 
 ```bash
 pip install polars cmudict
@@ -86,15 +74,17 @@ pip install pytest
 pytest tests/ -v
 ```
 
+### Web Viewer
+
+The web viewer (`index.html`) uses [Pico CSS](https://picocss.com/) for styling, [Tabulator](https://tabulator.info/) for the data grid, and [Papa Parse](https://papaparse.com/) for CSV parsing — all loaded from CDN with no build step required.
+
 ## Datasets
 
-This package uses two datasets (see `src/data`):
+This project uses two datasets (see `src/data`):
 
-- `babynames`: For each year from 1880 to 2023 the number of children of
-  each sex given each name. All names with more than 5 uses are given.
-  (Source: http://www.ssa.gov/oact/babynames/limits.html)
+- **babynames**: For each year from 1880 to 2023, the number of children of each sex given each name. All names with more than 5 uses are given. (Source: [SSA Baby Names](https://www.ssa.gov/oact/babynames/limits.html))
 
-- `biblical_names`: A collection of de-duplicated biblical names collected from the web.
+- **biblical_names**: A curated, de-duplicated collection of biblical names.
 
 ## How to contribute
 

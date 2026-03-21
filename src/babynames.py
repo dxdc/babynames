@@ -8,10 +8,11 @@ and enriches with features like syllable count, stress patterns, and biblical st
 import argparse
 import logging
 import re
-from functools import lru_cache
+from functools import cache
 from itertools import product as iterprod
 from pathlib import Path
 from statistics import mean
+from typing import TypeAlias
 
 import cmudict
 import polars as pl
@@ -21,10 +22,6 @@ log = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Type aliases
 # ---------------------------------------------------------------------------
-
-# With Python 3.12+ these can use the `type` statement instead:
-#   type Phonemes = list[str]
-from typing import TypeAlias
 
 Phonemes: TypeAlias = list[str]  # e.g. ["AH0", "B", "IY1"]
 Pronunciation: TypeAlias = str  # ARPABET string, e.g. "AH0 B IY1"
@@ -46,7 +43,7 @@ STRESS_SEPARATOR = " | "
 # ---------------------------------------------------------------------------
 
 
-@lru_cache(maxsize=None)
+@cache
 def split_into_subwords(word: str) -> list[Phonemes]:
     """Recursively split a word into CMU-dict sub-words and combine phonemes.
 
@@ -168,9 +165,7 @@ def find_peak_popularity_years(raw_data: pl.DataFrame) -> pl.DataFrame:
 
     When tied, the latest year wins.
     """
-    max_counts = raw_data.group_by(["name", "sex"]).agg(
-        pl.col("count").max().alias("count_max")
-    )
+    max_counts = raw_data.group_by(["name", "sex"]).agg(pl.col("count").max().alias("count_max"))
     with_max = raw_data.join(max_counts, on=["name", "sex"])
     return (
         with_max.filter(pl.col("count") == pl.col("count_max"))
@@ -210,7 +205,7 @@ def build_spelling_variants(df: pl.DataFrame) -> pl.DataFrame:
     # Build pronunciation -> names index
     pronunciation_to_names: dict[str, set[str]] = {}
     for name, pronunciations in zip(
-        df["name"].to_list(), df["pronunciations"].to_list()
+        df["name"].to_list(), df["pronunciations"].to_list(), strict=True
     ):
         for pronunciation in pronunciations:
             if pronunciation:
@@ -221,7 +216,7 @@ def build_spelling_variants(df: pl.DataFrame) -> pl.DataFrame:
 
     variants: list[str] = []
     groups: list[str] = []
-    for name, pronunciations in zip(names, pronunciations_list):
+    for name, pronunciations in zip(names, pronunciations_list, strict=True):
         all_related: set[str] = set()
         for pronunciation in pronunciations:
             if pronunciation in pronunciation_to_names:
@@ -314,9 +309,7 @@ def classify_unisex_names(
     df: pl.DataFrame, *, min_count: int = 15000, min_year: int = 1970
 ) -> pl.DataFrame:
     """Flag names used by both genders after min_year with at least min_count each."""
-    candidates = df.filter(
-        (pl.col("year_max") > min_year) & (pl.col("total_count") > min_count)
-    )
+    candidates = df.filter((pl.col("year_max") > min_year) & (pl.col("total_count") > min_count))
     unisex_names: set[str] = set(
         candidates.group_by("name")
         .agg(pl.col("sex").n_unique().alias("sex_count"))
@@ -404,16 +397,11 @@ def export_csvs(df: pl.DataFrame, output_dir: Path) -> None:
         gender_df = df.filter(pl.col("sex") == sex_code).drop("sex")
 
         gender_df = gender_df.with_columns(
-            pl.col("total_count")
-            .rank(method="dense", descending=True)
-            .cast(pl.Int64)
-            .alias("rank")
+            pl.col("total_count").rank(method="dense", descending=True).cast(pl.Int64).alias("rank")
         )
         total = gender_df["total_count"].sum()
         gender_df = gender_df.with_columns(
-            (100 * (pl.col("total_count").cum_sum() / total))
-            .round(1)
-            .alias("cumulative_pct")
+            (100 * (pl.col("total_count").cum_sum() / total)).round(1).alias("cumulative_pct")
         )
 
         final_cols = ["rank", "name", "spelling_variants", "total_count", "cumulative_pct"]

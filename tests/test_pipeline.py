@@ -2,8 +2,6 @@
 
 import polars as pl
 import pytest
-from pathlib import Path
-
 from src.babynames import (
     add_pronunciations,
     aggregate_counts,
@@ -156,12 +154,8 @@ class TestMergeSpellingVariants:
         result = merge_spelling_variants(prepared_df)
         # John + Jon combined count should be sum of both
         johns = result.filter((pl.col("name") == "John") & (pl.col("sex") == "M"))
-        john_only = prepared_df.filter(
-            (pl.col("name") == "John") & (pl.col("sex") == "M")
-        )
-        jon_only = prepared_df.filter(
-            (pl.col("name") == "Jon") & (pl.col("sex") == "M")
-        )
+        john_only = prepared_df.filter((pl.col("name") == "John") & (pl.col("sex") == "M"))
+        jon_only = prepared_df.filter((pl.col("name") == "Jon") & (pl.col("sex") == "M"))
         expected = john_only["total_count"][0] + jon_only["total_count"][0]
         assert johns["total_count"][0] == expected
 

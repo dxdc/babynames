@@ -1,10 +1,11 @@
 """Tests for CSV output format and integrity."""
 
-import polars as pl
-import pytest
 from pathlib import Path
 
+import polars as pl
+import pytest
 from src.babynames import (
+    PRONUNCIATION_SEPARATOR,
     add_pronunciations,
     aggregate_counts,
     build_spelling_variants,
@@ -16,7 +17,6 @@ from src.babynames import (
     load_biblical_names,
     load_ssa_data,
     merge_spelling_variants,
-    PRONUNCIATION_SEPARATOR,
 )
 
 
