@@ -6,12 +6,16 @@ const DATA_URLS = {
   F: "data/girls.csv",
 };
 
+const GENDER_LABELS = { M: "Boys", F: "Girls" };
+const TRENDING_WINDOW = 15; // "trending" = peaked within last N years of data
+
 const dataCache = {};
 let allData = [];
 let table = null;
 let tableReady = false;
 let currentGender = "M";
 let dataMaxYear = null;
+let dataMinYear = null;
 let activeFilters = {
   letters: [],
   biblical: false,
@@ -124,10 +128,11 @@ function initTable(data, onReady) {
       },
       {
         title: "Unisex%",
-        field: "unisex_ratio",
+        field: "unisex_pct",
         sorter: "number",
         width: 80,
         headerFilter: false,
+        tooltip: "Minority gender share (50% = perfectly balanced)",
         formatter: function (cell) {
           const val = cell.getValue();
           return val != null ? val + "%" : "";
@@ -198,32 +203,38 @@ function initTable(data, onReady) {
 }
 
 // ---------------------------------------------------------------
-// Dynamic year detection
+// Dynamic year detection and data info
 // ---------------------------------------------------------------
 
-function detectMaxYear(data) {
-  let maxYear = 0;
+function detectYearRange(data) {
+  let minY = 9999;
+  let maxY = 0;
   for (let i = 0; i < data.length; i++) {
-    const ym = Number(data[i].year_max);
-    if (ym > maxYear) maxYear = ym;
+    const ymin = Number(data[i].year_min);
+    const ymax = Number(data[i].year_max);
+    if (ymin < minY) minY = ymin;
+    if (ymax > maxY) maxY = ymax;
   }
-  return maxYear || new Date().getFullYear();
+  return { min: minY || 1880, max: maxY || new Date().getFullYear() };
 }
 
-function updateYearReferences(maxYear) {
+function updatePageMeta() {
+  if (!dataMinYear || !dataMaxYear) return;
   document.title =
-    "Baby Names \u2013 US Baby Name Search & Explorer (1880\u2013" +
-    maxYear +
+    "Baby Names \u2013 US Baby Name Search & Explorer (" +
+    dataMinYear +
+    "\u2013" +
+    dataMaxYear +
     ")";
-  const metaDesc = document.querySelector('meta[name="description"]');
-  if (metaDesc) {
-    metaDesc.setAttribute(
-      "content",
-      "Browse and filter US baby names from 1880\u2013" +
-        maxYear +
-        ", phonetically de-duplicated using the CMU Pronouncing Dictionary. Search by gender, popularity rank, syllables, year range, starting letter, name length, peak decade, biblical, unisex, trending, palindrome, and alliteration. Free downloadable CSV datasets.",
-    );
-  }
+}
+
+function updateDataInfo() {
+  const label = GENDER_LABELS[currentGender] || currentGender;
+  const count = allData.length.toLocaleString();
+  const range =
+    dataMinYear && dataMaxYear ? dataMinYear + "\u2013" + dataMaxYear : "";
+  document.getElementById("data-info").textContent =
+    label + " \u00b7 " + count + " names" + (range ? " \u00b7 " + range : "");
 }
 
 // ---------------------------------------------------------------
@@ -239,6 +250,7 @@ function loadData(gender) {
     allData = dataCache[gender];
     document.getElementById("total-count").textContent =
       allData.length.toLocaleString();
+    updateDataInfo();
 
     if (!table) {
       initTable(allData, function () {
@@ -268,7 +280,6 @@ function loadData(gender) {
     skipEmptyLines: true,
     dynamicTyping: true,
     complete: function (results) {
-      // Ignore stale responses from a previous gender switch
       if (gen !== loadData._gen) return;
 
       loadingEl.style.display = "none";
@@ -276,12 +287,15 @@ function loadData(gender) {
       dataCache[gender] = allData;
 
       if (!dataMaxYear) {
-        dataMaxYear = detectMaxYear(allData);
-        updateYearReferences(dataMaxYear);
+        const range = detectYearRange(allData);
+        dataMinYear = range.min;
+        dataMaxYear = range.max;
+        updatePageMeta();
       }
 
       document.getElementById("total-count").textContent =
         allData.length.toLocaleString();
+      updateDataInfo();
 
       if (!table) {
         initTable(allData, function () {
@@ -324,23 +338,25 @@ function applyFilters() {
   const decadeVal = document.getElementById("decade-filter").value;
   const decadeNum = decadeVal ? Number(decadeVal) : 0;
 
-  // Year combo filters
-  const firstDir = document.getElementById("first-dir").value;
-  const firstYearStr = document.getElementById("first-year").value;
-  const firstYear = firstYearStr ? Number(firstYearStr) : 0;
-  const lastDir = document.getElementById("last-dir").value;
-  const lastYearStr = document.getElementById("last-year").value;
-  const lastYear = lastYearStr ? Number(lastYearStr) : 0;
+  // Year filter
+  const yearMode = document.getElementById("year-mode").value;
+  const yearValStr = document.getElementById("year-value").value;
+  const yearVal = yearValStr ? Number(yearValStr) : 0;
+
+  // Unisex dropdown
+  const unisexVal = document.getElementById("unisex-filter").value;
+  const unisexMin = unisexVal ? Number(unisexVal) : 0;
 
   // Toggle filters
   const letterFilters = activeFilters.letters;
   const biblicalFilter = activeFilters.biblical;
-  const unisexVal = document.getElementById("unisex-filter").value;
-  const unisexMin = unisexVal ? Number(unisexVal) : 0;
   const trendingFilter = activeFilters.trending;
   const palindromeFilter = activeFilters.palindrome;
   const alliterationFilter = activeFilters.alliteration;
   const hasVariantsFilter = activeFilters.hasVariants;
+
+  // Trending threshold: peaked within last TRENDING_WINDOW years of data
+  const trendingCutoff = dataMaxYear ? dataMaxYear - TRENDING_WINDOW + 1 : 2010;
 
   const hasAnyFilter =
     searchLower ||
@@ -348,11 +364,10 @@ function applyFilters() {
     syllNum ||
     lengthVal ||
     decadeNum ||
-    firstYear ||
-    lastYear ||
+    (yearMode && yearVal) ||
+    unisexMin ||
     letterFilters.length > 0 ||
     biblicalFilter ||
-    unisexMin ||
     trendingFilter ||
     palindromeFilter ||
     alliterationFilter ||
@@ -365,7 +380,7 @@ function applyFilters() {
   }
 
   table.setFilter(function (data) {
-    // Name search (case-insensitive, also searches spelling variants)
+    // Name search
     if (searchLower) {
       const nameMatch = String(data.name).toLowerCase().includes(searchLower);
       if (!nameMatch) {
@@ -389,7 +404,7 @@ function applyFilters() {
       if (data.syllables !== syllNum) return false;
     }
 
-    // Name length
+    // Name length (primary spelling only)
     if (lengthVal) {
       const nameLen = String(data.name).length;
       if (lengthVal === "short" && nameLen > 4) return false;
@@ -400,7 +415,6 @@ function applyFilters() {
     // Peak decade
     if (decadeNum) {
       if (decadeNum === 1940) {
-        // "1940s & earlier"
         if (data.year_peak >= 1950) return false;
       } else {
         if (data.year_peak < decadeNum || data.year_peak >= decadeNum + 10)
@@ -408,17 +422,21 @@ function applyFilters() {
       }
     }
 
-    // First Used (year_min)
-    if (firstYear) {
-      if (firstDir === "after" && data.year_min < firstYear) return false;
-      if (firstDir === "before" && data.year_min > firstYear) return false;
+    // Year filter
+    if (yearMode && yearVal) {
+      if (yearMode === "appeared-after" && data.year_min < yearVal)
+        return false;
+      if (yearMode === "appeared-before" && data.year_min > yearVal)
+        return false;
+      if (yearMode === "retired-before" && data.year_max > yearVal)
+        return false;
+      if (yearMode === "still-used-after" && data.year_max < yearVal)
+        return false;
     }
 
-    // Last Used (year_max)
-    if (lastYear) {
-      if (lastDir === "after" && data.year_max < lastYear) return false;
-      if (lastDir === "before" && data.year_max > lastYear) return false;
-    }
+    // Unisex share
+    if (unisexMin && (data.unisex_pct == null || data.unisex_pct < unisexMin))
+      return false;
 
     // Starting letters (multi-select)
     if (
@@ -430,12 +448,7 @@ function applyFilters() {
 
     // Boolean toggles
     if (biblicalFilter && data.biblical != 1) return false;
-    if (
-      unisexMin &&
-      (data.unisex_ratio == null || data.unisex_ratio < unisexMin)
-    )
-      return false;
-    if (trendingFilter && data.year_peak < 2010) return false;
+    if (trendingFilter && data.year_peak < trendingCutoff) return false;
     if (palindromeFilter && data.is_palindrome != 1) return false;
     if (alliterationFilter && data.alliteration != 1) return false;
     if (hasVariantsFilter && !data.spelling_variants) return false;
@@ -479,14 +492,13 @@ document.getElementById("name-search").addEventListener("input", function () {
   "syllable-filter",
   "length-filter",
   "decade-filter",
+  "year-mode",
   "unisex-filter",
-  "first-dir",
-  "last-dir",
 ].forEach(function (id) {
   document.getElementById(id).addEventListener("change", applyFilters);
 });
 
-// Year inputs
+// Year input
 const YEAR_MIN = 1880;
 const YEAR_MAX = new Date().getFullYear();
 
@@ -498,8 +510,8 @@ function clampYear(value, lo, hi) {
   return String(n);
 }
 
-["first-year", "last-year"].forEach(function (id) {
-  const el = document.getElementById(id);
+(function () {
+  const el = document.getElementById("year-value");
   el.addEventListener("input", function () {
     this.value = this.value.replace(/[^0-9]/g, "");
     clearTimeout(searchTimeout);
@@ -511,7 +523,7 @@ function clampYear(value, lo, hi) {
     }
     applyFilters();
   });
-});
+})();
 
 // Letter chips — multi-select
 (function () {
@@ -583,11 +595,9 @@ document.getElementById("clear-filters").addEventListener("click", function () {
   document.getElementById("syllable-filter").value = "";
   document.getElementById("length-filter").value = "";
   document.getElementById("decade-filter").value = "";
+  document.getElementById("year-mode").value = "";
+  document.getElementById("year-value").value = "";
   document.getElementById("unisex-filter").value = "";
-  document.getElementById("first-dir").value = "after";
-  document.getElementById("first-year").value = "";
-  document.getElementById("last-dir").value = "after";
-  document.getElementById("last-year").value = "";
   activeFilters.letters = [];
   activeFilters.biblical = false;
   activeFilters.trending = false;
@@ -641,25 +651,21 @@ function saveStateToHash() {
   const decade = document.getElementById("decade-filter").value;
   if (decade) params.set("decade", decade);
 
-  // Year combos
-  const firstYear = document.getElementById("first-year").value;
-  if (firstYear) {
-    const firstDir = document.getElementById("first-dir").value;
-    params.set("fy", firstYear);
-    if (firstDir !== "after") params.set("fd", firstDir);
+  // Year filter
+  const yearMode = document.getElementById("year-mode").value;
+  const yearVal = document.getElementById("year-value").value;
+  if (yearMode && yearVal) {
+    params.set("ym", yearMode);
+    params.set("yv", yearVal);
   }
-  const lastYear = document.getElementById("last-year").value;
-  if (lastYear) {
-    const lastDir = document.getElementById("last-dir").value;
-    params.set("ly", lastYear);
-    if (lastDir !== "after") params.set("ld", lastDir);
-  }
+
+  // Unisex
+  const unisex = document.getElementById("unisex-filter").value;
+  if (unisex) params.set("unisex", unisex);
 
   if (activeFilters.letters.length > 0)
     params.set("letters", [...activeFilters.letters].sort().join(","));
   if (activeFilters.biblical) params.set("biblical", "1");
-  const unisex = document.getElementById("unisex-filter").value;
-  if (unisex) params.set("unisex", unisex);
   if (activeFilters.trending) params.set("trending", "1");
   if (activeFilters.palindrome) params.set("palindrome", "1");
   if (activeFilters.alliteration) params.set("alliteration", "1");
@@ -695,17 +701,15 @@ function loadStateFromHash() {
   if (params.get("decade"))
     document.getElementById("decade-filter").value = params.get("decade");
 
-  // Year combos
-  if (params.get("fy")) {
-    document.getElementById("first-year").value = params.get("fy");
-    if (params.get("fd"))
-      document.getElementById("first-dir").value = params.get("fd");
+  // Year filter
+  if (params.get("ym") && params.get("yv")) {
+    document.getElementById("year-mode").value = params.get("ym");
+    document.getElementById("year-value").value = params.get("yv");
   }
-  if (params.get("ly")) {
-    document.getElementById("last-year").value = params.get("ly");
-    if (params.get("ld"))
-      document.getElementById("last-dir").value = params.get("ld");
-  }
+
+  // Unisex
+  if (params.get("unisex"))
+    document.getElementById("unisex-filter").value = params.get("unisex");
 
   // Multi-select letters
   const lettersParam = params.get("letters");
@@ -738,10 +742,6 @@ function loadStateFromHash() {
       chip.setAttribute("aria-pressed", "true");
     }
   }
-
-  // Unisex ratio dropdown
-  if (params.get("unisex"))
-    document.getElementById("unisex-filter").value = params.get("unisex");
 
   // Boolean toggles
   ["biblical", "trending", "palindrome", "alliteration", "hasVariants"].forEach(

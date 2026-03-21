@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="Browse and filter US baby names from 1880–present, phonetically de-duplicated using the CMU Pronouncing Dictionary. Search by gender, popularity rank, syllables, name length, peak decade, year range, starting letter, unisex ratio, biblical, trending, palindrome, alliteration, and spelling variants. Free downloadable CSV datasets."
+      content="Browse and filter US baby names from 1880–present, phonetically de-duplicated using the CMU Pronouncing Dictionary. Search by gender, popularity rank, syllables, name length, peak decade, year range, starting letter, unisex share, biblical, trending, palindrome, alliteration, and spelling variants. Free downloadable CSV datasets."
     />
     <meta
       name="keywords"
@@ -23,6 +23,8 @@
     <style>
       :root {
         --pico-font-size: 15px;
+        --boys-color: oklch(0.55 0.15 250);
+        --girls-color: oklch(0.55 0.18 15);
       }
 
       [data-theme="dark"] {
@@ -38,6 +40,8 @@
         );
         --chip-bg: color-mix(in oklch, var(--pico-background-color) 75%, white);
         --chip-active: var(--pico-primary);
+        --boys-color: oklch(0.65 0.15 250);
+        --girls-color: oklch(0.65 0.18 15);
       }
 
       [data-theme="light"] {
@@ -71,19 +75,16 @@
         justify-content: space-between;
         flex-wrap: wrap;
         gap: 0.5rem;
-
         & h1 {
           margin: 0;
           font-size: 1.3rem;
         }
-
         & .nav-links {
           display: flex;
           gap: 0.75rem;
           align-items: center;
           flex-wrap: wrap;
         }
-
         & a {
           font-size: 0.85rem;
         }
@@ -103,7 +104,6 @@
         gap: 0.75rem;
         align-items: flex-end;
       }
-
       .filter-row + .filter-row {
         margin-top: 0.75rem;
       }
@@ -112,7 +112,6 @@
         display: flex;
         flex-direction: column;
         gap: 0.25rem;
-
         & label {
           font-size: 0.75rem;
           font-weight: 600;
@@ -120,7 +119,6 @@
           letter-spacing: 0.05em;
           margin: 0;
         }
-
         & select,
         & input[type="text"] {
           padding: 0.3rem 0.5rem;
@@ -128,21 +126,15 @@
           margin: 0;
           height: auto;
         }
-
         & input.year-input {
           width: 5rem;
         }
       }
 
-      .year-combo {
+      .year-filter-row {
         display: flex;
-        gap: 0.25rem;
+        gap: 0.35rem;
         align-items: center;
-
-        & select {
-          width: auto;
-          min-width: 5rem;
-        }
       }
 
       .letter-chips {
@@ -150,7 +142,6 @@
         flex-wrap: wrap;
         gap: 0.2rem;
       }
-
       .letter-chip {
         display: inline-flex;
         align-items: center;
@@ -165,11 +156,9 @@
         border: 1px solid transparent;
         color: var(--pico-color);
         transition: all 0.15s;
-
         &:hover {
           border-color: var(--pico-primary);
         }
-
         &.active {
           background: var(--chip-active);
           color: #fff;
@@ -186,17 +175,14 @@
         background: var(--chip-bg);
         color: var(--pico-color);
         transition: all 0.15s;
-
         &.boys.active {
-          background: oklch(0.45 0.12 250);
+          background: var(--boys-color);
           color: #fff;
         }
-
         &.girls.active {
-          background: oklch(0.45 0.15 15);
+          background: var(--girls-color);
           color: #fff;
         }
-
         &:not(.active):hover {
           border-color: var(--pico-primary);
         }
@@ -207,7 +193,6 @@
         gap: 0.25rem;
         flex-wrap: wrap;
       }
-
       .toggle-btn {
         padding: 0.3rem 0.7rem;
         font-size: 0.8rem;
@@ -217,11 +202,9 @@
         border: 1px solid transparent;
         color: var(--pico-color);
         transition: all 0.15s;
-
         &:hover {
           border-color: var(--pico-primary);
         }
-
         &.active {
           background: var(--chip-active);
           color: #fff;
@@ -235,11 +218,16 @@
         padding: 0.5rem 0;
         font-size: 0.85rem;
         color: var(--pico-muted-color);
-
         & .count {
           font-weight: 600;
           color: var(--pico-color);
         }
+      }
+
+      .data-info {
+        font-size: 0.75rem;
+        color: var(--pico-muted-color);
+        padding-bottom: 0.25rem;
       }
 
       .clear-btn {
@@ -250,7 +238,6 @@
         color: var(--pico-primary);
         text-decoration: underline;
         padding: 0;
-
         &:hover {
           color: var(--pico-primary-hover);
         }
@@ -287,30 +274,25 @@
         .filter-panel {
           padding: 0.75rem;
         }
-
         .filter-row {
           gap: 0.5rem;
         }
-
         .letter-chips {
           max-height: 3.8rem;
           overflow: hidden;
-
           &.expanded {
             max-height: none;
           }
         }
-
         .letter-chips-toggle {
           display: inline-block;
         }
-
         nav.top-nav .nav-links {
           font-size: 0.8rem;
         }
       }
 
-      /* Tabulator dark mode overrides */
+      /* Tabulator theme overrides */
       [data-theme="dark"] {
         & .tabulator {
           background-color: var(--pico-background-color);
@@ -320,20 +302,18 @@
           & .tabulator-header {
             background-color: color-mix(
               in oklch,
-              var(--pico-background-color) 85%,
+              var(--pico-background-color) 80%,
               white
             );
             color: var(--pico-color);
             border-color: var(--filter-border);
-
             & .tabulator-col {
               background-color: color-mix(
                 in oklch,
-                var(--pico-background-color) 85%,
+                var(--pico-background-color) 80%,
                 white
               );
               border-color: var(--filter-border);
-
               & .tabulator-col-content {
                 color: var(--pico-color);
               }
@@ -343,19 +323,16 @@
           & .tabulator-tableholder .tabulator-table .tabulator-row {
             background-color: var(--pico-background-color);
             color: var(--pico-color);
-
             &:hover {
               background-color: color-mix(
                 in oklch,
-                var(--pico-background-color) 75%,
+                var(--pico-background-color) 70%,
                 white
-              );
+              ) !important;
             }
-
             & .tabulator-cell {
               border-color: var(--filter-border);
             }
-
             &.tabulator-row-even {
               background-color: color-mix(
                 in oklch,
@@ -368,16 +345,14 @@
           & .tabulator-footer {
             background-color: color-mix(
               in oklch,
-              var(--pico-background-color) 85%,
+              var(--pico-background-color) 80%,
               white
             );
             color: var(--pico-color);
             border-color: var(--filter-border);
-
             & .tabulator-page {
               color: var(--pico-color);
               border-color: var(--filter-border);
-
               &.active {
                 background-color: var(--pico-primary);
                 color: #fff;
@@ -456,7 +431,11 @@
 
           <div class="filter-group">
             <label>Length</label>
-            <select id="length-filter" aria-label="Filter by name length">
+            <select
+              id="length-filter"
+              aria-label="Filter by name length"
+              title="Length of primary spelling only"
+            >
               <option value="">All</option>
               <option value="short">Short (≤4)</option>
               <option value="medium">Medium (5–6)</option>
@@ -489,56 +468,44 @@
           </div>
         </div>
 
-        <!-- Row 2: year filters + traits -->
+        <!-- Row 2: year filter + unisex + traits -->
         <div class="filter-row">
           <div class="filter-group">
-            <label>First Used</label>
-            <div class="year-combo">
-              <select id="first-dir" aria-label="First used direction">
-                <option value="after">after</option>
-                <option value="before">before</option>
+            <label>Year Filter</label>
+            <div class="year-filter-row">
+              <select id="year-mode" aria-label="Year filter mode">
+                <option value="">None</option>
+                <option value="appeared-after">Appeared after</option>
+                <option value="appeared-before">Appeared before</option>
+                <option value="retired-before">Retired before</option>
+                <option value="still-used-after">Still used after</option>
               </select>
               <input
                 type="text"
                 inputmode="numeric"
                 pattern="[0-9]*"
                 class="year-input"
-                id="first-year"
+                id="year-value"
                 placeholder="Year"
                 maxlength="4"
-                aria-label="First used year"
-              />
-            </div>
-          </div>
-
-          <div class="filter-group">
-            <label>Last Used</label>
-            <div class="year-combo">
-              <select id="last-dir" aria-label="Last used direction">
-                <option value="after">after</option>
-                <option value="before">before</option>
-              </select>
-              <input
-                type="text"
-                inputmode="numeric"
-                pattern="[0-9]*"
-                class="year-input"
-                id="last-year"
-                placeholder="Year"
-                maxlength="4"
-                aria-label="Last used year"
+                aria-label="Year value"
               />
             </div>
           </div>
 
           <div class="filter-group">
             <label>Unisex</label>
-            <select id="unisex-filter" aria-label="Filter by unisex ratio">
+            <select
+              id="unisex-filter"
+              aria-label="Filter by unisex share"
+              title="Minimum % of the minority gender (50% = perfectly balanced)"
+            >
               <option value="">All</option>
-              <option value="5">≥5%</option>
-              <option value="10">≥10%</option>
-              <option value="20">≥20%</option>
-              <option value="33">≥33%</option>
+              <option value="5">≥5% minority</option>
+              <option value="10">≥10% minority</option>
+              <option value="20">≥20% minority</option>
+              <option value="30">≥30% minority</option>
+              <option value="40">≥40% minority</option>
             </select>
           </div>
 
@@ -556,7 +523,7 @@
                 class="toggle-btn filter-toggle"
                 data-filter="trending"
                 aria-pressed="false"
-                title="Name peaked in popularity in the 2010s or later"
+                title="Name peaked in the most recent 15 years of data"
               >
                 Trending
               </button>
@@ -603,6 +570,7 @@
           >Showing <span class="count" id="shown-count">0</span> of
           <span class="count" id="total-count">0</span> names</span
         >
+        <span class="data-info" id="data-info"></span>
       </div>
 
       <div
@@ -612,7 +580,7 @@
         aria-live="polite"
         style="display: none"
       >
-        Loading baby names...
+        Loading baby names…
       </div>
 
       <div id="table-container"></div>

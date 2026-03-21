@@ -411,14 +411,17 @@ def classify_unisex_names(
     min_count: int = 5000,
     min_year: int = 1970,
 ) -> pl.DataFrame:
-    """Compute unisex ratio for names used by both genders.
+    """Compute unisex percentage for names used by both genders.
 
     For each name that appears in both M and F datasets (with year_max > min_year
-    and total_count > min_count for both), computes the minority/majority gender
-    ratio as a percentage (0–100). Names that don't qualify get null.
+    and total_count > min_count for both), computes the minority gender's share
+    of the total as a percentage (0–50, where 50 = perfectly balanced).
 
-    The ratio column lets users filter by their own threshold in the web viewer
-    (e.g., ≥5% for broad inclusion, ≥20% for truly gender-neutral names).
+    For example: Jordan has 419k boys + 139k girls = 24.9% minority share.
+    This value appears in both boys.csv and girls.csv, meaning "24.9% of all
+    Jordans are the minority gender."
+
+    Names that don't appear in both genders (or don't meet thresholds) get null.
     """
     candidates = df.filter((pl.col("year_max") > min_year) & (pl.col("total_count") > min_count))
 
@@ -427,27 +430,27 @@ def classify_unisex_names(
     for row in candidates.iter_rows(named=True):
         name_sex_counts.setdefault(row["name"], {})[row["sex"]] = row["total_count"]
 
-    # Compute ratio for names with both genders
-    name_ratios: dict[str, float] = {}
+    # Compute minority share for names with both genders
+    name_pcts: dict[str, float] = {}
     for name, sex_counts in name_sex_counts.items():
         if len(sex_counts) < 2:
             continue
         counts = list(sex_counts.values())
         minority = min(counts)
-        majority = max(counts)
-        name_ratios[name] = round(100 * minority / majority, 1)
+        total = sum(counts)
+        name_pcts[name] = round(100 * minority / total, 1)
 
     log.info(
-        "Computed unisex ratio for %d names (min count %d, after %d)",
-        len(name_ratios),
+        "Computed unisex share for %d names (min count %d, after %d)",
+        len(name_pcts),
         min_count,
         min_year,
     )
 
     return df.with_columns(
         pl.Series(
-            "unisex_ratio",
-            [name_ratios.get(name) for name in df["name"].to_list()],
+            "unisex_pct",
+            [name_pcts.get(name) for name in df["name"].to_list()],
             dtype=pl.Float64,
         )
     )
@@ -485,7 +488,7 @@ OUTPUT_COLUMNS: list[str] = [
     "syllables",
     "alliteration",
     "alliteration_first",
-    "unisex_ratio",
+    "unisex_pct",
 ]
 
 

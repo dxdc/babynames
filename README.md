@@ -14,12 +14,12 @@ Browse the data using the [interactive web viewer](https://dxdc.github.io/babyna
 - **Name search** — case-insensitive substring match (also searches spelling variants)
 - **Rank** — top 100, 500, 1,000, or 5,000
 - **Syllable count** — 1, 2, 3, or 4+
-- **Name length** — short (≤4 chars), medium (5–6), or long (≥7)
+- **Name length** — short (≤4 chars), medium (5–6), or long (≥7), based on primary spelling
 - **Peak decade** — when the name was most popular (2020s, 2010s, … 1940s & earlier)
-- **First used / Last used** — each with an after/before direction and year input (e.g., "First used after 1950" finds modern names; "Last used before 1960" finds extinct names)
+- **Year filter** — single dropdown with clear modes: "Appeared after" (modern names), "Appeared before" (vintage names), "Retired before" (extinct names), "Still used after" (active names)
 - **Starting letter** — A through Z (multi-select: click several letters to combine)
-- **Unisex** — dropdown to filter by gender-ratio threshold (≥5%, ≥10%, ≥20%, ≥33%)
-- **Traits** — Biblical, Trending (peaked 2010+), Palindrome, Alliteration, and Has Variants toggles
+- **Unisex** — dropdown to filter by minority gender share (≥5%, ≥10%, ≥20%, ≥30%, ≥40% of total)
+- **Traits** — Biblical, Trending (peaked within last 15 years), Palindrome, Alliteration, and Has Variants toggles
 
 Filter states are saved in the URL hash for easy sharing. Dark mode is also available.
 
@@ -55,7 +55,7 @@ As the chart shows, boys' names are more concentrated (775 names covers 90%), wh
 | syllables          | Number of syllables                                                                                    |
 | alliteration       | Name contains any repeated phoneme (1 = yes)                                                           |
 | alliteration_first | First phoneme repeats later in the name (1 = yes)                                                      |
-| unisex_ratio       | Minority/majority gender ratio as a percentage; null if not used by both genders                       |
+| unisex_pct         | Minority gender share as % of total (0–50, where 50 = perfectly balanced); null if single-gender       |
 
 ## About
 

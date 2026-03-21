@@ -198,21 +198,21 @@ class TestClassifyUnisexNames:
         agg = aggregate_counts(df)
         result = classify_unisex_names(agg, min_count=100, min_year=2019)
         jordan = result.filter(pl.col("name") == "Jordan")
-        assert any(v is not None and v > 0 for v in jordan["unisex_ratio"].to_list())
+        assert any(v is not None and v > 0 for v in jordan["unisex_pct"].to_list())
 
     def test_liam_not_unisex(self, ssa_dir) -> None:
         df = load_ssa_data(ssa_dir)
         agg = aggregate_counts(df)
         result = classify_unisex_names(agg, min_count=100, min_year=2019)
         liam = result.filter(pl.col("name") == "Liam")
-        assert liam["unisex_ratio"][0] is None
+        assert liam["unisex_pct"][0] is None
 
     def test_boundary_at_min_count(self, ssa_dir) -> None:
         df = load_ssa_data(ssa_dir)
         agg = aggregate_counts(df)
         # With threshold higher than any single name+sex count, none should have a ratio
         result = classify_unisex_names(agg, min_count=999999, min_year=2019)
-        assert result["unisex_ratio"].drop_nulls().len() == 0
+        assert result["unisex_pct"].drop_nulls().len() == 0
 
 
 class TestComputeNameFeatures:

@@ -50,12 +50,16 @@ def main() -> None:
     g_ranks, g_pcts = load_cumulative(girls_path)
 
     # Detect year range from data
+    min_year = 9999
     max_year = 0
     with open(boys_path, newline="") as f:
         for row in csv.DictReader(f):
-            yr = int(row["year_max"])
-            if yr > max_year:
-                max_year = yr
+            yr_min = int(row["year_min"])
+            yr_max = int(row["year_max"])
+            if yr_min < min_year:
+                min_year = yr_min
+            if yr_max > max_year:
+                max_year = yr_max
 
     # Limit x-axis to 5000 names (the interesting part of the curve)
     x_limit = 5000
@@ -130,7 +134,7 @@ def main() -> None:
     ax.set_xlabel("Number of Names Reviewed", fontsize=10, color=c_text, labelpad=8)
     ax.set_ylabel("Cumulative % of All Babies", fontsize=10, color=c_text, labelpad=8)
     ax.set_title(
-        f"Baby Name Distribution (1880–{max_year})",
+        f"Baby Name Distribution ({min_year}–{max_year})",
         fontsize=13,
         fontweight="bold",
         color=c_text,
