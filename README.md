@@ -14,9 +14,11 @@ Browse the data using the [interactive web viewer](https://dxdc.github.io/babyna
 - **Name search** — case-insensitive substring match (also searches spelling variants)
 - **Rank** — top 100, 500, 1,000, or 5,000
 - **Syllable count** — 1, 2, 3, or 4+
-- **Year range** — "Active After" / "Active Before" (overlap-based, so classic names aren't excluded)
+- **Name length** — short (≤4 chars), medium (5–6), or long (≥7)
+- **Peak decade** — when the name was most popular (2020s, 2010s, … 1940s & earlier)
+- **First used / Last used** — each with an after/before direction and year input (e.g., "First used after 1950" finds modern names; "Last used before 1960" finds extinct names)
 - **Starting letter** — A through Z (multi-select: click several letters to combine)
-- **Biblical**, **Unisex**, **Palindrome**, and **Alliteration** toggles
+- **Traits** — Biblical, Unisex, Trending (peaked 2010+), Palindrome, and Alliteration toggles
 
 Filter states are saved in the URL hash for easy sharing. Dark mode is also available.
 
