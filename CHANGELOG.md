@@ -56,7 +56,7 @@ Everyone is a peer — no "host" or "admin." Anyone can share at any time.
 
 ## [2.0.0] - 2026-03-21
 
-Ground-up rewrite of the data pipeline, web viewer, and project infrastructure. **The CSV schema has changed** — see [Breaking Changes](#breaking-changes-200) below.
+Ground-up rewrite of the data pipeline, web viewer, and project infrastructure. **The CSV schema has changed** — see [Breaking Changes (v2.0)](#breaking-changes-v20) below.
 
 ### Added
 
@@ -89,7 +89,7 @@ Ground-up rewrite of the data pipeline, web viewer, and project infrastructure. 
 - CSVs moved from project root to `data/`
 - Source data moved from `src/data/babynames/` to `raw/`
 
-### Breaking Changes {#breaking-changes-200}
+### Breaking Changes (v2.0)
 
 **CSV columns** — every column has been renamed or restructured:
 
