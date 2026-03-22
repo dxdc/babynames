@@ -42,8 +42,8 @@ jobs:
           cp CNAME _site/ 2>/dev/null || true
           cp data/*.csv _site/data/
           cp images/graph.png images/venmo.png _site/images/
-      - uses: actions/configure-pages@v4
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
         with:
           path: _site
       - name: Deploy
