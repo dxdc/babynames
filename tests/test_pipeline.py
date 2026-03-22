@@ -49,12 +49,11 @@ class TestLoadSSAData:
         """Ensure the blocklist covers known SSA artifacts."""
         expected = {
             "Unknown",
-            "Baby",
             "Infant",
             "Male",
             "Female",
-            "Boy",
-            "Girl",
+            "Babyboy",
+            "Babygirl",
             "Notnamed",
             "Unnamed",
         }
