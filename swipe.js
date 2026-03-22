@@ -1091,27 +1091,65 @@ const swipe = (() => {
   // ---------------------------------------------------------------
 
   function exportData() {
-    const data = {
-      version: deckHash,
-      gender: getGender(),
-      voter: voterName,
-      liked,
-      maybe,
-      passed: Object.keys(passed).map(Number),
-      otherVoters,
-      scopeLimit,
-      timestamp: new Date().toISOString(),
-      deckSize: deck.length,
-    };
-    const blob = new Blob([JSON.stringify(data, null, 2)], {
-      type: "application/json",
-    });
+    const deckByRank = {};
+    for (const d of deck) deckByRank[d.rank] = d;
+
+    const gender = getGender();
+    const gLabel = gender === "M" ? "Boys" : "Girls";
+    const rows = [["Name", "Decision", "Rank", "Spellings", "Voter", "Gender"]];
+
+    // Your picks
+    for (const [rank, item] of Object.entries(liked)) {
+      const spells = item.spellings ? item.spellings.join(" ") : "";
+      rows.push([item.name, "Liked", rank, spells, voterName || "You", gLabel]);
+    }
+    for (const [rank, item] of Object.entries(maybe)) {
+      const spells = item.spellings ? item.spellings.join(" ") : "";
+      rows.push([item.name, "Maybe", rank, spells, voterName || "You", gLabel]);
+    }
+
+    // Other voters' picks
+    for (const voter of otherVoters) {
+      const vGender =
+        voter.gender === "M" ? "Boys" : voter.gender === "F" ? "Girls" : gLabel;
+      for (const r of Object.keys(voter.liked || {})) {
+        const d = deckByRank[Number(r)];
+        rows.push([d?.name || `#${r}`, "Liked", r, "", voter.name, vGender]);
+      }
+      for (const r of Object.keys(voter.maybe || {})) {
+        const d = deckByRank[Number(r)];
+        rows.push([d?.name || `#${r}`, "Maybe", r, "", voter.name, vGender]);
+      }
+    }
+
+    // Sort by voter then rank
+    const header = rows.shift();
+    rows.sort(
+      (a, b) => a[4].localeCompare(b[4]) || Number(a[2]) - Number(b[2]),
+    );
+    rows.unshift(header);
+
+    const csv = rows
+      .map((r) =>
+        r
+          .map((cell) => {
+            const s = String(cell);
+            return s.includes(",") || s.includes('"')
+              ? `"${s.replace(/"/g, '""')}"`
+              : s;
+          })
+          .join(","),
+      )
+      .join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `babynames-picks-${voterName || "export"}.json`;
+    a.download = `baby-names-picks-${voterName || "export"}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+    showToast("CSV saved");
   }
 
   function importData(e) {
@@ -1120,25 +1158,69 @@ const swipe = (() => {
     const reader = new FileReader();
     reader.onload = (ev) => {
       try {
-        const data = JSON.parse(ev.target.result);
-        if (data.liked) liked = data.liked;
-        if (data.maybe) maybe = data.maybe;
-        if (data.passed) {
-          passed = {};
-          for (const r of data.passed) passed[r] = true;
+        const text = ev.target.result;
+        // Try JSON first (legacy format)
+        if (text.trimStart().startsWith("{")) {
+          const data = JSON.parse(text);
+          if (data.liked) liked = data.liked;
+          if (data.maybe) maybe = data.maybe;
+          if (data.passed) {
+            passed = {};
+            for (const r of data.passed) passed[r] = true;
+          }
+          if (data.voter) voterName = data.voter;
+          if (data.otherVoters) otherVoters = data.otherVoters;
+          if (data.scopeLimit) scopeLimit = data.scopeLimit;
+          saveSession();
+          if (data.version && data.version !== deckHash) {
+            alert(
+              "Note: This export was from a different data version. Some names may not match.",
+            );
+          }
+          showToast("Imported from JSON");
+          showIntro();
+          return;
         }
-        if (data.voter) voterName = data.voter;
-        if (data.otherVoters) otherVoters = data.otherVoters;
-        if (data.scopeLimit) scopeLimit = data.scopeLimit;
+
+        // Parse CSV
+        const lines = text
+          .trim()
+          .split("\n")
+          .map((l) => l.split(","));
+        if (lines.length < 2) throw new Error("empty");
+        const hdr = lines[0].map((h) => h.trim().toLowerCase());
+        const nameIdx = hdr.indexOf("name");
+        const decIdx = hdr.indexOf("decision");
+        const rankIdx = hdr.indexOf("rank");
+        if (nameIdx < 0 || decIdx < 0 || rankIdx < 0)
+          throw new Error("bad header");
+
+        let imported = 0;
+        for (let i = 1; i < lines.length; i++) {
+          const row = lines[i];
+          const rank = Number(row[rankIdx]);
+          const name = row[nameIdx]?.replace(/^"|"$/g, "");
+          const decision = row[decIdx]?.trim().toLowerCase();
+          if (!rank || !name) continue;
+          if (decision === "liked") {
+            liked[rank] = { name, spellings: [name] };
+            delete maybe[rank];
+            delete passed[rank];
+            imported++;
+          } else if (decision === "maybe") {
+            maybe[rank] = { name, spellings: [name] };
+            delete liked[rank];
+            delete passed[rank];
+            imported++;
+          }
+        }
         saveSession();
-        if (data.version && data.version !== deckHash) {
-          alert(
-            "Note: This export was created with a different version of the data. Some names may not match.",
-          );
-        }
+        showToast(`Imported ${imported} picks from CSV`);
         showIntro();
       } catch {
-        alert("Could not read file. Make sure it's a valid export.");
+        alert(
+          "Could not read file. Make sure it's a valid CSV or JSON export.",
+        );
       }
     };
     reader.readAsText(file);
