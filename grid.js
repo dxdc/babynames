@@ -271,6 +271,9 @@ function loadData(gender) {
     if (!table) {
       initTable(allData, function () {
         applyFilters();
+        if (typeof swipe !== "undefined" && swipe.tryAutoOpen) {
+          swipe.tryAutoOpen();
+        }
       });
     } else if (tableReady) {
       table

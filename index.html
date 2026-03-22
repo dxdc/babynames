@@ -1001,6 +1001,37 @@
         color: var(--pico-muted-color);
       }
 
+      /* Compare banner — shown when other voters' picks are loaded */
+      .compare-banner {
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        margin-bottom: 1.25rem;
+        background: color-mix(in oklch, var(--chip-active) 10%, transparent);
+        border: 1px solid
+          color-mix(in oklch, var(--chip-active) 30%, transparent);
+        font-size: 0.85rem;
+        line-height: 1.5;
+        text-align: center;
+      }
+      .compare-banner strong {
+        font-weight: 600;
+      }
+      .compare-banner .compare-cta {
+        display: inline-block;
+        margin-top: 0.5rem;
+        padding: 0.3rem 1rem;
+        border-radius: 6px;
+        background: var(--chip-active);
+        color: #fff;
+        font-weight: 600;
+        font-size: 0.85rem;
+        cursor: pointer;
+        border: none;
+      }
+      .compare-banner .compare-cta:hover {
+        opacity: 0.9;
+      }
+
       /* Small action buttons */
       .results-io {
         display: flex;
@@ -1477,6 +1508,18 @@
         >
           <div class="swipe-results-content">
             <h2>Your Shortlist</h2>
+
+            <div
+              id="compare-banner"
+              class="compare-banner"
+              style="display: none"
+            ></div>
+
+            <div id="compare-section" style="display: none">
+              <h3>Comparison</h3>
+              <div id="compare-results"></div>
+            </div>
+
             <div class="results-section">
               <h3>
                 ♥ Liked
@@ -1490,11 +1533,6 @@
                 <span class="results-count" id="results-maybe-count">0</span>
               </h3>
               <div id="results-maybe" class="results-list"></div>
-            </div>
-
-            <div id="compare-section" style="display: none">
-              <h3>Comparison</h3>
-              <div id="compare-results"></div>
             </div>
 
             <div class="results-actions">

@@ -35,6 +35,7 @@ const swipe = (() => {
   let otherVoters = [];
   let sessionId = "";
   let scopeLimit = 0; // 0 = all
+  let pendingPicks = false; // set true when a #picks= URL is detected at boot
 
   // ---------------------------------------------------------------
   // Helpers
@@ -564,11 +565,35 @@ const swipe = (() => {
     renderResultList($("results-liked"), liked, "liked");
     renderResultList($("results-maybe"), maybe, "maybe");
 
+    const banner = $("compare-banner");
     if (otherVoters.length) {
       $("compare-section").style.display = "";
       renderComparison();
+
+      // Build banner text
+      const names = otherVoters.map((v) => v.name || "Someone");
+      const ownPicks = Object.keys(liked).length + Object.keys(maybe).length;
+      const parts = names.map((name) => {
+        const v = otherVoters.find((ov) => (ov.name || "Someone") === name);
+        const n =
+          Object.keys(v.liked || {}).length + Object.keys(v.maybe || {}).length;
+        return `<strong>${name}</strong> shared ${n.toLocaleString()} pick${n !== 1 ? "s" : ""}`;
+      });
+
+      if (ownPicks === 0) {
+        banner.innerHTML =
+          `${parts.join(" · ")}<br>` +
+          `<button class="compare-cta" id="banner-start-btn">Start Swiping to Compare</button>`;
+        $("banner-start-btn").addEventListener("click", () => {
+          showIntro();
+        });
+      } else {
+        banner.innerHTML = parts.join(" · ") + " — see comparison below";
+      }
+      banner.style.display = "";
     } else {
       $("compare-section").style.display = "none";
+      banner.style.display = "none";
     }
   }
 
@@ -992,6 +1017,7 @@ const swipe = (() => {
           // Will merge into session when swipe opens
           otherVoters = otherVoters.filter((v) => v.name !== voter.name);
           otherVoters.push(voter);
+          pendingPicks = true;
         }
       } catch {
         /* ignore malformed */
@@ -1004,6 +1030,20 @@ const swipe = (() => {
         clean ? `#${clean}` : location.pathname,
       );
     }
+  }
+
+  // ---------------------------------------------------------------
+  // Auto-open (called by grid.js after data loads)
+  // ---------------------------------------------------------------
+
+  function tryAutoOpen() {
+    if (!pendingPicks) return;
+    pendingPicks = false;
+    // Small delay so table finishes rendering first
+    setTimeout(() => {
+      openSwipe();
+      if (deck.length) showResults();
+    }, 100);
   }
 
   // ---------------------------------------------------------------
@@ -1020,5 +1060,5 @@ const swipe = (() => {
     checkUrlParams();
   }
 
-  return { open: openSwipe, close: closeSwipe };
+  return { open: openSwipe, close: closeSwipe, tryAutoOpen };
 })();
