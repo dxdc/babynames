@@ -380,6 +380,12 @@ const swipe = (() => {
   }
 
   function startSwiping() {
+    // Capture name from input (change event may not have fired yet)
+    const nameInput = $("voter-name-input");
+    if (nameInput && nameInput.value.trim()) {
+      voterName = nameInput.value.trim();
+      saveSession();
+    }
     showScreen("swipe-cards");
     advanceToNext();
     if (currentIndex >= activeDeck.length) {

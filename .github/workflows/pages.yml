@@ -1,6 +1,7 @@
 name: Deploy to GitHub Pages
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
     paths:
@@ -10,6 +11,10 @@ on:
       - "manifest.json"
       - "data/*.csv"
       - "CNAME"
+  workflow_run:
+    workflows: ["Generate Data"]
+    types: [completed]
+    branches: [main]
 
 permissions:
   contents: read
@@ -22,6 +27,8 @@ concurrency:
 
 jobs:
   deploy:
+    # Skip if triggered by a failed Generate Data run
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
