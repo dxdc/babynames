@@ -142,10 +142,15 @@ const swipe = (() => {
 
     $("results-close").addEventListener("click", closeSwipe);
     $("results-back").addEventListener("click", () => {
-      if (currentIndex < activeDeck.length) showScreen("swipe-cards");
-      else if (reviewedCount() >= activeDeck.length)
+      if (currentIndex < activeDeck.length) {
+        showScreen("swipe-cards");
+        advanceToNext();
+        renderCard();
+      } else if (reviewedCount() >= activeDeck.length) {
         showScreen("swipe-complete");
-      else showScreen("swipe-intro");
+      } else {
+        showScreen("swipe-intro");
+      }
     });
 
     $("share-deck-btn").addEventListener("click", shareDeck);
