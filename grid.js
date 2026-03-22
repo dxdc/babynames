@@ -1,9 +1,11 @@
 // Baby Names - Tabulator-based data grid
 // Loads CSV data and renders with filtering, sorting, virtual scrolling
 
+const DATA_VERSION = "2.1.0"; // bump when CSV schema or data changes
+
 const DATA_URLS = {
-  M: "data/boys.csv",
-  F: "data/girls.csv",
+  M: `data/boys.csv?v=${DATA_VERSION}`,
+  F: `data/girls.csv?v=${DATA_VERSION}`,
 };
 
 const GENDER_LABELS = { M: "Boys", F: "Girls" };
