@@ -571,13 +571,25 @@ function clampYear(value, lo, hi) {
 }
 
 (function () {
-  const el = document.getElementById("year-value");
-  el.addEventListener("input", function () {
+  const modeEl = document.getElementById("year-mode");
+  const valEl = document.getElementById("year-value");
+
+  // Enable/disable year input based on mode selection
+  modeEl.addEventListener("change", function () {
+    valEl.disabled = !this.value;
+    if (!this.value) {
+      valEl.value = "";
+    } else {
+      valEl.focus();
+    }
+  });
+
+  valEl.addEventListener("input", function () {
     this.value = this.value.replace(/[^0-9]/g, "");
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(applyFilters, 300);
   });
-  el.addEventListener("blur", function () {
+  valEl.addEventListener("blur", function () {
     if (this.value) {
       this.value = clampYear(this.value, YEAR_MIN, YEAR_MAX);
     }
@@ -657,6 +669,7 @@ document.getElementById("clear-filters").addEventListener("click", function () {
   document.getElementById("decade-filter").value = "";
   document.getElementById("year-mode").value = "";
   document.getElementById("year-value").value = "";
+  document.getElementById("year-value").disabled = true;
   document.getElementById("unisex-filter").value = "";
   document.getElementById("variants-filter").value = "";
   activeFilters.letters = [];
@@ -767,6 +780,7 @@ function loadStateFromHash() {
   if (params.get("ym") && params.get("yv")) {
     document.getElementById("year-mode").value = params.get("ym");
     document.getElementById("year-value").value = params.get("yv");
+    document.getElementById("year-value").disabled = false;
   }
 
   // Unisex

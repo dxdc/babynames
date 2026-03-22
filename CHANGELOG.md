@@ -2,58 +2,58 @@
 
 All notable changes to this project are documented in this file. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [2.1.0] - 2026-03-21
+## [2.1.0] - 2026-03-22
 
-### Added
+Swipe mode for couples, sharing, and a bunch of polish.
 
-- **Swipe Mode** — Tinder-style card swiping to review names one at a time
-  - Swipe right/left/up (or tap ♥/✗/★, or use arrow keys) for like/pass/maybe
-  - Touch and mouse drag with physics-style rotation and color feedback
-  - Multi-select variant chips on each card to pick preferred spellings
-  - Scope selector ("How deep?") with time estimates per option and boundary name hint
-  - Inline progress counters (♥ liked / ★ maybe) visible during swiping
-  - Direction hints ("← Pass · Maybe ↑ · Like →") below action buttons
-  - Progress bar, undo (↩ / Ctrl+Z), and mid-session "View picks so far"
-  - Completion screen with summary, bounce animation, and share prompt
-  - Escape key closes overlay
-- **Multi-person sharing** — everyone is a peer, anyone can share and compare
-  - "Share My Picks" generates a URL encoding name + liked/maybe ranks
-  - "Add Someone's Picks" loads any number of other voters (partner, grandparents, friends)
-  - Re-sharing gives updated picks; re-loading replaces the old data by name
-  - N-way comparison groups names as "Everyone loves" / "Strong contenders" / "Worth discussing"
-- **Session persistence** — picks saved to localStorage, keyed by deck content hash
-  - Resume info on return ("340 reviewed · 12 liked · 5 maybe · 960 remaining")
-  - Scope selection persisted across sessions
-  - Start Fresh option to reset
-  - localStorage warning on intro screen
-- **Export/Import** — JSON backup with picks, other voters' data, deck version hash, and timestamp
-  - Survives browser wipes, incognito mode, device changes
-  - Import warns if data version has changed since export
-- **Inline SVG favicon** (👶 emoji)
-- **Open Graph meta tags** (og:title, og:description, og:image) and canonical URL
-- **`.prettierignore`** to exclude data/raw/images from formatting
+### Swipe Mode
 
-### Fixed
+New full-screen overlay for reviewing names one at a time — swipe right to like, left to pass, up for maybe. Works with touch drag, mouse drag, tap buttons, or arrow keys.
 
-- **XSS vulnerability** in swipe comparison view — voter names from URL params were rendered via innerHTML; now uses safe textContent via DOM methods
-- **Pages deployed entire 41MB repo** including raw/ SSA data — now builds a `_site/` directory with only web assets (~14MB)
-- **generate.yml missing `permissions: contents: write`** — git push could silently fail
-- **CRLF line endings** in 5 files (.editorconfig, test files) despite .editorconfig specifying LF
-- **Empty card after returning from shortlist** — "← Back" now re-renders the current card instead of showing a stale exit-animation state
-- **Progress overflow when reducing scope** — `reviewedCount()` now only counts ranks within the active deck, not globally
-- **Rapid double-click on action buttons** — added debounce guard preventing the same card from being acted on twice within the 280ms animation window
-- **URL-loaded voter picks discarded** — shared `#picks=` links were wiped by `loadSession()` on first open; now preserved and merged
-- **Number formatting** — all counts now use `toLocaleString()` (e.g., "31,935" not "31935")
+- Choose how deep to go before starting (Top 100 / 500 / 1000 / All) with time estimates
+- Multi-select spelling variants on each card (tap to toggle preferred spellings)
+- Progress bar with running ♥/★ counts, direction hints, undo (Ctrl+Z), Escape to close
+- Swipe down to dismiss on mobile
+- Session auto-saved to localStorage; resume where you left off
 
-### Changed
+### Sharing & Comparison
 
-- Card screen wrapped in max-width 440px centered container (fixes desktop/mobile layout)
-- Card elevation with shadow (light and dark mode variants)
-- Button press animation (`:active` scale) and colored glow on hover
-- Screen fade transitions between swipe views
-- Improved contrast across both themes: darker backgrounds, visible borders on all chips/toggles/buttons, `--muted-stronger` for interactive text, richer gender accent colors
-- `swipe.js` modernized: 0 `var` (all `const`/`let`), arrow functions, template literals, `for...of`, destructuring, `SCREENS` array for screen management
-- CDN versions verified as latest: Pico CSS 2.1.1, Tabulator 6.4.0, PapaParse 5.5.3
+Everyone is a peer — no "host" or "admin." Anyone can share at any time.
+
+- **Share My Picks**: generates a URL with your name, gender, and liked/maybe ranks
+- **Add Someone's Picks**: paste a link to load a partner's, grandparent's, or friend's picks
+- **Comparison view**: groups matches as "Everyone loves" / "Strong contenders" / "Worth discussing"
+- **Individual voter details**: expandable section showing each person's picks with remove button
+- Gender validation: warns if someone shared boys picks but you're viewing girls
+- Self-import protection: won't add your own picks as another voter
+- Export to CSV (opens in Excel/Sheets), import from CSV or JSON
+- Share as image: generates a PNG with your picks for texting
+
+### Web UI
+
+- Custom domain: `baby.dxdc.dev`
+- PWA manifest for "Add to Home Screen" on mobile
+- Favicon (👶 emoji), Open Graph meta tags, canonical URL
+- Improved contrast in light/dark mode (visible borders, darker chip backgrounds, stronger muted text)
+- Card shadow, button press/glow animations, screen fade transitions, completion bounce
+- Year filter input disabled until a mode is selected
+- Keyboard hint on desktop (hidden on touch devices)
+- Cache-busting version param on CSV URLs
+- Screen reader announcements for card changes, actions, and completion
+
+### Pipeline
+
+- Excluded junk names from SSA data: Unknown, Baby, Infant, Male, Female, Boy, Girl, Notnamed, Unnamed
+
+### Infrastructure
+
+- Pages workflow deploys only `_site/` directory (was shipping entire 41MB repo)
+- Generate workflow queues instead of cancelling on rapid pushes
+- Pages auto-redeploys after successful data generation
+- Added `permissions: contents: write` to generate workflow
+- Fixed CRLF line endings in test files
+- Added `.prettierignore` for data/raw/images
+- License changed from MIT to AGPL-3.0
 
 ## [2.0.0] - 2026-03-21
 
