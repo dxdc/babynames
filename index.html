@@ -517,7 +517,61 @@
         color: var(--pico-muted-color);
       }
 
+      /* Scope selector */
+      .swipe-scope {
+        margin-bottom: 1.5rem;
+        width: 100%;
+        max-width: 320px;
+      }
+      .scope-options {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+      }
+      .scope-option {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0.75rem;
+        border-radius: 6px;
+        cursor: pointer;
+        border: 2px solid var(--filter-border);
+        background: none;
+        color: var(--pico-color);
+        font-size: 0.85rem;
+        transition: all 0.15s;
+        text-align: left;
+        width: 100%;
+      }
+      .scope-option:hover {
+        border-color: var(--pico-muted-color);
+      }
+      .scope-option.active {
+        border-color: var(--chip-active);
+        background: color-mix(in oklch, var(--chip-active) 10%, transparent);
+      }
+      .scope-option .scope-label {
+        font-weight: 600;
+      }
+      .scope-option .scope-detail {
+        font-size: 0.8rem;
+        color: var(--pico-muted-color);
+      }
+      .scope-hint {
+        font-size: 0.75rem;
+        color: var(--pico-muted-color);
+        margin-top: 0.5rem;
+      }
+
       /* Card area */
+      .swipe-cards-inner {
+        width: 100%;
+        max-width: 440px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+      }
       .swipe-progress {
         padding: 1rem 1.5rem 0;
         display: flex;
@@ -1195,6 +1249,13 @@
                 <span class="estimate-label">estimated time</span>
               </div>
             </div>
+            <div class="swipe-scope">
+              <label class="swipe-label">How deep?</label>
+              <div class="scope-options" id="scope-options">
+                <!-- Populated by JS based on filtered deck -->
+              </div>
+              <p class="scope-hint" id="scope-hint"></p>
+            </div>
             <div class="swipe-name-row">
               <label class="swipe-label">Your name</label>
               <input
@@ -1245,44 +1306,50 @@
 
         <!-- Card screen -->
         <div id="swipe-cards" class="swipe-screen" style="display: none">
-          <div class="swipe-progress">
-            <div class="swipe-progress-track">
-              <div class="swipe-progress-fill" id="swipe-progress-bar"></div>
+          <div class="swipe-cards-inner">
+            <div class="swipe-progress">
+              <div class="swipe-progress-track">
+                <div class="swipe-progress-fill" id="swipe-progress-bar"></div>
+              </div>
+              <span class="swipe-progress-label" id="swipe-progress-text"
+                >0 / 0</span
+              >
             </div>
-            <span class="swipe-progress-label" id="swipe-progress-text"
-              >0 / 0</span
-            >
-          </div>
-          <div class="swipe-card-area">
-            <div class="swipe-card" id="swipe-card">
-              <div class="card-name" id="card-name"></div>
-              <div class="card-variants" id="card-variants"></div>
-              <div class="card-stats" id="card-stats"></div>
+            <div class="swipe-card-area">
+              <div class="swipe-card" id="swipe-card">
+                <div class="card-name" id="card-name"></div>
+                <div class="card-variants" id="card-variants"></div>
+                <div class="card-stats" id="card-stats"></div>
+              </div>
             </div>
-          </div>
-          <div class="swipe-actions">
-            <button class="swipe-btn pass" id="swipe-pass" title="Pass (←)">
-              ✗
-            </button>
-            <button
-              class="swipe-btn undo"
-              id="swipe-undo"
-              title="Undo (Ctrl+Z)"
-              style="visibility: hidden"
-            >
-              ↩
-            </button>
-            <button class="swipe-btn maybe" id="swipe-maybe" title="Maybe (↑)">
-              ★
-            </button>
-            <button class="swipe-btn like" id="swipe-like" title="Like (→)">
-              ♥
-            </button>
-          </div>
-          <div class="swipe-peek-row">
-            <button class="swipe-peek-btn" id="swipe-peek">
-              View picks so far
-            </button>
+            <div class="swipe-actions">
+              <button class="swipe-btn pass" id="swipe-pass" title="Pass (←)">
+                ✗
+              </button>
+              <button
+                class="swipe-btn undo"
+                id="swipe-undo"
+                title="Undo (Ctrl+Z)"
+                style="visibility: hidden"
+              >
+                ↩
+              </button>
+              <button
+                class="swipe-btn maybe"
+                id="swipe-maybe"
+                title="Maybe (↑)"
+              >
+                ★
+              </button>
+              <button class="swipe-btn like" id="swipe-like" title="Like (→)">
+                ♥
+              </button>
+            </div>
+            <div class="swipe-peek-row">
+              <button class="swipe-peek-btn" id="swipe-peek">
+                View picks so far
+              </button>
+            </div>
           </div>
         </div>
 

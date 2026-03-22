@@ -23,16 +23,18 @@ const swipe = (() => {
   // Mutable state
   // ---------------------------------------------------------------
 
-  let deck = [];
+  let deck = []; // full filtered list from table
+  let activeDeck = []; // deck sliced to scope limit (what we actually swipe)
   let deckHash = "";
   let currentIndex = 0;
-  let liked = {};
-  let maybe = {};
-  let passed = {};
+  let liked = {}; // rank -> { name, spellings: [] }
+  let maybe = {}; // rank -> { name, spellings: [] }
+  let passed = {}; // rank -> true
   let actionHistory = [];
   let voterName = "";
   let otherVoters = [];
   let sessionId = "";
+  let scopeLimit = 0; // 0 = all
 
   // ---------------------------------------------------------------
   // Helpers
@@ -140,8 +142,9 @@ const swipe = (() => {
 
     $("results-close").addEventListener("click", closeSwipe);
     $("results-back").addEventListener("click", () => {
-      if (currentIndex < deck.length) showScreen("swipe-cards");
-      else if (reviewedCount() >= deck.length) showScreen("swipe-complete");
+      if (currentIndex < activeDeck.length) showScreen("swipe-cards");
+      else if (reviewedCount() >= activeDeck.length)
+        showScreen("swipe-complete");
       else showScreen("swipe-intro");
     });
 
@@ -200,19 +203,20 @@ const swipe = (() => {
   function showIntro() {
     showScreen("swipe-intro");
 
-    const total = deck.length;
-    const reviewed = reviewedCount();
-    const remaining = total - reviewed;
-
-    $("swipe-deck-count").textContent = total.toLocaleString();
-    $("swipe-time-est").textContent = formatTime(remaining);
     $("voter-name-input").value = voterName;
 
+    // Build scope options based on filtered deck size
+    buildScopeOptions();
+    updateEstimates();
+
+    // Resume info
+    const reviewed = reviewedCount();
     const resumeEl = $("swipe-resume-info");
     const freshBtn = $("swipe-start-fresh");
     if (reviewed > 0) {
       const likedN = Object.keys(liked).length;
       const maybeN = Object.keys(maybe).length;
+      const remaining = activeDeck.length - reviewed;
       resumeEl.textContent = `${reviewed} reviewed · ${likedN} liked · ${maybeN} maybe · ${remaining} remaining`;
       resumeEl.style.display = "";
       freshBtn.style.display = "";
@@ -235,9 +239,75 @@ const swipe = (() => {
     $("storage-warning").style.display = "";
   }
 
+  function buildScopeOptions() {
+    const container = $("scope-options");
+    container.innerHTML = "";
+    const total = deck.length;
+    const presets = [50, 100, 250, 500, 1000, 2000, 5000].filter(
+      (n) => n < total,
+    );
+    presets.push(total);
+    // Keep at most 4 options: pick evenly spaced ones
+    let options = presets;
+    if (options.length > 5) {
+      const keep = [presets[0]];
+      const step = (presets.length - 1) / 3;
+      for (let i = 1; i < 3; i++) keep.push(presets[Math.round(i * step)]);
+      keep.push(presets[presets.length - 1]);
+      options = [...new Set(keep)];
+    }
+
+    // Default to "all" if no scope saved, or restore saved
+    if (!scopeLimit || scopeLimit > total) scopeLimit = total;
+
+    for (const n of options) {
+      const btn = document.createElement("button");
+      btn.className = `scope-option${n === scopeLimit ? " active" : ""}`;
+      btn.type = "button";
+      const label = n === total ? "All" : `Top ${n.toLocaleString()}`;
+      const time = formatTime(Math.max(0, n - reviewedCount()));
+      btn.innerHTML =
+        `<span class="scope-label">${label}</span>` +
+        `<span class="scope-detail">${n.toLocaleString()} names · ${time}</span>`;
+      btn.addEventListener("click", () => {
+        scopeLimit = n;
+        activeDeck = deck.slice(0, scopeLimit);
+        container
+          .querySelectorAll(".scope-option")
+          .forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        updateEstimates();
+        saveSession();
+      });
+      container.appendChild(btn);
+    }
+
+    activeDeck = deck.slice(0, scopeLimit);
+  }
+
+  function updateEstimates() {
+    const count = activeDeck.length;
+    const reviewed = reviewedCount();
+    const remaining = Math.max(0, count - reviewed);
+    $("swipe-deck-count").textContent = count.toLocaleString();
+    $("swipe-time-est").textContent = formatTime(remaining);
+
+    // Hint with example name at boundary
+    if (activeDeck.length > 0 && activeDeck.length < deck.length) {
+      const last = activeDeck[activeDeck.length - 1];
+      $("scope-hint").textContent =
+        `Includes names up to #${last.rank} (e.g., ${last.name})`;
+    } else {
+      $("scope-hint").textContent = "";
+    }
+  }
+
   function advanceToNext() {
     currentIndex = 0;
-    while (currentIndex < deck.length && isReviewed(deck[currentIndex].rank)) {
+    while (
+      currentIndex < activeDeck.length &&
+      isReviewed(activeDeck[currentIndex].rank)
+    ) {
       currentIndex++;
     }
   }
@@ -255,7 +325,7 @@ const swipe = (() => {
   function startSwiping() {
     showScreen("swipe-cards");
     advanceToNext();
-    if (currentIndex >= deck.length) {
+    if (currentIndex >= activeDeck.length) {
       showResults();
       return;
     }
@@ -267,17 +337,17 @@ const swipe = (() => {
   // ---------------------------------------------------------------
 
   function renderCard() {
-    if (currentIndex >= deck.length) {
+    if (currentIndex >= activeDeck.length) {
       showComplete();
       return;
     }
 
-    const d = deck[currentIndex];
+    const d = activeDeck[currentIndex];
     const card = $("swipe-card");
 
     $("card-name").textContent = d.name;
 
-    // Variant chips
+    // Variant chips — multi-select, primary always selected
     const varEl = $("card-variants");
     varEl.innerHTML = "";
     const allSpellings = [d.name];
@@ -293,10 +363,10 @@ const swipe = (() => {
         chip.textContent = v;
         chip.dataset.spelling = v;
         chip.addEventListener("click", () => {
-          varEl
-            .querySelectorAll(".variant-chip")
-            .forEach((c) => c.classList.remove("selected"));
-          chip.classList.add("selected");
+          // Toggle, but at least one must stay selected
+          chip.classList.toggle("selected");
+          const anySelected = varEl.querySelector(".variant-chip.selected");
+          if (!anySelected) chip.classList.add("selected");
         });
         varEl.appendChild(chip);
       });
@@ -317,7 +387,7 @@ const swipe = (() => {
     $("card-stats").textContent = parts.join(" · ");
 
     // Progress
-    const total = deck.length;
+    const total = activeDeck.length;
     const reviewed = reviewedCount();
     $("swipe-progress-bar").style.width =
       `${((reviewed / total) * 100).toFixed(1)}%`;
@@ -341,9 +411,10 @@ const swipe = (() => {
     });
   }
 
-  function getSelectedSpelling() {
-    const sel = $("card-variants").querySelector(".variant-chip.selected");
-    return sel ? sel.dataset.spelling : deck[currentIndex].name;
+  function getSelectedSpellings() {
+    const chips = $("card-variants").querySelectorAll(".variant-chip.selected");
+    if (chips.length === 0) return [activeDeck[currentIndex].name];
+    return Array.from(chips).map((c) => c.dataset.spelling);
   }
 
   // ---------------------------------------------------------------
@@ -351,10 +422,10 @@ const swipe = (() => {
   // ---------------------------------------------------------------
 
   function act(action) {
-    if (currentIndex >= deck.length) return;
+    if (currentIndex >= activeDeck.length) return;
 
-    const d = deck[currentIndex];
-    const spelling = getSelectedSpelling();
+    const d = activeDeck[currentIndex];
+    const spellings = getSelectedSpellings();
     const card = $("swipe-card");
     const dir = action === "pass" ? "left" : action === "like" ? "right" : "up";
 
@@ -375,14 +446,14 @@ const swipe = (() => {
       flash.style.display = "none";
     }, 400);
 
-    actionHistory.push({ rank: d.rank, action, spelling });
+    actionHistory.push({ rank: d.rank, action, spellings });
 
     if (action === "like") {
-      liked[d.rank] = { name: d.name, spelling };
+      liked[d.rank] = { name: d.name, spellings };
       delete maybe[d.rank];
       delete passed[d.rank];
     } else if (action === "maybe") {
-      maybe[d.rank] = { name: d.name, spelling };
+      maybe[d.rank] = { name: d.name, spellings };
       delete liked[d.rank];
       delete passed[d.rank];
     } else {
@@ -405,8 +476,8 @@ const swipe = (() => {
     delete liked[last.rank];
     delete maybe[last.rank];
     delete passed[last.rank];
-    for (let i = 0; i < deck.length; i++) {
-      if (deck[i].rank === last.rank) {
+    for (let i = 0; i < activeDeck.length; i++) {
+      if (activeDeck[i].rank === last.rank) {
         currentIndex = i;
         break;
       }
@@ -474,8 +545,10 @@ const swipe = (() => {
 
       const nameSpan = document.createElement("span");
       nameSpan.className = "result-name";
-      nameSpan.textContent = item.spelling || item.name;
-      if (item.spelling && item.spelling !== item.name) {
+      const spells =
+        item.spellings || (item.spelling ? [item.spelling] : [item.name]);
+      nameSpan.textContent = spells.join(", ");
+      if (spells.length === 1 && spells[0] !== item.name) {
         nameSpan.textContent += ` (${item.name})`;
       }
 
@@ -681,6 +754,7 @@ const swipe = (() => {
       maybe,
       passed: Object.keys(passed).map(Number),
       otherVoters,
+      scopeLimit,
       timestamp: new Date().toISOString(),
       deckSize: deck.length,
     };
@@ -798,7 +872,14 @@ const swipe = (() => {
     try {
       localStorage.setItem(
         sessionId,
-        JSON.stringify({ liked, maybe, passed, voter: voterName, otherVoters }),
+        JSON.stringify({
+          liked,
+          maybe,
+          passed,
+          voter: voterName,
+          otherVoters,
+          scopeLimit,
+        }),
       );
     } catch {
       /* storage full or unavailable */
@@ -813,6 +894,7 @@ const swipe = (() => {
     otherVoters = [];
     actionHistory = [];
     currentIndex = 0;
+    scopeLimit = 0;
     try {
       const raw = localStorage.getItem(sessionId);
       if (!raw) return;
@@ -822,6 +904,7 @@ const swipe = (() => {
       passed = data.passed || {};
       voterName = data.voter || "";
       otherVoters = data.otherVoters || [];
+      scopeLimit = data.scopeLimit || 0;
     } catch {
       /* corrupt data, start fresh */
     }
