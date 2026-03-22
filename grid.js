@@ -783,23 +783,6 @@ function loadStateFromHash() {
       }
     });
   }
-  // Backward compat: single letter param
-  if (
-    !lettersParam &&
-    params.get("letter") &&
-    isValidLetter(params.get("letter"))
-  ) {
-    const singleLetter = params.get("letter");
-    activeFilters.letters = [singleLetter];
-    const chip = document.querySelector(
-      '.letter-chip[data-letter="' + singleLetter + '"]',
-    );
-    if (chip) {
-      chip.classList.add("active");
-      chip.setAttribute("aria-pressed", "true");
-    }
-  }
-
   // Variants dropdown
   if (params.get("variants"))
     document.getElementById("variants-filter").value = params.get("variants");

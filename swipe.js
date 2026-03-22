@@ -472,7 +472,7 @@ const swipe = (() => {
   let actTimer = 0;
 
   function act(action) {
-    if (acting || currentIndex >= activeDeck.length) return;
+    if (acting || currentIndex >= activeDeck.length) return false;
     acting = true;
 
     const d = activeDeck[currentIndex];
@@ -520,6 +520,7 @@ const swipe = (() => {
       renderCard();
       acting = false;
     }, 280);
+    return true;
   }
 
   function undo() {
@@ -984,6 +985,7 @@ const swipe = (() => {
         }
         if (data.voter) voterName = data.voter;
         if (data.otherVoters) otherVoters = data.otherVoters;
+        if (data.scopeLimit) scopeLimit = data.scopeLimit;
         saveSession();
         if (data.version && data.version !== deckHash) {
           alert(
@@ -1012,7 +1014,9 @@ const swipe = (() => {
     const threshold = 80;
 
     function onStart(e) {
+      if (acting) return;
       if ($("swipe-cards").style.display === "none") return;
+      if (e.target.closest(".variant-chip")) return;
       dragging = true;
       const pt = e.touches ? e.touches[0] : e;
       startX = pt.clientX;
@@ -1042,10 +1046,13 @@ const swipe = (() => {
       const card = $("swipe-card");
       card.style.transition = "transform 0.3s ease, opacity 0.25s ease";
       card.style.boxShadow = "";
-      if (dx > threshold) act("like");
-      else if (dx < -threshold) act("pass");
-      else if (dy < -threshold) act("maybe");
-      else card.style.transform = "";
+      if (dx > threshold) {
+        if (!act("like")) card.style.transform = "";
+      } else if (dx < -threshold) {
+        if (!act("pass")) card.style.transform = "";
+      } else if (dy < -threshold) {
+        if (!act("maybe")) card.style.transform = "";
+      } else card.style.transform = "";
     }
 
     document.addEventListener("mousedown", (e) => {
