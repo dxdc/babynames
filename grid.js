@@ -35,7 +35,7 @@ function initTable(data, onReady) {
     height: "70vh",
     data: data,
     layout: "fitColumns",
-    responsiveLayout: "collapse",
+    responsiveLayout: "hide",
     placeholder: "No matching names found",
     columns: [
       {
@@ -95,6 +95,7 @@ function initTable(data, onReady) {
           return Number(cell.getValue()).toFixed(1);
         },
         headerFilter: false,
+        responsive: 1,
       },
       {
         title: "Yr Min",
