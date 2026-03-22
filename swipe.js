@@ -4,7 +4,7 @@
 // Sharing model: everyone is a peer. Anyone can:
 //  1. Share their picks (generates a URL with name + liked/maybe ranks)
 //  2. Load anyone else's picks (paste their URL, keyed by name — re-pasting updates)
-//  3. Share the deck (frozen filter state so everyone swipes the same list)
+//  3. Share the deck (copies current URL with filter state intact)
 //  4. Export/import JSON for backup across browsers/devices
 //
 // Picks URLs always reflect current state, so re-sharing gives updated picks.
@@ -87,16 +87,6 @@ const swipe = (() => {
   // ---------------------------------------------------------------
   // Encode / decode for sharing
   // ---------------------------------------------------------------
-
-  function encodeSession() {
-    return safeEncode(
-      JSON.stringify({
-        v: deckHash,
-        g: getGender(),
-        ranks: deck.map((d) => d.rank),
-      }),
-    );
-  }
 
   function encodePicks() {
     return safeEncode(
@@ -701,9 +691,9 @@ const swipe = (() => {
   // ---------------------------------------------------------------
 
   function shareDeck() {
-    const encoded = encodeSession();
-    const url = `${location.origin}${location.pathname}#swipe=${encoded}`;
-    copyToClipboard(url, "share-deck-btn");
+    // The filter state is already in the URL hash (managed by grid.js)
+    // Just copy the current URL — anyone opening it gets the same filtered deck
+    copyToClipboard(location.href, "share-deck-btn");
   }
 
   function sharePicks() {
@@ -1336,24 +1326,6 @@ const swipe = (() => {
     const hash = location.hash.slice(1);
     if (!hash) return;
     const params = new URLSearchParams(hash);
-
-    if (params.get("swipe")) {
-      // Shared deck link — currently used for version detection only.
-      // Full deck reconstruction would require loading CSV + applying filters,
-      // which is better handled by sharing filter state in the main URL hash.
-      try {
-        JSON.parse(safeDecode(params.get("swipe")));
-      } catch {
-        /* ignore malformed */
-      }
-      params.delete("swipe");
-      const clean = params.toString();
-      window.history.replaceState(
-        null,
-        "",
-        clean ? `#${clean}` : location.pathname,
-      );
-    }
 
     if (params.get("picks")) {
       try {
