@@ -424,6 +424,61 @@ def build_spelling_variants(df: pl.DataFrame) -> pl.DataFrame:
     )
 
 
+def apply_forced_merges(df: pl.DataFrame, merges_path: Path) -> pl.DataFrame:
+    """Remap variant_group IDs based on a forced merges CSV.
+
+    The CSV has columns ``source,target`` (comments starting with # are ignored).
+    For each pair, all rows whose name matches ``source`` get their variant_group
+    reassigned to match ``target``'s group. This causes merge_spelling_variants
+    to combine them, with variants re-sorted by popularity automatically.
+    """
+    if not merges_path.exists():
+        return df
+
+    pairs: list[tuple[str, str]] = []
+    with open(merges_path) as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#") or line.startswith("source"):
+                continue
+            parts = line.split(",", 1)
+            if len(parts) == 2:
+                pairs.append((parts[0].strip(), parts[1].strip()))
+
+    if not pairs:
+        return df
+
+    # Build (name, sex) → variant_group lookup
+    names = df["name"].to_list()
+    sexes = df["sex"].to_list()
+    groups = df["variant_group"].to_list()
+    name_sex_to_group: dict[tuple[str, str], int] = {}
+    for n, s, g in zip(names, sexes, groups, strict=True):
+        name_sex_to_group[(n, s)] = g
+
+    # Build group remapping: old_group → new_group
+    remap: dict[int, int] = {}
+    applied = 0
+    for source, target in pairs:
+        for sex in ("M", "F"):
+            src_group = name_sex_to_group.get((source, sex))
+            tgt_group = name_sex_to_group.get((target, sex))
+            if src_group is not None and tgt_group is not None and src_group != tgt_group:
+                # Also follow chains: if tgt_group was already remapped
+                while tgt_group in remap:
+                    tgt_group = remap[tgt_group]
+                remap[src_group] = tgt_group
+                applied += 1
+
+    if not remap:
+        log.info("No forced merges applied (0 of %d pairs matched)", len(pairs))
+        return df
+
+    new_groups = [remap.get(g, g) for g in groups]
+    log.info("Applied %d forced merges (%d pairs total)", applied, len(pairs))
+    return df.with_columns(pl.Series("variant_group", new_groups))
+
+
 def merge_spelling_variants(df: pl.DataFrame) -> pl.DataFrame:
     """Merge rows that share a variant_group, keeping the most popular spelling.
 
@@ -707,6 +762,12 @@ def main() -> None:
         help="Output directory for CSV files (default: data)",
     )
     parser.add_argument(
+        "--forced-merges",
+        type=Path,
+        default=Path("raw/forced_merges.csv"),
+        help="Path to forced spelling merges CSV (default: raw/forced_merges.csv)",
+    )
+    parser.add_argument(
         "-v",
         "--verbose",
         action="store_true",
@@ -731,6 +792,7 @@ def main() -> None:
     df = df.join(biblical_names.select("name", "biblical"), on="name", how="left")
     df = add_pronunciations(df)
     df = build_spelling_variants(df)
+    df = apply_forced_merges(df, args.forced_merges)
     df = df.join(peak_years, on=["name", "sex"], how="left")
     df = flag_palindromes(df)
 
