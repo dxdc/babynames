@@ -60,10 +60,23 @@ const swipe = (() => {
     return `~${(mins / 60).toFixed(1)} hrs`;
   }
 
-  const reviewedCount = () =>
-    Object.keys(liked).length +
-    Object.keys(maybe).length +
-    Object.keys(passed).length;
+  // Count only reviews that are within the active deck scope
+  const reviewedCount = () => {
+    if (!activeDeck.length) {
+      return (
+        Object.keys(liked).length +
+        Object.keys(maybe).length +
+        Object.keys(passed).length
+      );
+    }
+    const activeRanks = new Set(activeDeck.map((d) => d.rank));
+    let count = 0;
+    for (const r of Object.keys(liked)) if (activeRanks.has(Number(r))) count++;
+    for (const r of Object.keys(maybe)) if (activeRanks.has(Number(r))) count++;
+    for (const r of Object.keys(passed))
+      if (activeRanks.has(Number(r))) count++;
+    return count;
+  };
 
   const isReviewed = (rank) => !!liked[rank] || !!maybe[rank] || !!passed[rank];
 
@@ -168,6 +181,10 @@ const swipe = (() => {
 
     document.addEventListener("keydown", (e) => {
       if ($("swipe-overlay").style.display === "none") return;
+      if (e.key === "Escape") {
+        closeSwipe();
+        return;
+      }
       if ($("swipe-cards").style.display === "none") return;
       if (e.key === "ArrowLeft") act("pass");
       else if (e.key === "ArrowUp") act("maybe");
@@ -186,10 +203,21 @@ const swipe = (() => {
     deck = typeof getSwipeDeck === "function" ? getSwipeDeck() : [];
     if (!deck.length) return;
 
+    // Save any URL-loaded voters before loadSession resets state
+    const pendingVoters = [...otherVoters];
+
     deckHash = buildDeckHash(deck);
     sessionId = `${STORAGE_PREFIX}${getGender()}_${deckHash}`;
 
     loadSession();
+
+    // Merge URL-loaded voters (keyed by name, URL wins over stale session data)
+    for (const pv of pendingVoters) {
+      otherVoters = otherVoters.filter((v) => v.name !== pv.name);
+      otherVoters.push(pv);
+    }
+    if (pendingVoters.length) saveSession();
+
     $("swipe-overlay").style.display = "";
     showIntro();
     document.body.style.overflow = "hidden";
@@ -395,9 +423,13 @@ const swipe = (() => {
     const total = activeDeck.length;
     const reviewed = reviewedCount();
     $("swipe-progress-bar").style.width =
-      `${((reviewed / total) * 100).toFixed(1)}%`;
+      `${Math.min(100, (reviewed / total) * 100).toFixed(1)}%`;
     $("swipe-progress-text").textContent =
       `${reviewed.toLocaleString()} / ${total.toLocaleString()}`;
+    $("progress-liked-count").textContent =
+      `♥ ${Object.keys(liked).length.toLocaleString()}`;
+    $("progress-maybe-count").textContent =
+      `★ ${Object.keys(maybe).length.toLocaleString()}`;
 
     $("swipe-undo").style.visibility = actionHistory.length
       ? "visible"
@@ -427,8 +459,11 @@ const swipe = (() => {
   // Actions
   // ---------------------------------------------------------------
 
+  let acting = false;
+
   function act(action) {
-    if (currentIndex >= activeDeck.length) return;
+    if (acting || currentIndex >= activeDeck.length) return;
+    acting = true;
 
     const d = activeDeck[currentIndex];
     const spellings = getSelectedSpellings();
@@ -473,6 +508,7 @@ const swipe = (() => {
       currentIndex++;
       advanceToNext();
       renderCard();
+      acting = false;
     }, 280);
   }
 

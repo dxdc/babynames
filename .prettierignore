@@ -1,0 +1,6 @@
+data/
+raw/
+images/
+*.csv
+*.png
+*.pdf

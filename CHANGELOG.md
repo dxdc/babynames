@@ -9,10 +9,13 @@ All notable changes to this project are documented in this file. Format based on
 - **Swipe Mode** — Tinder-style card swiping to review names one at a time
   - Swipe right/left/up (or tap ♥/✗/★, or use arrow keys) for like/pass/maybe
   - Touch and mouse drag with physics-style rotation and color feedback
-  - Tap variant chips on each card to pick preferred spelling
-  - Time estimate based on filtered deck size (~4 sec/card)
+  - Multi-select variant chips on each card to pick preferred spellings
+  - Scope selector ("How deep?") with time estimates per option and boundary name hint
+  - Inline progress counters (♥ liked / ★ maybe) visible during swiping
+  - Direction hints ("← Pass · Maybe ↑ · Like →") below action buttons
   - Progress bar, undo (↩ / Ctrl+Z), and mid-session "View picks so far"
-  - Completion screen with summary and share prompt
+  - Completion screen with summary, bounce animation, and share prompt
+  - Escape key closes overlay
 - **Multi-person sharing** — everyone is a peer, anyone can share and compare
   - "Share My Picks" generates a URL encoding name + liked/maybe ranks
   - "Add Someone's Picks" loads any number of other voters (partner, grandparents, friends)
@@ -20,6 +23,7 @@ All notable changes to this project are documented in this file. Format based on
   - N-way comparison groups names as "Everyone loves" / "Strong contenders" / "Worth discussing"
 - **Session persistence** — picks saved to localStorage, keyed by deck content hash
   - Resume info on return ("340 reviewed · 12 liked · 5 maybe · 960 remaining")
+  - Scope selection persisted across sessions
   - Start Fresh option to reset
   - localStorage warning on intro screen
 - **Export/Import** — JSON backup with picks, other voters' data, deck version hash, and timestamp
@@ -35,9 +39,19 @@ All notable changes to this project are documented in this file. Format based on
 - **Pages deployed entire 41MB repo** including raw/ SSA data — now builds a `_site/` directory with only web assets (~14MB)
 - **generate.yml missing `permissions: contents: write`** — git push could silently fail
 - **CRLF line endings** in 5 files (.editorconfig, test files) despite .editorconfig specifying LF
+- **Empty card after returning from shortlist** — "← Back" now re-renders the current card instead of showing a stale exit-animation state
+- **Progress overflow when reducing scope** — `reviewedCount()` now only counts ranks within the active deck, not globally
+- **Rapid double-click on action buttons** — added debounce guard preventing the same card from being acted on twice within the 280ms animation window
+- **URL-loaded voter picks discarded** — shared `#picks=` links were wiped by `loadSession()` on first open; now preserved and merged
+- **Number formatting** — all counts now use `toLocaleString()` (e.g., "31,935" not "31935")
 
 ### Changed
 
+- Card screen wrapped in max-width 440px centered container (fixes desktop/mobile layout)
+- Card elevation with shadow (light and dark mode variants)
+- Button press animation (`:active` scale) and colored glow on hover
+- Screen fade transitions between swipe views
+- Improved contrast across both themes: darker backgrounds, visible borders on all chips/toggles/buttons, `--muted-stronger` for interactive text, richer gender accent colors
 - `swipe.js` modernized: 0 `var` (all `const`/`let`), arrow functions, template literals, `for...of`, destructuring, `SCREENS` array for screen management
 - CDN versions verified as latest: Pico CSS 2.1.1, Tabulator 6.4.0, PapaParse 5.5.3
 

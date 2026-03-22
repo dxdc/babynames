@@ -449,6 +449,15 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        animation: fadeIn 0.2s ease;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
       }
 
       /* Intro */
@@ -642,9 +651,35 @@
           transform 0.25s,
           opacity 0.25s,
           box-shadow 0.15s;
+        box-shadow:
+          0 4px 24px rgba(0, 0, 0, 0.08),
+          0 1px 4px rgba(0, 0, 0, 0.04);
       }
       .swipe-card:active {
         cursor: grabbing;
+      }
+      [data-theme="dark"] .swipe-card {
+        box-shadow:
+          0 4px 24px rgba(0, 0, 0, 0.3),
+          0 1px 4px rgba(0, 0, 0, 0.15);
+      }
+
+      .complete-emoji {
+        font-size: 4rem;
+        animation: bounceIn 0.5s ease;
+      }
+      @keyframes bounceIn {
+        0% {
+          transform: scale(0);
+          opacity: 0;
+        }
+        50% {
+          transform: scale(1.3);
+        }
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
       }
 
       .card-name {
@@ -702,7 +737,7 @@
         display: flex;
         justify-content: center;
         gap: 1rem;
-        padding: 1rem 1.5rem 2rem;
+        padding: 1rem 1.5rem 0.5rem;
         align-items: center;
       }
       .swipe-btn {
@@ -718,10 +753,15 @@
         justify-content: center;
         transition:
           transform 0.15s,
-          background 0.15s;
+          background 0.15s,
+          box-shadow 0.15s;
       }
       .swipe-btn:hover {
         transform: scale(1.1);
+      }
+      .swipe-btn:active {
+        transform: scale(0.92);
+        transition: transform 0.05s;
       }
       .swipe-btn.pass {
         border-color: #ef5350;
@@ -729,6 +769,7 @@
       }
       .swipe-btn.pass:hover {
         background: rgba(239, 83, 80, 0.1);
+        box-shadow: 0 0 16px rgba(239, 83, 80, 0.2);
       }
       .swipe-btn.maybe {
         border-color: #ffc107;
@@ -736,6 +777,7 @@
       }
       .swipe-btn.maybe:hover {
         background: rgba(255, 193, 7, 0.1);
+        box-shadow: 0 0 16px rgba(255, 193, 7, 0.2);
       }
       .swipe-btn.like {
         border-color: #4caf50;
@@ -746,6 +788,7 @@
       }
       .swipe-btn.like:hover {
         background: rgba(76, 175, 80, 0.1);
+        box-shadow: 0 0 16px rgba(76, 175, 80, 0.2);
       }
       .swipe-btn.undo {
         width: 40px;
@@ -753,6 +796,28 @@
         border-color: var(--pico-muted-color);
         color: var(--pico-muted-color);
         font-size: 1rem;
+      }
+      .swipe-direction-hints {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        font-size: 0.7rem;
+        color: var(--muted-stronger, var(--pico-muted-color));
+        padding: 0 1.5rem 1.5rem;
+        letter-spacing: 0.02em;
+      }
+      .swipe-progress-counts {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        font-size: 0.75rem;
+        padding: 0.25rem 1.5rem 0;
+      }
+      .progress-liked {
+        color: #4caf50;
+      }
+      .progress-maybe {
+        color: #ffc107;
       }
 
       /* Results */
@@ -1333,6 +1398,10 @@
                 >0 / 0</span
               >
             </div>
+            <div class="swipe-progress-counts">
+              <span class="progress-liked" id="progress-liked-count">♥ 0</span>
+              <span class="progress-maybe" id="progress-maybe-count">★ 0</span>
+            </div>
             <div class="swipe-card-area">
               <div class="swipe-card" id="swipe-card">
                 <div class="card-name" id="card-name"></div>
@@ -1362,6 +1431,11 @@
               <button class="swipe-btn like" id="swipe-like" title="Like (→)">
                 ♥
               </button>
+            </div>
+            <div class="swipe-direction-hints">
+              <span>← Pass</span>
+              <span>Maybe ↑</span>
+              <span>Like →</span>
             </div>
             <div class="swipe-peek-row">
               <button class="swipe-peek-btn" id="swipe-peek">
