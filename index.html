@@ -17,6 +17,11 @@
       rel="icon"
       href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👶</text></svg>"
     />
+    <link rel="manifest" href="manifest.json" />
+    <meta name="theme-color" content="#ffffff" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Baby Names" />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
@@ -418,6 +423,17 @@
       }
 
       /* Swipe overlay */
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
       .swipe-overlay {
         position: fixed;
         inset: 0;
@@ -803,8 +819,20 @@
         gap: 2rem;
         font-size: 0.7rem;
         color: var(--muted-stronger, var(--pico-muted-color));
-        padding: 0 1.5rem 1.5rem;
+        padding: 0 1.5rem 0;
         letter-spacing: 0.02em;
+      }
+      .swipe-keyboard-hint {
+        text-align: center;
+        font-size: 0.65rem;
+        padding: 0.25rem 1.5rem 1.5rem;
+        color: var(--pico-muted-color);
+        letter-spacing: 0.02em;
+      }
+      @media (pointer: coarse) {
+        .swipe-keyboard-hint {
+          display: none;
+        }
       }
       .swipe-progress-counts {
         display: flex;
@@ -1418,7 +1446,13 @@
       <div id="table-container"></div>
 
       <!-- Swipe Mode Overlay -->
-      <div id="swipe-overlay" class="swipe-overlay" style="display: none">
+      <div
+        id="swipe-overlay"
+        class="swipe-overlay"
+        style="display: none"
+        role="dialog"
+        aria-label="Swipe mode"
+      >
         <button
           class="swipe-close-btn"
           id="swipe-close"
@@ -1427,6 +1461,12 @@
           ×
         </button>
         <div id="swipe-flash" class="swipe-flash" style="display: none"></div>
+        <div
+          id="swipe-announce"
+          class="sr-only"
+          aria-live="assertive"
+          aria-atomic="true"
+        ></div>
 
         <!-- Intro screen -->
         <div id="swipe-intro" class="swipe-screen">
@@ -1550,6 +1590,9 @@
               <span>Maybe ↑</span>
               <span>Like →</span>
             </div>
+            <div class="swipe-keyboard-hint" id="swipe-keyboard-hint">
+              Use arrow keys · Ctrl+Z to undo
+            </div>
             <div class="swipe-peek-row">
               <button class="swipe-peek-btn" id="swipe-peek">
                 View picks so far
@@ -1620,6 +1663,9 @@
             <div class="results-actions">
               <button class="swipe-action-btn primary" id="share-picks-btn">
                 Share My Picks
+              </button>
+              <button class="swipe-action-btn secondary" id="share-image-btn">
+                Share as Image
               </button>
               <button class="swipe-action-btn secondary" id="share-deck-btn">
                 Share This Deck

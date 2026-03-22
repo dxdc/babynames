@@ -1,0 +1,16 @@
+{
+  "name": "Baby Names – US Baby Name Search & Explorer",
+  "short_name": "Baby Names",
+  "description": "Browse, filter, and swipe through 100k+ US baby names from 1880–present.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👶</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

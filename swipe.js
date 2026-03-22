@@ -179,6 +179,7 @@ const swipe = (() => {
 
     $("share-deck-btn").addEventListener("click", shareDeck);
     $("share-picks-btn").addEventListener("click", sharePicks);
+    $("share-image-btn").addEventListener("click", shareAsImage);
     $("export-btn").addEventListener("click", exportData);
     $("import-btn").addEventListener("click", () => $("import-file").click());
     $("import-file").addEventListener("change", importData);
@@ -446,9 +447,13 @@ const swipe = (() => {
     }
     $("card-stats").textContent = parts.join(" · ");
 
-    // Progress
+    // Announce to screen readers
     const total = activeDeck.length;
     const reviewed = reviewedCount();
+    $("swipe-announce").textContent =
+      `${d.name}, rank ${d.rank}, ${reviewed + 1} of ${total}`;
+
+    // Progress
     $("swipe-progress-bar").style.width =
       `${Math.min(100, (reviewed / total) * 100).toFixed(1)}%`;
     $("swipe-progress-text").textContent =
@@ -517,6 +522,10 @@ const swipe = (() => {
 
     actionHistory.push({ rank: d.rank, action, spellings });
 
+    // Announce action to screen readers
+    const actionLabel = { like: "Liked", pass: "Passed", maybe: "Maybe" };
+    $("swipe-announce").textContent = `${actionLabel[action]}: ${d.name}`;
+
     if (action === "like") {
       liked[d.rank] = { name: d.name, spellings };
       delete maybe[d.rank];
@@ -570,6 +579,8 @@ const swipe = (() => {
     const maybeN = Object.keys(maybe).length;
     $("complete-summary").textContent =
       `${likedN.toLocaleString()} liked · ${maybeN.toLocaleString()} maybe`;
+    $("swipe-announce").textContent =
+      `All done! ${likedN} liked, ${maybeN} maybe`;
 
     const flash = $("swipe-flash");
     flash.className = "swipe-flash flash-complete";
@@ -727,6 +738,131 @@ const swipe = (() => {
       },
       () => prompt("Copy this link:", text),
     );
+  }
+
+  function shareAsImage() {
+    const deckByRank = {};
+    for (const d of deck) deckByRank[d.rank] = d;
+
+    const likedNames = Object.keys(liked)
+      .map(Number)
+      .sort((a, b) => a - b)
+      .map((r) => deckByRank[r]?.name)
+      .filter(Boolean);
+    const maybeNames = Object.keys(maybe)
+      .map(Number)
+      .sort((a, b) => a - b)
+      .map((r) => deckByRank[r]?.name)
+      .filter(Boolean);
+
+    const gender = getGender();
+    const gLabel = gender === "M" ? "Boys" : "Girls";
+    const accent = gender === "M" ? "#4a90d9" : "#d94a6e";
+
+    const MAX_SHOW = 20;
+    const likedShow = likedNames.slice(0, MAX_SHOW);
+    const likedMore = likedNames.length - likedShow.length;
+    const maybeShow = maybeNames.slice(0, MAX_SHOW);
+    const maybeMore = maybeNames.length - maybeShow.length;
+
+    // Size canvas
+    const padding = 40;
+    const lineH = 26;
+    const headerH = 60;
+    const sectionGap = 20;
+    const likedLines = Math.max(likedShow.length, 1) + (likedMore ? 1 : 0);
+    const maybeLines = Math.max(maybeShow.length, 1) + (maybeMore ? 1 : 0);
+    const height =
+      padding * 2 +
+      headerH +
+      sectionGap * 2 +
+      (likedLines + maybeLines + 2) * lineH +
+      40;
+    const width = 480;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width * 2;
+    canvas.height = height * 2;
+    const ctx = canvas.getContext("2d");
+    ctx.scale(2, 2);
+
+    // Background
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, width, height);
+
+    // Header bar
+    ctx.fillStyle = accent;
+    ctx.fillRect(0, 0, width, headerH);
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 22px -apple-system, BlinkMacSystemFont, sans-serif";
+    ctx.fillText(`👶 ${voterName || "My"}'s ${gLabel} Picks`, padding, 38);
+
+    let y = headerH + padding;
+
+    function drawSection(title, emoji, names, moreCount) {
+      ctx.fillStyle = "#333333";
+      ctx.font = "bold 16px -apple-system, BlinkMacSystemFont, sans-serif";
+      ctx.fillText(
+        `${emoji} ${title} (${names.length + moreCount})`,
+        padding,
+        y,
+      );
+      y += lineH;
+      ctx.font = "15px -apple-system, BlinkMacSystemFont, sans-serif";
+      if (names.length) {
+        ctx.fillStyle = "#444444";
+        for (const name of names) {
+          ctx.fillText(name, padding + 12, y);
+          y += lineH;
+        }
+        if (moreCount > 0) {
+          ctx.fillStyle = "#999999";
+          ctx.fillText(`…and ${moreCount} more`, padding + 12, y);
+          y += lineH;
+        }
+      } else {
+        ctx.fillStyle = "#999999";
+        ctx.fillText("None yet", padding + 12, y);
+        y += lineH;
+      }
+    }
+
+    drawSection("Liked", "♥", likedShow, likedMore);
+    y += sectionGap;
+    drawSection("Maybe", "★", maybeShow, maybeMore);
+
+    // Footer
+    y += sectionGap;
+    ctx.fillStyle = "#bbbbbb";
+    ctx.font = "12px -apple-system, BlinkMacSystemFont, sans-serif";
+    ctx.fillText("baby.dxdc.dev", padding, y);
+
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const file = new File([blob], "baby-names-picks.png", {
+        type: "image/png",
+      });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator
+          .share({
+            files: [file],
+            title: `${voterName || "My"}'s Baby Name Picks`,
+          })
+          .catch(() => downloadBlob(blob));
+      } else {
+        downloadBlob(blob);
+      }
+    }, "image/png");
+  }
+
+  function downloadBlob(blob) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `baby-names-picks-${voterName || "export"}.png`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast("Image saved");
   }
 
   // ---------------------------------------------------------------
@@ -1054,6 +1190,7 @@ const swipe = (() => {
       if (dx > 30) card.style.boxShadow = "0 0 40px rgba(76,175,80,0.5)";
       else if (dx < -30) card.style.boxShadow = "0 0 40px rgba(239,83,80,0.5)";
       else if (dy < -30) card.style.boxShadow = "0 0 40px rgba(255,193,7,0.5)";
+      else if (dy > 40) card.style.boxShadow = "0 0 40px rgba(128,128,128,0.3)";
       else card.style.boxShadow = "";
       e.preventDefault();
     }
@@ -1064,6 +1201,10 @@ const swipe = (() => {
       const card = $("swipe-card");
       card.style.transition = "transform 0.3s ease, opacity 0.25s ease";
       card.style.boxShadow = "";
+      if (dy > 120 && Math.abs(dx) < 60) {
+        closeSwipe();
+        return;
+      }
       if (dx > threshold) {
         if (!act("like")) card.style.transform = "";
       } else if (dx < -threshold) {
@@ -1087,6 +1228,58 @@ const swipe = (() => {
     );
     document.addEventListener("touchmove", onMove, { passive: false });
     document.addEventListener("touchend", onEnd);
+
+    // Overlay-level swipe-down to dismiss (works on all screens)
+    let overlayStartY = 0;
+    let overlayDragging = false;
+    const overlay = $("swipe-overlay");
+
+    overlay.addEventListener(
+      "touchstart",
+      (e) => {
+        if (e.target.closest("#swipe-card")) return; // card has its own handler
+        if (e.target.closest("button, input, a, details, .result-row")) return;
+        overlayStartY = e.touches[0].clientY;
+        overlayDragging = true;
+      },
+      { passive: true },
+    );
+
+    overlay.addEventListener(
+      "touchmove",
+      (e) => {
+        if (!overlayDragging) return;
+        const dy = e.touches[0].clientY - overlayStartY;
+        if (dy > 0) {
+          overlay.style.transform = `translateY(${Math.min(dy * 0.4, 80)}px)`;
+          overlay.style.opacity = String(Math.max(0.5, 1 - dy / 400));
+        }
+      },
+      { passive: true },
+    );
+
+    overlay.addEventListener("touchend", (e) => {
+      if (!overlayDragging) return;
+      overlayDragging = false;
+      const dy = (e.changedTouches[0]?.clientY || 0) - overlayStartY;
+      overlay.style.transition = "transform 0.2s ease, opacity 0.2s ease";
+      if (dy > 120) {
+        overlay.style.transform = "translateY(100%)";
+        overlay.style.opacity = "0";
+        setTimeout(() => {
+          closeSwipe();
+          overlay.style.transition = "";
+          overlay.style.transform = "";
+          overlay.style.opacity = "";
+        }, 200);
+      } else {
+        overlay.style.transform = "";
+        overlay.style.opacity = "";
+        setTimeout(() => {
+          overlay.style.transition = "";
+        }, 200);
+      }
+    });
   }
 
   // ---------------------------------------------------------------

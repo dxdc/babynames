@@ -7,6 +7,7 @@ on:
       - "index.html"
       - "grid.js"
       - "swipe.js"
+      - "manifest.json"
       - "data/*.csv"
       - "CNAME"
 
@@ -30,12 +31,12 @@ jobs:
       - name: Prepare deploy directory
         run: |
           mkdir -p _site/data _site/images
-          cp index.html grid.js swipe.js .nojekyll _site/
+          cp index.html grid.js swipe.js manifest.json .nojekyll _site/
           cp CNAME _site/ 2>/dev/null || true
           cp data/*.csv _site/data/
           cp images/graph.png images/venmo.png _site/images/
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v4
+      - uses: actions/configure-pages@v4
+      - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
       - name: Deploy
