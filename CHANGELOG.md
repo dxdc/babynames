@@ -12,8 +12,10 @@ New full-screen overlay for reviewing names one at a time — swipe right to lik
 
 - Choose how deep to go before starting (Top 100 / 500 / 1000 / All) with time estimates
 - Multi-select spelling variants on each card (tap to toggle preferred spellings)
-- Progress bar with running ♥/★ counts, direction hints, undo (Ctrl+Z), Escape to close
+- Card badges for quick visual ID: 📖 Biblical (category), 📈 Trending, 🕰️ Classic, ⚤ Unisex, 🔁 Palindrome, 🔤 Alliteration
+- Progress bar with running ♥/★ counts, undo (Ctrl+Z), Escape to close
 - Swipe down to dismiss on mobile
+- Simplified intro screen — just pick scope, enter name, go
 - Session auto-saved to localStorage; resume where you left off
 
 ### Sharing & Comparison
@@ -32,18 +34,20 @@ Everyone is a peer — no "host" or "admin." Anyone can share at any time.
 ### Web UI
 
 - Custom domain: `baby.dxdc.dev`
+- Custom OG image for social sharing previews (Twitter Card, JSON-LD structured data)
+- Nav with inline SVG icons (GitHub, download arrows), footer with source/feedback/donate links
 - PWA manifest for "Add to Home Screen" on mobile
-- Favicon (👶 emoji), Open Graph meta tags, canonical URL
+- Mobile table hides overflow columns cleanly instead of collapsing into sub-rows
 - Improved contrast in light/dark mode (visible borders, darker chip backgrounds, stronger muted text)
 - Card shadow, button press/glow animations, screen fade transitions, completion bounce
 - Year filter input disabled until a mode is selected
-- Keyboard hint on desktop (hidden on touch devices)
 - Cache-busting version param on CSV URLs
 - Screen reader announcements for card changes, actions, and completion
 
 ### Pipeline
 
-- Biblical names now categorized: Person, Place, God, Other (was boolean). Shows category in table instead of "Y".
+- Forced spelling merges (`raw/forced_merges.csv`) — 180 manual overrides for names the phonetic algorithm splits incorrectly (Kaitlyn/Katelyn/Caitlin, Caleb/Kaleb, Brooklyn/Brooklynn, etc.)
+- Biblical names now categorized: Person, Place, God, Other (was boolean). Shows category in table and swipe card badges.
 - Expanded biblical names list with missing entries (Elizabeth, Timothy, Ethan, Elijah, etc.) and BibleNLP cross-reference
 - Excluded junk names from SSA data: Unknown, Baby, Infant, Male, Female, Boy, Girl, Notnamed, Unnamed
 - Unisex recency cutoff derived from data (`max_year - 50`) instead of hardcoded 1970

@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="Browse and filter US baby names from 1880–present, phonetically de-duplicated using the CMU Pronouncing Dictionary. Search by gender, popularity rank, syllables, name length, peak decade, year range, starting letter, unisex share, biblical, trending, palindrome, alliteration, and spelling variants. Free downloadable CSV datasets."
+      content="Browse, filter, and swipe through 100k+ US baby names (1880–present). Phonetically de-duplicated so you only review each name once. Swipe with your partner and compare picks. Free."
     />
     <meta
       name="keywords"
-      content="baby names, US baby names, SSA baby names, popular baby names, name popularity, baby name search, name finder, biblical names, unisex names"
+      content="baby names, US baby names, SSA baby names, popular baby names, name popularity, baby name search, name finder, biblical names, unisex names, baby name swipe, couple baby name picker"
     />
-    <title>Baby Names – US Baby Name Search &amp; Explorer</title>
+    <title>Baby Names – Browse, Filter &amp; Swipe 100k+ US Names</title>
     <link rel="canonical" href="https://baby.dxdc.dev/" />
     <link
       rel="icon"
@@ -27,17 +27,48 @@
     <meta property="og:type" content="website" />
     <meta
       property="og:title"
-      content="Baby Names – US Baby Name Search &amp; Explorer"
+      content="Baby Names – Browse, Filter & Swipe 100k+ US Names"
     />
     <meta
       property="og:description"
-      content="Browse and filter 100k+ US baby names from 1880–present. Phonetically de-duplicated, with swipe mode for couples."
+      content="Phonetically de-duplicated baby names from 1880–present. Swipe with your partner and compare picks. 12 filters, free CSV downloads."
     />
     <meta property="og:url" content="https://baby.dxdc.dev/" />
     <meta
       property="og:image"
-      content="https://baby.dxdc.dev/images/graph.png"
+      content="https://baby.dxdc.dev/images/og-image.png"
     />
+    <meta property="og:site_name" content="Baby Names" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:title"
+      content="Baby Names – Browse, Filter & Swipe 100k+ US Names"
+    />
+    <meta
+      name="twitter:description"
+      content="Phonetically de-duplicated baby names from 1880–present. Swipe with your partner and compare picks."
+    />
+    <meta
+      name="twitter:image"
+      content="https://baby.dxdc.dev/images/og-image.png"
+    />
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Baby Names",
+        "url": "https://baby.dxdc.dev/",
+        "description": "Browse, filter, and swipe through 100k+ US baby names from 1880–present. Phonetically de-duplicated so you only review each name once.",
+        "applicationCategory": "LifestyleApplication",
+        "operatingSystem": "Any",
+        "offers": { "@type": "Offer", "price": "0" },
+        "isAccessibleForFree": true
+      }
+    </script>
 
     <link
       rel="stylesheet"
@@ -132,6 +163,55 @@
         }
         & a {
           font-size: 0.85rem;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.3rem;
+        }
+        & .nav-icon {
+          width: 16px;
+          height: 16px;
+          fill: currentColor;
+          vertical-align: middle;
+          flex-shrink: 0;
+        }
+      }
+
+      .site-footer {
+        text-align: center;
+        padding: 1.5rem 1rem;
+        margin-top: 1rem;
+        border-top: 1px solid var(--filter-border);
+        font-size: 0.8rem;
+        color: var(--pico-muted-color);
+        & a {
+          color: var(--pico-muted-color);
+          text-decoration: underline;
+        }
+        & a:hover {
+          color: var(--pico-color);
+        }
+        & .footer-links {
+          display: flex;
+          justify-content: center;
+          gap: 1.25rem;
+          flex-wrap: wrap;
+          margin-bottom: 0.5rem;
+        }
+        & .footer-links a {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.3rem;
+          text-decoration: none;
+          font-size: 0.85rem;
+        }
+        & .footer-links a:hover {
+          color: var(--pico-color);
+        }
+        & .footer-icon {
+          width: 15px;
+          height: 15px;
+          fill: currentColor;
+          vertical-align: middle;
         }
       }
 
@@ -507,25 +587,6 @@
         margin-bottom: 1.5rem;
         font-size: 0.95rem;
       }
-      .swipe-estimate {
-        display: flex;
-        gap: 2rem;
-        justify-content: center;
-        margin-bottom: 1.5rem;
-      }
-      .estimate-row {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-      }
-      .estimate-num {
-        font-size: 1.8rem;
-        font-weight: 700;
-      }
-      .estimate-label {
-        font-size: 0.8rem;
-        color: var(--pico-muted-color);
-      }
       .swipe-resume-info {
         font-size: 0.85rem;
         color: var(--pico-muted-color);
@@ -565,14 +626,6 @@
       }
       .swipe-action-btn.secondary:hover {
         opacity: 0.8;
-      }
-      .swipe-hint {
-        display: flex;
-        gap: 2rem;
-        justify-content: center;
-        margin-top: 1.5rem;
-        font-size: 0.8rem;
-        color: var(--pico-muted-color);
       }
 
       /* Scope selector */
@@ -749,6 +802,27 @@
         font-size: 0.8rem;
         color: var(--muted-stronger, var(--pico-muted-color));
         line-height: 1.5;
+      }
+      .card-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+        justify-content: center;
+      }
+      .card-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.15rem 0.55rem;
+        font-size: 0.7rem;
+        border-radius: 10px;
+        background: var(--chip-bg);
+        color: var(--muted-stronger, var(--pico-muted-color));
+        border: 1px solid var(--filter-border);
+        white-space: nowrap;
+      }
+      .card-badge .badge-icon {
+        font-size: 0.8rem;
       }
 
       .card-exit-left {
@@ -1228,12 +1302,43 @@
   </head>
   <body>
     <nav class="top-nav">
-      <h1>Baby Names</h1>
+      <h1>👶 Baby Names</h1>
       <div class="nav-links">
-        <a href="https://github.com/dxdc/babynames">GitHub</a>
-        <a href="data/boys.csv" download>Boys CSV</a>
-        <a href="data/girls.csv" download>Girls CSV</a>
-        <a href="data/all-names.csv" download>All CSV</a>
+        <a
+          href="https://github.com/dxdc/babynames"
+          target="_blank"
+          rel="noopener"
+          title="View source on GitHub"
+        >
+          <svg class="nav-icon" viewBox="0 0 16 16">
+            <path
+              d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"
+            />
+          </svg>
+          Source
+        </a>
+        <a href="data/boys.csv" download title="Download boys names CSV">
+          <svg class="nav-icon" viewBox="0 0 16 16">
+            <path
+              d="M2.75 14A1.75 1.75 0 011 12.25v-2.5a.75.75 0 011.5 0v2.5c0 .138.112.25.25.25h10.5a.25.25 0 00.25-.25v-2.5a.75.75 0 011.5 0v2.5A1.75 1.75 0 0113.25 14H2.75z"
+            />
+            <path
+              d="M7.25 7.689V2a.75.75 0 011.5 0v5.689l1.97-1.969a.749.749 0 111.06 1.06l-3.25 3.25a.749.749 0 01-1.06 0L4.22 6.78a.749.749 0 111.06-1.06l1.97 1.969z"
+            />
+          </svg>
+          Boys
+        </a>
+        <a href="data/girls.csv" download title="Download girls names CSV">
+          <svg class="nav-icon" viewBox="0 0 16 16">
+            <path
+              d="M2.75 14A1.75 1.75 0 011 12.25v-2.5a.75.75 0 011.5 0v2.5c0 .138.112.25.25.25h10.5a.25.25 0 00.25-.25v-2.5a.75.75 0 011.5 0v2.5A1.75 1.75 0 0113.25 14H2.75z"
+            />
+            <path
+              d="M7.25 7.689V2a.75.75 0 011.5 0v5.689l1.97-1.969a.749.749 0 111.06 1.06l-3.25 3.25a.749.749 0 01-1.06 0L4.22 6.78a.749.749 0 111.06-1.06l1.97 1.969z"
+            />
+          </svg>
+          Girls
+        </a>
         <button
           id="theme-toggle"
           class="toggle-btn"
@@ -1490,27 +1595,22 @@
           <div class="swipe-intro-content">
             <h2>♥ Swipe Mode</h2>
             <p class="swipe-subtitle">
-              Swipe through names one at a time. Like, pass, or save for later.
+              Like, pass, or save for later — one name at a time.
             </p>
-            <div class="swipe-estimate">
-              <div class="estimate-row">
-                <span class="estimate-num" id="swipe-deck-count">0</span>
-                <span class="estimate-label">names in deck</span>
-              </div>
-              <div class="estimate-row">
-                <span class="estimate-num" id="swipe-time-est">~0 min</span>
-                <span class="estimate-label">estimated time</span>
-              </div>
-            </div>
             <div class="swipe-scope">
-              <label class="swipe-label">How deep?</label>
+              <label class="swipe-label">How many names?</label>
               <div class="scope-options" id="scope-options">
                 <!-- Populated by JS based on filtered deck -->
               </div>
               <p class="scope-hint" id="scope-hint"></p>
             </div>
             <div class="swipe-name-row">
-              <label class="swipe-label">Your name</label>
+              <label class="swipe-label"
+                >Your name
+                <span style="font-weight: 400; color: var(--pico-muted-color)"
+                  >(for sharing)</span
+                ></label
+              >
               <input
                 type="text"
                 id="voter-name-input"
@@ -1539,12 +1639,13 @@
               >
                 Start Fresh
               </button>
-              <button class="swipe-action-btn secondary" id="swipe-results-btn">
+              <button
+                class="swipe-action-btn secondary"
+                id="swipe-results-btn"
+                style="display: none"
+              >
                 View Shortlist
               </button>
-            </div>
-            <div class="swipe-hint">
-              <span>← Pass</span><span>↑ Maybe</span><span>→ Like</span>
             </div>
             <p
               id="storage-warning"
@@ -1552,7 +1653,7 @@
               style="display: none"
             >
               Your picks are saved in this browser only. Use Export to back them
-              up. Private/incognito mode won't save progress.
+              up.
             </p>
           </div>
         </div>
@@ -1575,6 +1676,7 @@
             <div class="swipe-card-area">
               <div class="swipe-card" id="swipe-card">
                 <div class="card-name" id="card-name"></div>
+                <div class="card-badges" id="card-badges"></div>
                 <div class="card-variants" id="card-variants"></div>
                 <div class="card-stats" id="card-stats"></div>
               </div>
@@ -1737,6 +1839,61 @@
         </div>
       </div>
     </main>
+
+    <footer class="site-footer">
+      <div class="footer-links">
+        <a
+          href="https://github.com/dxdc/babynames"
+          target="_blank"
+          rel="noopener"
+          title="View source on GitHub"
+        >
+          <svg class="footer-icon" viewBox="0 0 16 16">
+            <path
+              d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"
+            />
+          </svg>
+          Source Code
+        </a>
+        <a
+          href="https://github.com/dxdc/babynames/issues"
+          target="_blank"
+          rel="noopener"
+          title="Report a bug or request a feature"
+        >
+          <svg class="footer-icon" viewBox="0 0 16 16">
+            <path d="M8 9.5a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
+            <path
+              d="M8 0a8 8 0 100 16A8 8 0 008 0zM1.5 8a6.5 6.5 0 1113 0 6.5 6.5 0 01-13 0z"
+            />
+          </svg>
+          Feedback
+        </a>
+        <a
+          href="https://paypal.me/ddcaspi"
+          target="_blank"
+          rel="noopener"
+          title="Support this project"
+        >
+          <svg class="footer-icon" viewBox="0 0 16 16">
+            <path
+              d="M4.25 2.5a2.75 2.75 0 00-1.86 4.78l5.14 4.76a.67.67 0 00.94 0l5.14-4.76A2.75 2.75 0 0011.75 2.5c-1.15 0-2.16.7-2.58 1.7a.37.37 0 01-.34.22.37.37 0 01-.33-.22A2.75 2.75 0 004.25 2.5z"
+            />
+          </svg>
+          Donate
+        </a>
+      </div>
+      <div>
+        Data from
+        <a
+          href="https://www.ssa.gov/oact/babynames/limits.html"
+          target="_blank"
+          rel="noopener"
+          >US Social Security Administration</a
+        >
+        · Free &amp; open source
+      </div>
+    </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/tabulator-tables@6.4.0/dist/js/tabulator.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.5.3/papaparse.min.js"></script>

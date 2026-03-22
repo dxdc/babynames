@@ -120,7 +120,7 @@ python -m http.server 8000
 ├── grid.js                 # Table, filtering, URL state
 ├── swipe.js                # Swipe mode
 ├── manifest.json           # PWA manifest
-├── raw/                    # SSA source files + biblical names
+├── raw/                    # SSA source files, biblical names, merge overrides
 ├── data/                   # Generated CSVs
 ├── src/babynames.py        # Data pipeline
 ├── tests/                  # Test suite
@@ -138,6 +138,7 @@ python -m http.server 8000
 
 - **SSA Baby Names** (`raw/yob*.txt`): Children of each sex given each name, per year, 1880–2024. All names with 5+ uses included. ([Source](https://www.ssa.gov/oact/babynames/limits.html))
 - **Biblical Names** (`raw/biblical_names.csv`): Categorized list of biblical names (Person, Place, God, Other).
+- **Forced Merges** (`raw/forced_merges.csv`): Manual spelling group overrides for names the phonetic algorithm splits incorrectly (e.g., Kaitlyn/Katelyn/Caitlin).
 
 ## Contributing
 

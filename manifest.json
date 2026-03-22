@@ -1,7 +1,7 @@
 {
-  "name": "Baby Names – US Baby Name Search & Explorer",
+  "name": "Baby Names – Browse, Filter & Swipe 100k+ US Names",
   "short_name": "Baby Names",
-  "description": "Browse, filter, and swipe through 100k+ US baby names from 1880–present.",
+  "description": "Browse, filter, and swipe through 100k+ US baby names. Phonetically de-duplicated. Swipe with your partner and compare picks.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

@@ -321,11 +321,12 @@ const swipe = (() => {
       const btn = document.createElement("button");
       btn.className = `scope-option${n === scopeLimit ? " active" : ""}`;
       btn.type = "button";
-      const label = n === total ? "All" : `Top ${n.toLocaleString()}`;
+      const label =
+        n === total ? `All ${n.toLocaleString()}` : `Top ${n.toLocaleString()}`;
       const time = formatTime(Math.max(0, n - reviewedCount()));
       btn.innerHTML =
         `<span class="scope-label">${label}</span>` +
-        `<span class="scope-detail">${n.toLocaleString()} names · ${time}</span>`;
+        `<span class="scope-detail">${time}</span>`;
       btn.addEventListener("click", () => {
         scopeLimit = n;
         activeDeck = deck.slice(0, scopeLimit);
@@ -345,9 +346,6 @@ const swipe = (() => {
   function updateEstimates() {
     const count = activeDeck.length;
     const reviewed = reviewedCount();
-    const remaining = Math.max(0, count - reviewed);
-    $("swipe-deck-count").textContent = count.toLocaleString();
-    $("swipe-time-est").textContent = formatTime(remaining);
 
     // Hint with example name at boundary
     if (activeDeck.length > 0 && activeDeck.length < deck.length) {
@@ -357,6 +355,11 @@ const swipe = (() => {
     } else {
       $("scope-hint").textContent = "";
     }
+
+    // Show View Shortlist only if there are picks
+    const hasPicksNow =
+      Object.keys(liked).length > 0 || Object.keys(maybe).length > 0;
+    $("swipe-results-btn").style.display = hasPicksNow ? "" : "none";
   }
 
   function advanceToNext() {
@@ -435,18 +438,40 @@ const swipe = (() => {
       });
     }
 
-    // Stats
+    // Badges — quick visual indicators
+    const badgeEl = $("card-badges");
+    badgeEl.innerHTML = "";
+    const badges = [];
+    if (d.biblical) badges.push({ icon: "📖", label: d.biblical });
+    const currentYear = new Date().getFullYear();
+    if (d.year_peak && d.year_peak >= currentYear - 15) {
+      badges.push({ icon: "📈", label: "Trending" });
+    } else if (d.year_peak && d.year_peak < 1960) {
+      badges.push({ icon: "🕰️", label: "Classic" });
+    }
+    if (
+      d.unisex_pct != null &&
+      d.unisex_pct !== "" &&
+      Number(d.unisex_pct) >= 30
+    ) {
+      badges.push({ icon: "⚤", label: `${d.unisex_pct}% unisex` });
+    }
+    if (d.is_palindrome == 1) badges.push({ icon: "🔁", label: "Palindrome" });
+    if (d.alliteration == 1) badges.push({ icon: "🔤", label: "Alliteration" });
+    for (const b of badges) {
+      const span = document.createElement("span");
+      span.className = "card-badge";
+      span.innerHTML = `<span class="badge-icon">${b.icon}</span>${b.label}`;
+      badgeEl.appendChild(span);
+    }
+
+    // Stats — compact; badges handle traits
     const parts = [
       `#${d.rank}`,
       `${Number(d.total_count).toLocaleString()} babies`,
       `${d.year_min}–${d.year_max}`,
-      `peaked ${d.year_peak}`,
     ];
     if (d.syllables) parts.push(`${d.syllables} syl`);
-    if (d.unisex_pct != null && d.unisex_pct !== "") {
-      const sym = d.unisex_dominant === "M" ? "♂" : "♀";
-      parts.push(`${d.unisex_pct}% unisex ${sym}`);
-    }
     $("card-stats").textContent = parts.join(" · ");
 
     // Announce to screen readers
@@ -703,9 +728,15 @@ const swipe = (() => {
   // ---------------------------------------------------------------
 
   function shareDeck() {
-    // The filter state is already in the URL hash (managed by grid.js)
-    // Just copy the current URL — anyone opening it gets the same filtered deck
-    copyToClipboard(location.href, "share-deck-btn");
+    const gLabel = getGender() === "M" ? "Boys" : "Girls";
+    shareOrCopy(
+      {
+        title: `Baby Names – ${gLabel}`,
+        text: `Check out these ${gLabel.toLowerCase()} names`,
+        url: location.href,
+      },
+      "share-deck-btn",
+    );
   }
 
   function sharePicks() {
@@ -725,11 +756,27 @@ const swipe = (() => {
       $("swipe-complete").style.display !== "none"
         ? "complete-share-btn"
         : "share-picks-btn";
-    copyToClipboard(url, btnId);
+    const gLabel = getGender() === "M" ? "boys" : "girls";
+    const count = Object.keys(liked).length + Object.keys(maybe).length;
+    shareOrCopy(
+      {
+        title: `${voterName}'s ${gLabel} name picks`,
+        text: `${voterName} shared ${count} ${gLabel} name picks`,
+        url: url,
+      },
+      btnId,
+    );
   }
 
-  function copyToClipboard(text, btnId) {
-    navigator.clipboard.writeText(text).then(
+  function shareOrCopy(data, btnId) {
+    // Use native share sheet on supported devices (mobile, some desktop)
+    if (navigator.share) {
+      navigator.share(data).catch(() => {});
+      return;
+    }
+    // Fallback: copy URL to clipboard
+    const url = data.url || data.text;
+    navigator.clipboard.writeText(url).then(
       () => {
         const btn = $(btnId);
         const orig = btn.textContent;
@@ -738,7 +785,7 @@ const swipe = (() => {
           btn.textContent = orig;
         }, 2000);
       },
-      () => prompt("Copy this link:", text),
+      () => prompt("Copy this link:", url),
     );
   }
 
