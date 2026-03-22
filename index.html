@@ -445,19 +445,22 @@
       }
 
       /* Reset Pico's button styling inside swipe overlay.
-         Pico styles all <button> with primary bg + white text.
-         This reset neutralizes those defaults so our classes work. */
+         Pico styles <button> with primary bg + white text via internal vars.
+         Override every property Pico touches to neutralize defaults. */
       .swipe-overlay button {
         --pico-background-color: transparent;
         --pico-border-color: transparent;
+        --pico-primary-inverse: var(--pico-color);
+        --pico-form-element-color: var(--pico-color);
         --pico-box-shadow: none;
         background-color: transparent;
         border-color: transparent;
-        color: var(--pico-color);
+        color: inherit;
         box-shadow: none;
+        font-weight: inherit;
       }
 
-      .swipe-close-btn {
+      .swipe-overlay .swipe-close-btn {
         position: absolute;
         top: 0.75rem;
         right: 1rem;
@@ -916,7 +919,7 @@
         font-size: 0.8rem;
         color: var(--pico-muted-color);
       }
-      .result-remove {
+      .swipe-overlay .result-remove {
         background: none;
         border: none;
         color: var(--pico-muted-color);
@@ -1172,7 +1175,7 @@
         text-align: center;
         padding-bottom: 0.5rem;
       }
-      .swipe-peek-btn {
+      .swipe-overlay .swipe-peek-btn {
         background: none;
         border: none;
         color: var(--pico-muted-color);
