@@ -444,6 +444,19 @@
         overflow-y: auto;
       }
 
+      /* Reset Pico's button styling inside swipe overlay.
+         Pico styles all <button> with primary bg + white text.
+         This reset neutralizes those defaults so our classes work. */
+      .swipe-overlay button {
+        --pico-background-color: transparent;
+        --pico-border-color: transparent;
+        --pico-box-shadow: none;
+        background-color: transparent;
+        border-color: transparent;
+        color: var(--pico-color);
+        box-shadow: none;
+      }
+
       .swipe-close-btn {
         position: absolute;
         top: 0.75rem;
@@ -570,7 +583,7 @@
         flex-direction: column;
         gap: 0.35rem;
       }
-      .scope-option {
+      button.scope-option {
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -585,17 +598,17 @@
         text-align: left;
         width: 100%;
       }
-      .scope-option:hover {
+      button.scope-option:hover {
         border-color: var(--chip-active);
       }
-      .scope-option.active {
+      button.scope-option.active {
         border-color: var(--chip-active);
         background: color-mix(in oklch, var(--chip-active) 12%, transparent);
       }
-      .scope-option .scope-label {
+      button.scope-option .scope-label {
         font-weight: 600;
       }
-      .scope-option .scope-detail {
+      button.scope-option .scope-detail {
         font-size: 0.8rem;
         color: var(--muted-stronger, var(--pico-muted-color));
       }
