@@ -36,15 +36,17 @@ ArpabetDict: TypeAlias = dict[str, list[Phonemes]]
 # ---------------------------------------------------------------------------
 
 EXCLUDED_NAMES: set[str] = {
-    "Unknown",
-    "Infant",
-    "Male",
-    "Female",
     "Babyboy",
     "Babygirl",
-    "Notnamed",
-    "Unnamed",
     "Childnotnamed",
+    "Female",
+    "Infant",
+    "Male",
+    "Nogivenname",
+    "Nonamegiven",
+    "Notnamed",
+    "Unknown",
+    "Unnamed",
 }
 
 # ---------------------------------------------------------------------------

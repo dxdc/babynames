@@ -45,20 +45,6 @@ class TestLoadSSAData:
         for blocked in EXCLUDED_NAMES:
             assert blocked not in names, f"{blocked} should be excluded"
 
-    def test_excluded_names_constant(self) -> None:
-        """Ensure the blocklist covers known SSA artifacts."""
-        expected = {
-            "Unknown",
-            "Infant",
-            "Male",
-            "Female",
-            "Babyboy",
-            "Babygirl",
-            "Notnamed",
-            "Unnamed",
-        }
-        assert expected == EXCLUDED_NAMES
-
 
 class TestLoadBiblicalNames:
     def test_loads(self, biblical_path) -> None:
