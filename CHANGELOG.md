@@ -43,10 +43,14 @@ Everyone is a peer — no "host" or "admin." Anyone can share at any time.
 
 ### Pipeline
 
+- Biblical names now categorized: Person, Place, God, Other (was boolean). Shows category in table instead of "Y".
+- Expanded biblical names list with missing entries (Elizabeth, Timothy, Ethan, Elijah, etc.) and BibleNLP cross-reference
 - Excluded junk names from SSA data: Unknown, Baby, Infant, Male, Female, Boy, Girl, Notnamed, Unnamed
+- Unisex recency cutoff derived from data (`max_year - 50`) instead of hardcoded 1970
 
 ### Infrastructure
 
+- `biblical` CSV column changed from `1`/empty to category string: `Person`, `Place`, `God`, `Other`, or empty
 - Pages workflow deploys only `_site/` directory (was shipping entire 41MB repo)
 - Generate workflow queues instead of cancelling on rapid pushes
 - Pages auto-redeploys after successful data generation

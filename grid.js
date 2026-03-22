@@ -123,10 +123,11 @@ function initTable(data, onReady) {
       {
         title: "Biblical",
         field: "biblical",
-        width: 75,
+        width: 80,
         headerFilter: false,
         formatter: function (cell) {
-          return cell.getValue() == 1 ? "Y" : "";
+          var val = cell.getValue();
+          return val || "";
         },
         responsive: 1,
       },
@@ -501,7 +502,7 @@ function applyFilters() {
     }
 
     // Boolean toggles
-    if (biblicalFilter && data.biblical != 1) return false;
+    if (biblicalFilter && !data.biblical) return false;
     if (trendingFilter && data.year_peak < trendingCutoff) return false;
     if (palindromeFilter && data.is_palindrome != 1) return false;
     if (alliterationFilter && data.alliteration != 1) return false;

@@ -36,7 +36,7 @@ Boys' names are more concentrated (fewer names to reach 90%), while girls' names
 | year_min           | First year this name appears in SSA data                                      |
 | year_max           | Last year this name appears                                                   |
 | year_peak          | Most popular year                                                             |
-| biblical           | Biblical name (1 = yes)                                                       |
+| biblical           | Biblical category: Person, Place, God, or Other; empty if not biblical        |
 | is_palindrome      | Reads the same forwards and backwards (1 = yes)                               |
 | pronunciations     | ARPABET phonetic pronunciations, pipe-separated                               |
 | first_letter       | First letter                                                                  |
@@ -137,7 +137,7 @@ python -m http.server 8000
 ## Datasets
 
 - **SSA Baby Names** (`raw/yob*.txt`): Children of each sex given each name, per year, 1880–2024. All names with 5+ uses included. ([Source](https://www.ssa.gov/oact/babynames/limits.html))
-- **Biblical Names** (`raw/biblical_names.csv`): Curated list of biblical names.
+- **Biblical Names** (`raw/biblical_names.csv`): Categorized list of biblical names (Person, Place, God, Other).
 
 ## Contributing
 

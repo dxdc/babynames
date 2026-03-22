@@ -264,10 +264,41 @@ def load_ssa_data(data_dir: Path) -> pl.DataFrame:
 
 
 def load_biblical_names(filepath: Path) -> pl.DataFrame:
-    """Load biblical names CSV and add a boolean marker column."""
+    """Load biblical names CSV with category labels.
+
+    Maps verbose categories to short display labels:
+      "Names of People"  → "Person"
+      "Names of Places"  → "Place"
+      "Names of God"     → "God"
+    Dual categories (e.g. "Names of People | Names of Places") use the first.
+    Other categories (peoples/nations, miscellaneous) map to "Other".
+    """
     log.info("Loading biblical names from %s", filepath)
     names = pl.read_csv(filepath, encoding="utf8-lossy")
-    return names.with_columns(pl.lit(1).alias("biblical"))
+
+    # Support both old (name-only) and new (name,category) formats
+    if "category" not in names.columns:
+        return names.with_columns(pl.lit("Person").alias("biblical"))
+
+    category_map = {
+        "Names of People": "Person",
+        "Names of Places": "Place",
+        "Names of God": "God",
+        "Names of Peoples and Nations": "Other",
+        "Other Names": "Other",
+    }
+
+    def map_category(cat: str | None) -> str:
+        if not cat:
+            return "Other"
+        # Dual categories: take the first
+        primary = cat.split(" | ")[0]
+        return category_map.get(primary, "Other")
+
+    labels = [map_category(c) for c in names["category"].to_list()]
+    return names.select(pl.col("name").str.to_titlecase()).with_columns(
+        pl.Series("biblical", labels)
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -431,8 +462,8 @@ def merge_spelling_variants(df: pl.DataFrame) -> pl.DataFrame:
             entry["total_count"] += row["total_count"]
             entry["year_min"] = min(entry["year_min"], row["year_min"])
             entry["year_max"] = max(entry["year_max"], row["year_max"])
-            if row["biblical"]:
-                entry["biblical"] = 1
+            if row["biblical"] and not entry["biblical"]:
+                entry["biblical"] = row["biblical"]
             if row.get("is_palindrome"):
                 entry["is_palindrome"] = 1
             if row["pronunciations"]:
