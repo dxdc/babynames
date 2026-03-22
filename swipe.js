@@ -103,6 +103,7 @@ const swipe = (() => {
       JSON.stringify({
         v: deckHash,
         n: voterName,
+        g: getGender(),
         l: Object.keys(liked).map(Number),
         m: Object.keys(maybe).map(Number),
       }),
@@ -263,8 +264,13 @@ const swipe = (() => {
 
     const votersNote = $("swipe-voters-note");
     if (otherVoters.length) {
-      const names = otherVoters.map((v) => v.name || "Anonymous");
-      votersNote.textContent = `${names.join(", ")} also shared picks — compare in Results`;
+      const descs = otherVoters.map((v) => {
+        const n = v.name || "Someone";
+        const gLabel =
+          v.gender === "M" ? "boys" : v.gender === "F" ? "girls" : "";
+        return gLabel ? `${n} (${gLabel})` : n;
+      });
+      votersNote.textContent = `${descs.join(", ")} shared picks — compare in Results`;
       votersNote.style.display = "";
     } else {
       votersNote.style.display = "none";
@@ -571,24 +577,36 @@ const swipe = (() => {
       renderComparison();
 
       // Build banner text
-      const names = otherVoters.map((v) => v.name || "Someone");
       const ownPicks = Object.keys(liked).length + Object.keys(maybe).length;
-      const parts = names.map((name) => {
-        const v = otherVoters.find((ov) => (ov.name || "Someone") === name);
+      const currentGdr = getGender();
+      const parts = otherVoters.map((v) => {
         const n =
           Object.keys(v.liked || {}).length + Object.keys(v.maybe || {}).length;
-        return `<strong>${name}</strong> shared ${n.toLocaleString()} pick${n !== 1 ? "s" : ""}`;
+        const gLabel =
+          v.gender === "M" ? "boys" : v.gender === "F" ? "girls" : "";
+        const mismatch = v.gender && v.gender !== currentGdr;
+        return (
+          `<strong>${v.name || "Someone"}</strong> shared ${n.toLocaleString()} ${gLabel} pick${n !== 1 ? "s" : ""}` +
+          (mismatch ? " ⚠️" : "")
+        );
       });
+
+      const anyMismatch = otherVoters.some(
+        (v) => v.gender && v.gender !== currentGdr,
+      );
+      const mismatchNote = anyMismatch
+        ? `<br><small>⚠️ Some picks are for ${currentGdr === "M" ? "girls" : "boys"} — switch gender to compare those</small>`
+        : "";
 
       if (ownPicks === 0) {
         banner.innerHTML =
-          `${parts.join(" · ")}<br>` +
+          `${parts.join(" · ")}${mismatchNote}<br>` +
           `<button class="compare-cta" id="banner-start-btn">Start Swiping to Compare</button>`;
         $("banner-start-btn").addEventListener("click", () => {
           showIntro();
         });
       } else {
-        banner.innerHTML = parts.join(" · ") + " — see comparison below";
+        banner.innerHTML = parts.join(" · ") + mismatchNote;
       }
       banner.style.display = "";
     } else {
@@ -711,7 +729,25 @@ const swipe = (() => {
       const data = decodePicks(encoded);
       if (!data || (!data.l && !data.m)) throw new Error("bad data");
 
-      const voter = { name: data.n || "Partner", liked: {}, maybe: {} };
+      const voterGender = data.g || null;
+      const currentGdr = getGender();
+
+      if (voterGender && voterGender !== currentGdr) {
+        const label = voterGender === "M" ? "boys" : "girls";
+        const currentLabel = currentGdr === "M" ? "boys" : "girls";
+        alert(
+          `These picks are for ${label}, but you're viewing ${currentLabel}. ` +
+            `Switch to ${label} first, then try again.`,
+        );
+        return;
+      }
+
+      const voter = {
+        name: data.n || "Partner",
+        gender: voterGender || currentGdr,
+        liked: {},
+        maybe: {},
+      };
       for (const r of data.l || []) voter.liked[r] = true;
       for (const r of data.m || []) voter.maybe[r] = true;
 
@@ -722,9 +758,26 @@ const swipe = (() => {
       saveSession();
       $("add-voter-input-row").style.display = "none";
       showResults();
-    } catch {
-      alert("Could not read picks. Make sure you paste the full link.");
+
+      // Feedback flash
+      showToast(
+        `Added ${voter.name}'s picks (${Object.keys(voter.liked).length + Object.keys(voter.maybe).length} names)`,
+      );
+    } catch (e) {
+      if (e.message !== "gender_mismatch") {
+        alert("Could not read picks. Make sure you paste the full link.");
+      }
     }
+  }
+
+  function showToast(message) {
+    const existing = document.querySelector(".swipe-toast");
+    if (existing) existing.remove();
+    const toast = document.createElement("div");
+    toast.className = "swipe-toast";
+    toast.textContent = message;
+    $("swipe-overlay").appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
   }
 
   // ---------------------------------------------------------------
@@ -806,9 +859,84 @@ const swipe = (() => {
     addSection("Worth discussing", "💜", some, "maybe");
 
     if (!everyone.length && !most.length && !some.length) {
-      container.innerHTML =
-        '<div class="result-empty">No overlap yet — need at least 2 people\'s picks to compare</div>';
+      const ownPicks = Object.keys(liked).length + Object.keys(maybe).length;
+      if (ownPicks === 0) {
+        container.innerHTML =
+          '<div class="result-empty">Start swiping to see how your picks compare</div>';
+      } else {
+        container.innerHTML =
+          '<div class="result-empty">No overlap yet — keep swiping!</div>';
+      }
     }
+
+    // Individual voter picks
+    const voterDetails = document.createElement("div");
+    voterDetails.className = "voter-details";
+    for (const voter of otherVoters) {
+      const section = document.createElement("details");
+      section.className = "voter-detail";
+      const summary = document.createElement("summary");
+      const likedN = Object.keys(voter.liked || {}).length;
+      const maybeN = Object.keys(voter.maybe || {}).length;
+      const gLabel =
+        voter.gender === "M" ? "boys" : voter.gender === "F" ? "girls" : "";
+      summary.textContent = `${voter.name}'s picks — ${likedN} liked, ${maybeN} maybe${gLabel ? ` (${gLabel})` : ""}`;
+      section.appendChild(summary);
+
+      const content = document.createElement("div");
+      content.className = "voter-detail-content";
+
+      // Their liked names
+      if (likedN) {
+        const likedList = document.createElement("div");
+        likedList.className = "voter-pick-list";
+        for (const r of Object.keys(voter.liked)
+          .map(Number)
+          .sort((a, b) => a - b)) {
+          const d = deckByRank[r];
+          if (!d) continue;
+          const span = document.createElement("span");
+          span.className = "voter-pick liked";
+          span.textContent = d.name;
+          likedList.appendChild(span);
+        }
+        content.appendChild(likedList);
+      }
+
+      // Their maybe names
+      if (maybeN) {
+        const maybeList = document.createElement("div");
+        maybeList.className = "voter-pick-list";
+        for (const r of Object.keys(voter.maybe)
+          .map(Number)
+          .sort((a, b) => a - b)) {
+          const d = deckByRank[r];
+          if (!d) continue;
+          const span = document.createElement("span");
+          span.className = "voter-pick maybe";
+          span.textContent = d.name;
+          maybeList.appendChild(span);
+        }
+        content.appendChild(maybeList);
+      }
+
+      // Remove button
+      const removeBtn = document.createElement("button");
+      removeBtn.className = "swipe-action-btn secondary small";
+      removeBtn.textContent = `Remove ${voter.name}`;
+      removeBtn.style.marginTop = "0.5rem";
+      removeBtn.addEventListener("click", () => {
+        otherVoters = otherVoters.filter((v) => v.name !== voter.name);
+        saveSession();
+        showToast(`Removed ${voter.name}'s picks`);
+        showResults();
+      });
+      content.appendChild(removeBtn);
+
+      section.appendChild(content);
+      voterDetails.appendChild(section);
+    }
+    container.appendChild(voterDetails);
   }
 
   // ---------------------------------------------------------------
@@ -1011,7 +1139,12 @@ const swipe = (() => {
       try {
         const picks = decodePicks(params.get("picks"));
         if (picks) {
-          const voter = { name: picks.n || "Partner", liked: {}, maybe: {} };
+          const voter = {
+            name: picks.n || "Partner",
+            gender: picks.g || null,
+            liked: {},
+            maybe: {},
+          };
           for (const r of picks.l || []) voter.liked[r] = true;
           for (const r of picks.m || []) voter.maybe[r] = true;
           // Will merge into session when swipe opens

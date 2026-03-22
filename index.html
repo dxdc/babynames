@@ -1044,6 +1044,88 @@
         font-size: 0.85rem;
       }
 
+      /* Toast notification */
+      .swipe-toast {
+        position: fixed;
+        bottom: 2rem;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 0.6rem 1.5rem;
+        border-radius: 8px;
+        z-index: 230;
+        background: var(--pico-color);
+        color: var(--pico-background-color);
+        font-size: 0.85rem;
+        font-weight: 500;
+        animation:
+          toastIn 0.3s ease,
+          toastOut 0.3s ease 2.7s forwards;
+      }
+      @keyframes toastIn {
+        from {
+          opacity: 0;
+          transform: translateX(-50%) translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(-50%) translateY(0);
+        }
+      }
+      @keyframes toastOut {
+        from {
+          opacity: 1;
+        }
+        to {
+          opacity: 0;
+        }
+      }
+
+      /* Voter detail sections */
+      .voter-details {
+        margin-top: 1.5rem;
+      }
+      .voter-detail {
+        border: 1px solid var(--filter-border);
+        border-radius: 8px;
+        margin-bottom: 0.5rem;
+        overflow: hidden;
+      }
+      .voter-detail summary {
+        padding: 0.6rem 0.75rem;
+        cursor: pointer;
+        font-size: 0.85rem;
+        font-weight: 500;
+        background: var(--filter-bg);
+      }
+      .voter-detail summary:hover {
+        background: var(--chip-bg);
+      }
+      .voter-detail-content {
+        padding: 0.75rem;
+      }
+      .voter-pick-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.3rem;
+        margin-bottom: 0.5rem;
+      }
+      .voter-pick {
+        padding: 0.15rem 0.5rem;
+        border-radius: 10px;
+        font-size: 0.8rem;
+      }
+      .voter-pick.liked {
+        background: rgba(76, 175, 80, 0.12);
+        color: #4caf50;
+      }
+      .voter-pick.maybe {
+        background: rgba(255, 193, 7, 0.12);
+        color: #c79100;
+      }
+      [data-theme="dark"] .voter-pick.maybe {
+        color: #ffc107;
+      }
+
       /* Mid-session peek */
       .swipe-peek-row {
         text-align: center;
