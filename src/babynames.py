@@ -258,8 +258,29 @@ def load_ssa_data(data_dir: Path) -> pl.DataFrame:
     before = raw.height
     raw = raw.filter(~pl.col("name").is_in(EXCLUDED_NAMES))
     excluded = before - raw.height
+
+    # Strip names ending in "jr" where the base name exists as a standalone name
+    # (e.g., Martinjr → Martin exists, so it's a suffix artifact; Fajr → Fa doesn't exist)
+    jr_before = raw.height
+    all_names = set(raw["name"].unique().to_list())
+    jr_mask = []
+    for name in raw["name"].to_list():
+        low = name.lower()
+        if low.endswith("jr") and name[:-2] in all_names:
+            jr_mask.append(True)
+        else:
+            jr_mask.append(False)
+    raw = raw.filter(~pl.Series(jr_mask))
+    jr_excluded = jr_before - raw.height
+    excluded += jr_excluded
+
     if excluded:
-        log.info("Excluded %d rows matching %d blocked names", excluded, len(EXCLUDED_NAMES))
+        log.info(
+            "Excluded %d rows (%d blocked names, %d Jr suffixes)",
+            excluded,
+            excluded - jr_excluded,
+            jr_excluded,
+        )
     return raw
 
 
