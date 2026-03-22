@@ -89,7 +89,7 @@ const swipe = (() => {
   // ---------------------------------------------------------------
 
   function encodeSession() {
-    return btoa(
+    return safeEncode(
       JSON.stringify({
         v: deckHash,
         g: getGender(),
@@ -99,7 +99,7 @@ const swipe = (() => {
   }
 
   function encodePicks() {
-    return btoa(
+    return safeEncode(
       JSON.stringify({
         v: deckHash,
         n: voterName,
@@ -112,10 +112,19 @@ const swipe = (() => {
 
   function decodePicks(encoded) {
     try {
-      return JSON.parse(atob(encoded));
+      return JSON.parse(safeDecode(encoded));
     } catch {
       return null;
     }
+  }
+
+  // Unicode-safe base64 (handles names like José, Noël)
+  function safeEncode(str) {
+    return btoa(unescape(encodeURIComponent(str)));
+  }
+
+  function safeDecode(str) {
+    return decodeURIComponent(escape(atob(str)));
   }
 
   // ---------------------------------------------------------------
@@ -188,10 +197,19 @@ const swipe = (() => {
         return;
       }
       if ($("swipe-cards").style.display === "none") return;
-      if (e.key === "ArrowLeft") act("pass");
-      else if (e.key === "ArrowUp") act("maybe");
-      else if (e.key === "ArrowRight") act("like");
-      else if (e.key === "z" && (e.ctrlKey || e.metaKey)) undo();
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        act("pass");
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        act("maybe");
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        act("like");
+      } else if (e.key === "z" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        undo();
+      }
     });
 
     setupGestures();
@@ -1131,7 +1149,7 @@ const swipe = (() => {
       // Full deck reconstruction would require loading CSV + applying filters,
       // which is better handled by sharing filter state in the main URL hash.
       try {
-        JSON.parse(atob(params.get("swipe")));
+        JSON.parse(safeDecode(params.get("swipe")));
       } catch {
         /* ignore malformed */
       }

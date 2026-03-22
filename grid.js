@@ -148,7 +148,7 @@ function initTable(data, onReady) {
           "Minority gender share (50% = perfectly balanced). Shows dominant gender.",
         formatter: function (cell) {
           const val = cell.getValue();
-          if (val == null) return "";
+          if (val == null || val === "") return "";
           const dom = cell.getRow().getData().unisex_dominant;
           const label = dom === "M" ? "♂" : dom === "F" ? "♀" : "";
           return val + "% " + label;
@@ -484,7 +484,12 @@ function applyFilters() {
     }
 
     // Unisex share
-    if (unisexMin && (data.unisex_pct == null || data.unisex_pct < unisexMin))
+    if (
+      unisexMin &&
+      (data.unisex_pct == null ||
+        data.unisex_pct === "" ||
+        data.unisex_pct < unisexMin)
+    )
       return false;
 
     // Starting letters (multi-select)
