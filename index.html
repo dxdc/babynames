@@ -45,40 +45,50 @@
     <style>
       :root {
         --pico-font-size: 15px;
-        --boys-color: oklch(0.55 0.15 250);
-        --girls-color: oklch(0.55 0.18 15);
+        --boys-color: oklch(0.5 0.16 250);
+        --girls-color: oklch(0.52 0.19 15);
       }
 
       [data-theme="dark"] {
         --filter-bg: color-mix(
           in oklch,
-          var(--pico-background-color) 85%,
+          var(--pico-background-color) 82%,
           white
+        );
+        --filter-border: color-mix(
+          in oklch,
+          var(--pico-color) 30%,
+          transparent
+        );
+        --chip-bg: color-mix(in oklch, var(--pico-background-color) 72%, white);
+        --chip-active: var(--pico-primary);
+        --muted-stronger: color-mix(
+          in oklch,
+          var(--pico-color) 55%,
+          transparent
+        );
+        --boys-color: oklch(0.68 0.15 250);
+        --girls-color: oklch(0.68 0.18 15);
+      }
+
+      [data-theme="light"] {
+        --filter-bg: color-mix(
+          in oklch,
+          var(--pico-background-color) 88%,
+          black
         );
         --filter-border: color-mix(
           in oklch,
           var(--pico-color) 25%,
           transparent
         );
-        --chip-bg: color-mix(in oklch, var(--pico-background-color) 75%, white);
+        --chip-bg: color-mix(in oklch, var(--pico-background-color) 82%, black);
         --chip-active: var(--pico-primary);
-        --boys-color: oklch(0.65 0.15 250);
-        --girls-color: oklch(0.65 0.18 15);
-      }
-
-      [data-theme="light"] {
-        --filter-bg: color-mix(
+        --muted-stronger: color-mix(
           in oklch,
-          var(--pico-background-color) 95%,
-          black
-        );
-        --filter-border: color-mix(
-          in oklch,
-          var(--pico-color) 15%,
+          var(--pico-color) 50%,
           transparent
         );
-        --chip-bg: color-mix(in oklch, var(--pico-background-color) 90%, black);
-        --chip-active: var(--pico-primary);
       }
 
       /* Gender-aware accent color for active chips, toggles, letters */
@@ -183,15 +193,17 @@
         border-radius: 4px;
         cursor: pointer;
         background: var(--chip-bg);
-        border: 1px solid transparent;
-        color: var(--pico-color);
+        border: 1px solid var(--filter-border);
+        color: var(--muted-stronger, var(--pico-color));
         transition: all 0.15s;
         &:hover {
-          border-color: var(--pico-primary);
+          border-color: var(--chip-active);
+          color: var(--pico-color);
         }
         &.active {
           background: var(--chip-active);
           color: #fff;
+          border-color: transparent;
         }
       }
 
@@ -201,20 +213,23 @@
         font-weight: 600;
         border-radius: 4px;
         cursor: pointer;
-        border: 2px solid transparent;
+        border: 2px solid var(--filter-border);
         background: var(--chip-bg);
-        color: var(--pico-color);
+        color: var(--muted-stronger, var(--pico-color));
         transition: all 0.15s;
         &.boys.active {
           background: var(--boys-color);
           color: #fff;
+          border-color: var(--boys-color);
         }
         &.girls.active {
           background: var(--girls-color);
           color: #fff;
+          border-color: var(--girls-color);
         }
         &:not(.active):hover {
-          border-color: var(--pico-primary);
+          border-color: var(--chip-active);
+          color: var(--pico-color);
         }
       }
 
@@ -229,15 +244,17 @@
         border-radius: 4px;
         cursor: pointer;
         background: var(--chip-bg);
-        border: 1px solid transparent;
-        color: var(--pico-color);
+        border: 1px solid var(--filter-border);
+        color: var(--muted-stronger, var(--pico-color));
         transition: all 0.15s;
         &:hover {
-          border-color: var(--pico-primary);
+          border-color: var(--chip-active);
+          color: var(--pico-color);
         }
         &.active {
           background: var(--chip-active);
           color: #fff;
+          border-color: transparent;
         }
       }
 
@@ -544,22 +561,22 @@
         width: 100%;
       }
       .scope-option:hover {
-        border-color: var(--pico-muted-color);
+        border-color: var(--chip-active);
       }
       .scope-option.active {
         border-color: var(--chip-active);
-        background: color-mix(in oklch, var(--chip-active) 10%, transparent);
+        background: color-mix(in oklch, var(--chip-active) 12%, transparent);
       }
       .scope-option .scope-label {
         font-weight: 600;
       }
       .scope-option .scope-detail {
         font-size: 0.8rem;
-        color: var(--pico-muted-color);
+        color: var(--muted-stronger, var(--pico-muted-color));
       }
       .scope-hint {
         font-size: 0.75rem;
-        color: var(--pico-muted-color);
+        color: var(--muted-stronger, var(--pico-muted-color));
         margin-top: 0.5rem;
       }
 
@@ -647,13 +664,14 @@
         font-size: 0.8rem;
         border-radius: 12px;
         background: var(--chip-bg);
-        color: var(--pico-muted-color);
+        color: var(--muted-stronger, var(--pico-muted-color));
         cursor: pointer;
-        border: 1px solid transparent;
+        border: 1px solid var(--filter-border);
         transition: all 0.15s;
       }
       .variant-chip:hover {
-        border-color: var(--pico-primary);
+        border-color: var(--chip-active);
+        color: var(--pico-color);
       }
       .variant-chip.selected {
         background: var(--chip-active);
@@ -662,7 +680,7 @@
       }
       .card-stats {
         font-size: 0.8rem;
-        color: var(--pico-muted-color);
+        color: var(--muted-stronger, var(--pico-muted-color));
         line-height: 1.5;
       }
 

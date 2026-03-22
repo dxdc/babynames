@@ -217,7 +217,7 @@ const swipe = (() => {
       const likedN = Object.keys(liked).length;
       const maybeN = Object.keys(maybe).length;
       const remaining = activeDeck.length - reviewed;
-      resumeEl.textContent = `${reviewed} reviewed · ${likedN} liked · ${maybeN} maybe · ${remaining} remaining`;
+      resumeEl.textContent = `${reviewed.toLocaleString()} reviewed · ${likedN.toLocaleString()} liked · ${maybeN.toLocaleString()} maybe · ${remaining.toLocaleString()} remaining`;
       resumeEl.style.display = "";
       freshBtn.style.display = "";
       advanceToNext();
@@ -391,7 +391,8 @@ const swipe = (() => {
     const reviewed = reviewedCount();
     $("swipe-progress-bar").style.width =
       `${((reviewed / total) * 100).toFixed(1)}%`;
-    $("swipe-progress-text").textContent = `${reviewed} / ${total}`;
+    $("swipe-progress-text").textContent =
+      `${reviewed.toLocaleString()} / ${total.toLocaleString()}`;
 
     $("swipe-undo").style.visibility = actionHistory.length
       ? "visible"
@@ -495,7 +496,8 @@ const swipe = (() => {
 
     const likedN = Object.keys(liked).length;
     const maybeN = Object.keys(maybe).length;
-    $("complete-summary").textContent = `${likedN} liked · ${maybeN} maybe`;
+    $("complete-summary").textContent =
+      `${likedN.toLocaleString()} liked · ${maybeN.toLocaleString()} maybe`;
 
     const flash = $("swipe-flash");
     flash.className = "swipe-flash flash-complete";
@@ -513,8 +515,10 @@ const swipe = (() => {
   function showResults() {
     showScreen("swipe-results");
 
-    $("results-liked-count").textContent = Object.keys(liked).length;
-    $("results-maybe-count").textContent = Object.keys(maybe).length;
+    $("results-liked-count").textContent =
+      Object.keys(liked).length.toLocaleString();
+    $("results-maybe-count").textContent =
+      Object.keys(maybe).length.toLocaleString();
 
     renderResultList($("results-liked"), liked, "liked");
     renderResultList($("results-maybe"), maybe, "maybe");
@@ -712,7 +716,7 @@ const swipe = (() => {
     function addSection(title, emoji, items, cls) {
       if (!items.length) return;
       const h = document.createElement("h4");
-      h.textContent = `${emoji} ${title} (${items.length})`;
+      h.textContent = `${emoji} ${title} (${items.length.toLocaleString()})`;
       container.appendChild(h);
       for (const item of items) {
         const row = document.createElement("div");
