@@ -226,6 +226,8 @@ const swipe = (() => {
   }
 
   function closeSwipe() {
+    clearTimeout(actTimer);
+    acting = false;
     $("swipe-overlay").style.display = "none";
     for (const s of SCREENS) $(s).style.display = "none";
     document.body.style.overflow = "";
@@ -420,7 +422,7 @@ const swipe = (() => {
       `peaked ${d.year_peak}`,
     ];
     if (d.syllables) parts.push(`${d.syllables} syl`);
-    if (d.unisex_pct != null) {
+    if (d.unisex_pct != null && d.unisex_pct !== "") {
       const sym = d.unisex_dominant === "M" ? "♂" : "♀";
       parts.push(`${d.unisex_pct}% unisex ${sym}`);
     }
@@ -467,6 +469,7 @@ const swipe = (() => {
   // ---------------------------------------------------------------
 
   let acting = false;
+  let actTimer = 0;
 
   function act(action) {
     if (acting || currentIndex >= activeDeck.length) return;
@@ -511,7 +514,7 @@ const swipe = (() => {
     }
 
     saveSession();
-    setTimeout(() => {
+    actTimer = setTimeout(() => {
       currentIndex++;
       advanceToNext();
       renderCard();
@@ -521,6 +524,8 @@ const swipe = (() => {
 
   function undo() {
     if (!actionHistory.length) return;
+    clearTimeout(actTimer);
+    acting = false;
     const last = actionHistory.pop();
     delete liked[last.rank];
     delete maybe[last.rank];
@@ -633,8 +638,7 @@ const swipe = (() => {
 
       const nameSpan = document.createElement("span");
       nameSpan.className = "result-name";
-      const spells =
-        item.spellings || (item.spelling ? [item.spelling] : [item.name]);
+      const spells = item.spellings || [item.name];
       nameSpan.textContent = spells.join(", ");
       if (spells.length === 1 && spells[0] !== item.name) {
         nameSpan.textContent += ` (${item.name})`;
@@ -763,10 +767,8 @@ const swipe = (() => {
       showToast(
         `Added ${voter.name}'s picks (${Object.keys(voter.liked).length + Object.keys(voter.maybe).length} names)`,
       );
-    } catch (e) {
-      if (e.message !== "gender_mismatch") {
-        alert("Could not read picks. Make sure you paste the full link.");
-      }
+    } catch {
+      alert("Could not read picks. Make sure you paste the full link.");
     }
   }
 
@@ -1171,6 +1173,26 @@ const swipe = (() => {
 
   function tryAutoOpen() {
     if (!pendingPicks) return;
+
+    // If incoming picks have a gender that doesn't match, switch first
+    const incomingGender = otherVoters.length
+      ? otherVoters[otherVoters.length - 1].gender
+      : null;
+    if (
+      incomingGender &&
+      typeof getCurrentGender === "function" &&
+      getCurrentGender() !== incomingGender
+    ) {
+      // Click the gender button — grid.js will reload data and call tryAutoOpen again
+      const btn = document.querySelector(
+        `.gender-btn[data-gender="${incomingGender}"]`,
+      );
+      if (btn) {
+        btn.click();
+        return; // tryAutoOpen will be called again after data loads
+      }
+    }
+
     pendingPicks = false;
     // Small delay so table finishes rendering first
     setTimeout(() => {

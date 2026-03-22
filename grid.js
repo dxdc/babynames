@@ -280,6 +280,9 @@ function loadData(gender) {
         .setData(allData)
         .then(function () {
           applyFilters();
+          if (typeof swipe !== "undefined" && swipe.tryAutoOpen) {
+            swipe.tryAutoOpen();
+          }
         })
         .catch(function (err) {
           console.error("setData error:", err);
@@ -319,12 +322,18 @@ function loadData(gender) {
       if (!table) {
         initTable(allData, function () {
           applyFilters();
+          if (typeof swipe !== "undefined" && swipe.tryAutoOpen) {
+            swipe.tryAutoOpen();
+          }
         });
       } else if (tableReady) {
         table
           .setData(allData)
           .then(function () {
             applyFilters();
+            if (typeof swipe !== "undefined" && swipe.tryAutoOpen) {
+              swipe.tryAutoOpen();
+            }
           })
           .catch(function (err) {
             console.error("setData error:", err);
