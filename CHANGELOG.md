@@ -53,7 +53,6 @@ Everyone is a peer — no "host" or "admin." Anyone can share at any time.
 - Added `permissions: contents: write` to generate workflow
 - Fixed CRLF line endings in test files
 - Added `.prettierignore` for data/raw/images
-- License changed from MIT to AGPL-3.0
 
 ## [2.0.0] - 2026-03-21
 
