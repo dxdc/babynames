@@ -8,6 +8,7 @@ on:
       - "grid.js"
       - "swipe.js"
       - "data/*.csv"
+      - "CNAME"
 
 permissions:
   contents: read
@@ -30,6 +31,7 @@ jobs:
         run: |
           mkdir -p _site/data _site/images
           cp index.html grid.js swipe.js .nojekyll _site/
+          cp CNAME _site/ 2>/dev/null || true
           cp data/*.csv _site/data/
           cp images/graph.png images/venmo.png _site/images/
       - uses: actions/configure-pages@v4

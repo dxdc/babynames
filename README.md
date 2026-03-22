@@ -8,7 +8,7 @@ Using publicly-available datasets from the United States Social Security Adminis
 
 ## How to Use
 
-Browse the data using the [interactive web viewer](https://dxdc.github.io/babynames/), which supports filtering by:
+Browse the data using the [interactive web viewer](https://baby.dxdc.dev/), which supports filtering by:
 
 - **Gender** — boys or girls
 - **Name search** — case-insensitive substring match (also searches spelling variants)
