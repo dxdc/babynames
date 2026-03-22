@@ -10,6 +10,7 @@ on:
       - "swipe.js"
       - "manifest.json"
       - "data/*.csv"
+      - "images/*.png"
       - "CNAME"
   workflow_run:
     workflows: ["Generate Data"]
@@ -41,9 +42,11 @@ jobs:
           cp index.html grid.js swipe.js manifest.json .nojekyll _site/
           cp CNAME _site/ 2>/dev/null || true
           cp data/*.csv _site/data/
+          for img in graph.png venmo.png og-image.png; do
+            [ -f "images/$img" ] && cp "images/$img" _site/images/
+          done
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
-          cp images/graph.png images/venmo.png images/og-image.png _site/images/
         with:
           path: _site
       - name: Deploy

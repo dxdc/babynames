@@ -46,7 +46,7 @@ Everyone is a peer — no "host" or "admin." Anyone can share at any time.
 
 ### Pipeline
 
-- Forced spelling merges (`raw/forced_merges.csv`) — 180 manual overrides for names the phonetic algorithm splits incorrectly (Kaitlyn/Katelyn/Caitlin, Caleb/Kaleb, Brooklyn/Brooklynn, etc.)
+- Forced spelling merges (`raw/forced_merges.csv`) — 210 manual overrides for names the phonetic algorithm splits incorrectly (Kaitlyn/Katelyn/Caitlin, Caleb/Kaleb, Jason/Jayson, Brooklyn/Brooklynn, etc.)
 - Biblical names now categorized: Person, Place, God, Other (was boolean). Shows category in table and swipe card badges.
 - Expanded biblical names list with missing entries (Elizabeth, Timothy, Ethan, Elijah, etc.) and BibleNLP cross-reference
 - Excluded junk names from SSA data: Unknown, Baby, Infant, Male, Female, Boy, Girl, Notnamed, Unnamed
