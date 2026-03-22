@@ -35,7 +35,7 @@ def generated_csvs(ssa_dir, biblical_path, tmp_path_factory) -> Path:
     df = flag_palindromes(df)
     df = merge_spelling_variants(df)
     df = compute_name_features(df)
-    df = classify_unisex_names(df, min_count=100, min_year=2019)
+    df = classify_unisex_names(df, min_count=100, recency_years=2)
     export_csvs(df, tmp_path)
     return tmp_path
 

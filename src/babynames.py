@@ -494,13 +494,17 @@ def classify_unisex_names(
     df: pl.DataFrame,
     *,
     min_count: int = 5000,
-    min_year: int = 1970,
+    recency_years: int = 50,
 ) -> pl.DataFrame:
     """Compute unisex percentage for names used by both genders.
 
-    For each name that appears in both M and F datasets (with year_max > min_year
-    and total_count > min_count for both), computes the minority gender's share
-    of the total as a percentage (0–50, where 50 = perfectly balanced).
+    Only considers names that are still in active use (year_max within
+    the last ``recency_years`` of the dataset) and have at least
+    ``min_count`` total uses for both genders. This prevents long-dead
+    names from being flagged as unisex.
+
+    For each qualifying name, computes the minority gender’s share of the
+    total as a percentage (0–50, where 50 = perfectly balanced).
 
     For example: Jordan has 419k boys + 139k girls = 24.9% minority share.
     This value appears in both boys.csv and girls.csv, meaning "24.9% of all
@@ -508,6 +512,8 @@ def classify_unisex_names(
 
     Names that don't appear in both genders (or don't meet thresholds) get null.
     """
+    data_max_year = df["year_max"].max()
+    min_year = data_max_year - recency_years
     candidates = df.filter((pl.col("year_max") > min_year) & (pl.col("total_count") > min_count))
 
     # Build name -> {sex: count} mapping
