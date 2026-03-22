@@ -32,6 +32,21 @@ PronunciationList: TypeAlias = list[Pronunciation]
 ArpabetDict: TypeAlias = dict[str, list[Phonemes]]
 
 # ---------------------------------------------------------------------------
+# Excluded names — SSA data artifacts, not real baby names
+# ---------------------------------------------------------------------------
+
+EXCLUDED_NAMES: set[str] = {
+    "Unknown",
+    "Infant",
+    "Male",
+    "Female",
+    "Babyboy",
+    "Babygirl",
+    "Notnamed",
+    "Unnamed",
+}
+
+# ---------------------------------------------------------------------------
 # CMU Pronouncing Dictionary
 # ---------------------------------------------------------------------------
 
@@ -236,7 +251,13 @@ def load_ssa_data(data_dir: Path) -> pl.DataFrame:
         ).with_columns(pl.lit(year).alias("year"))
         frames.append(frame)
 
-    return pl.concat(frames)
+    raw = pl.concat(frames)
+    before = raw.height
+    raw = raw.filter(~pl.col("name").is_in(EXCLUDED_NAMES))
+    excluded = before - raw.height
+    if excluded:
+        log.info("Excluded %d rows matching %d blocked names", excluded, len(EXCLUDED_NAMES))
+    return raw
 
 
 def load_biblical_names(filepath: Path) -> pl.DataFrame:

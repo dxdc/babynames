@@ -3,6 +3,7 @@
 import polars as pl
 import pytest
 from src.babynames import (
+    EXCLUDED_NAMES,
     add_pronunciations,
     aggregate_counts,
     build_spelling_variants,
@@ -37,6 +38,27 @@ class TestLoadSSAData:
     def test_missing_dir_raises(self, tmp_path) -> None:
         with pytest.raises(FileNotFoundError):
             load_ssa_data(tmp_path / "nonexistent")
+
+    def test_excludes_junk_names(self, ssa_dir) -> None:
+        df = load_ssa_data(ssa_dir)
+        names = set(df["name"].unique().to_list())
+        for blocked in EXCLUDED_NAMES:
+            assert blocked not in names, f"{blocked} should be excluded"
+
+    def test_excluded_names_constant(self) -> None:
+        """Ensure the blocklist covers known SSA artifacts."""
+        expected = {
+            "Unknown",
+            "Baby",
+            "Infant",
+            "Male",
+            "Female",
+            "Boy",
+            "Girl",
+            "Notnamed",
+            "Unnamed",
+        }
+        assert expected == EXCLUDED_NAMES
 
 
 class TestLoadBiblicalNames:
