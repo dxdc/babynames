@@ -227,6 +227,12 @@ const swipe = (() => {
       otherVoters = otherVoters.filter((v) => v.name !== pv.name);
       otherVoters.push(pv);
     }
+
+    // Don't add yourself as an "other voter" (happens when you open your own shared link)
+    if (voterName) {
+      otherVoters = otherVoters.filter((v) => v.name !== voterName);
+    }
+
     if (pendingVoters.length) saveSession();
 
     $("swipe-overlay").style.display = "";
@@ -897,6 +903,13 @@ const swipe = (() => {
         liked: {},
         maybe: {},
       };
+
+      // Don't let users import their own picks as another voter
+      if (voterName && voter.name === voterName) {
+        alert("That's your own picks link! Share it with someone else.");
+        return;
+      }
+
       for (const r of data.l || []) voter.liked[r] = true;
       for (const r of data.m || []) voter.maybe[r] = true;
 
