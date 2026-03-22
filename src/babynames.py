@@ -44,6 +44,7 @@ EXCLUDED_NAMES: set[str] = {
     "Babygirl",
     "Notnamed",
     "Unnamed",
+    "Childnotnamed",
 }
 
 # ---------------------------------------------------------------------------
