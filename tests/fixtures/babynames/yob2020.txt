@@ -12,6 +12,10 @@ James,M,12250
 Hannah,F,2931
 Jordan,M,3500
 Jordan,F,1200
+Bob,M,800
+Anna,F,3200
+Al,M,150
+Zaylen,M,120
 Unknown,M,50
 Baby,F,30
 Infant,M,15

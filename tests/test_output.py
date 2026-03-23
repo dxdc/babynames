@@ -17,6 +17,7 @@ from src.babynames import (
     load_biblical_names,
     load_ssa_data,
     merge_spelling_variants,
+    serialize_list_columns,
 )
 
 
@@ -107,3 +108,19 @@ class TestPronunciationDelimiter:
             if isinstance(phones, str) and PRONUNCIATION_SEPARATOR in phones:
                 parts = phones.split(PRONUNCIATION_SEPARATOR)
                 assert all(len(p.strip()) > 0 for p in parts)
+
+
+class TestSerializeListColumns:
+    def test_empty_lists_become_empty_strings(self) -> None:
+        df = pl.DataFrame({"items": [["a", "b"], [], ["c"]]})
+        result = serialize_list_columns(df)
+        values = result["items"].to_list()
+        assert values[0] == "a | b"
+        assert values[1] == ""
+        assert values[2] == "c"
+
+    def test_non_list_columns_unchanged(self) -> None:
+        df = pl.DataFrame({"name": ["John", "Mary"], "count": [100, 200]})
+        result = serialize_list_columns(df)
+        assert result["name"].to_list() == ["John", "Mary"]
+        assert result["count"].to_list() == [100, 200]

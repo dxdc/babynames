@@ -12,3 +12,7 @@ James,M,12367
 Hannah,F,2780
 Jordan,M,3300
 Jordan,F,1100
+Bob,M,750
+Anna,F,3100
+Al,M,140
+Zaylen,M,110

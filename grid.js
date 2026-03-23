@@ -158,6 +158,14 @@ function initTable(data, onReady) {
         responsive: 1,
       },
       {
+        title: "Nickname Of",
+        field: "nickname_of",
+        width: 120,
+        headerFilter: false,
+        tooltip: "Formal name this is a nickname for.",
+        responsive: 2,
+      },
+      {
         title: "Letter",
         field: "first_letter",
         width: 65,

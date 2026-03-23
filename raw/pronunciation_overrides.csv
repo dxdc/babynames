@@ -1,0 +1,23 @@
+name,pronunciation
+# CMU dict corrections — these entries override the CMU Pronouncing Dictionary
+# to prevent incorrect phonetic groupings.
+#
+# Format: name,ARPABET pronunciation
+# Each name's CMU pronunciations are fully replaced by the override(s).
+# Use multiple rows for the same name to provide multiple pronunciations.
+
+# Jere: distinct name (short for Jeremiah), not a variant of Jerry
+# CMU says JH EH1 R IY0 (same as Jerry) — actually pronounced "JEER"
+Jere,JH IH1 R
+
+# Hugh: CMU lists Y UW1 as alt pronunciation, causing merge with Yu
+# Hugh always has the initial H sound
+Hugh,HH Y UW1
+
+# Charron: French name, not a variant of Karen
+# CMU lists K EH1 R AH0 N as alt — should only be SH sound
+Charron,SH EH1 R AH0 N
+
+# Tsai: Chinese name, not related to Cy
+# CMU lists S AY1 as alt — should keep the TS onset
+Tsai,T S AY1

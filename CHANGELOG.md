@@ -2,6 +2,25 @@
 
 All notable changes to this project are documented in this file. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.2.0] - 2026-03-22
+
+Project audit — data quality, pronunciation fixes, nickname support, territory data.
+
+### Pipeline
+
+- **Nickname relationships** — new `nickname_of` and `nicknames` columns link names to their formal forms (Matt → Matthew, Liz → Elizabeth). Curated mappings in `raw/nicknames.csv`. Informational only — counts stay separate.
+- **Pronunciation overrides** (`raw/pronunciation_overrides.csv`) — correct CMU dictionary errors that cause incorrect groupings. Fixes: Jere ≠ Jerry, Hugh ≠ Yu, Charron ≠ Karen, Tsai ≠ Cy.
+- **US territory data** — pipeline now loads SSA territory files (Puerto Rico, Guam, American Samoa, etc.) from `raw/territories/` and merges into national totals.
+- **Expanded excluded names** — added Infantof, Infantboy, Infantgirl, Infantmale, Infantfemale, Newborn, Noname, Unborn, Infboy, Wm, Jr to the filter list. Boy and Girl are kept as legitimate names.
+- **~70 new forced merges** — double/single consonant splits (Jenifer→Jennifer, Hanah→Hannah), vowel ending variants (Colten→Colton, Helyn→Helen), ph/f substitutions (Christofer→Christopher), and more.
+- **Diagnostic script** (`scripts/find_missing_merges.py`) — reusable tool to detect candidate missing merges by applying substitution patterns. Run after SSA data updates.
+- Fixed `classify_unisex_names` dominant gender calculation to be explicit rather than relying on dict iteration order.
+- Fixed inconsistent `.get()` vs direct indexing in `merge_spelling_variants`.
+
+### Tests
+
+- 86 tests (was 57) — added coverage for forced merges, pronunciation overrides, nickname loading, Jr-suffix stripping, excluded names, biblical categories, subword splitting, and syllable estimation.
+
 ## [2.1.0] - 2026-03-22
 
 Swipe mode for couples, sharing, and a bunch of polish.
@@ -49,7 +68,7 @@ Everyone is a peer — no "host" or "admin." Anyone can share at any time.
 - Forced spelling merges (`raw/forced_merges.csv`) — 210 manual overrides for names the phonetic algorithm splits incorrectly (Kaitlyn/Katelyn/Caitlin, Caleb/Kaleb, Jason/Jayson, Brooklyn/Brooklynn, etc.)
 - Biblical names now categorized: Person, Place, God, Other (was boolean). Shows category in table and swipe card badges.
 - Expanded biblical names list with missing entries (Elizabeth, Timothy, Ethan, Elijah, etc.) and BibleNLP cross-reference
-- Excluded junk names from SSA data: Unknown, Baby, Infant, Male, Female, Boy, Girl, Notnamed, Unnamed
+- Excluded junk names from SSA data: Unknown, Infant, Male, Female, Babyboy, Babygirl, Childnotnamed, Nogivenname, Nonamegiven, Notnamed, Unnamed
 - Unisex recency cutoff derived from data (`max_year - 50`) instead of hardcoded 1970
 
 ### Infrastructure
@@ -147,6 +166,7 @@ Ground-up rewrite of the data pipeline, web viewer, and project infrastructure. 
 - CSV output with rank, name, alternate spellings, counts, year range, biblical flag, pronunciations, syllables, alliteration, and unisex flag
 - SSA data through 2021
 
+[2.2.0]: https://github.com/dxdc/babynames/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/dxdc/babynames/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/dxdc/babynames/compare/v1.0.2...v2.0.0
 [1.0.2]: https://github.com/dxdc/babynames/compare/v1.0.1...v1.0.2

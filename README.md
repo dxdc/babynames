@@ -35,7 +35,7 @@ Boys' names are more concentrated (fewer names to reach 90%), while girls' names
 | cumulative_pct     | Cumulative percentage of babies born with this name (includes higher rows)    |
 | year_min           | First year this name appears in SSA data                                      |
 | year_max           | Last year this name appears                                                   |
-| year_peak          | Most popular year                                                             |
+| year_peak          | Year with the highest single-year count (for the primary spelling)            |
 | biblical           | Biblical category: Person, Place, God, or Other; empty if not biblical        |
 | is_palindrome      | Reads the same forwards and backwards (1 = yes)                               |
 | pronunciations     | ARPABET phonetic pronunciations, pipe-separated                               |
@@ -46,6 +46,8 @@ Boys' names are more concentrated (fewer names to reach 90%), while girls' names
 | alliteration_first | First phoneme repeats later (1 = yes)                                         |
 | unisex_pct         | Minority gender share as % (0–50, where 50 = balanced); null if single-gender |
 | unisex_dominant    | Dominant gender (M or F); null if single-gender                               |
+| nickname_of        | Formal name(s) this is a nickname for (e.g., Matt → Matthew); null if none    |
+| nicknames          | Known nicknames for this name that exist in the data; null if none            |
 
 ## About
 
@@ -79,6 +81,8 @@ python src/babynames.py --verbose
 ```
 
 Writes `boys.csv`, `girls.csv`, and `all-names.csv` to `data/`.
+
+Options: `--data-dir`, `--biblical`, `--output-dir`, `--forced-merges`, `--pronunciation-overrides`, `--nicknames`, `--territory-dir`.
 
 ### Regenerating the Graph
 
@@ -139,6 +143,9 @@ python -m http.server 8000
 - **SSA Baby Names** (`raw/yob*.txt`): Children of each sex given each name, per year, 1880–2024. All names with 5+ uses included. ([Source](https://www.ssa.gov/oact/babynames/limits.html))
 - **Biblical Names** (`raw/biblical_names.csv`): Categorized list of biblical names (Person, Place, God, Other).
 - **Forced Merges** (`raw/forced_merges.csv`): Manual spelling group overrides for names the phonetic algorithm splits incorrectly (e.g., Kaitlyn/Katelyn/Caitlin).
+- **Pronunciation Overrides** (`raw/pronunciation_overrides.csv`): Corrections for CMU dictionary entries that cause incorrect groupings (e.g., Jere ≠ Jerry).
+- **Nicknames** (`raw/nicknames.csv`): Curated nickname → formal name mappings (e.g., Matt → Matthew). Informational only — counts stay separate.
+- **Territory Names** (`raw/territories/`): SSA baby name data for US territories (Puerto Rico, Guam, American Samoa, etc.). ([Source](https://www.ssa.gov/oact/babynames/territory/namesbyterritory.zip))
 
 ## Contributing
 

@@ -11,6 +11,7 @@ For names not found in CMU dict, the g2p_en neural model is used if available
 import argparse
 import logging
 import re
+import time
 from functools import cache
 from itertools import product as iterprod
 from pathlib import Path
@@ -36,17 +37,32 @@ ArpabetDict: TypeAlias = dict[str, list[Phonemes]]
 # ---------------------------------------------------------------------------
 
 EXCLUDED_NAMES: set[str] = {
+    # SSA placeholder artifacts (no real name given)
     "Babyboy",
     "Babygirl",
     "Childnotnamed",
     "Female",
     "Infant",
+    "Infantboy",
+    "Infantfemale",
+    "Infantgirl",
+    "Infantmale",
+    "Infantof",
+    "Infboy",
     "Male",
+    "Newborn",
     "Nogivenname",
+    "Noname",
     "Nonamegiven",
     "Notnamed",
+    "Unborn",
     "Unknown",
     "Unnamed",
+    # Abbreviations that cause incorrect phonetic merges (Wm→William, Jr→Junior)
+    "Jr",
+    "Wm",
+    # NOTE: "Baby" is borderline — 12k+ uses across genders. Could be a real name
+    # in some cultures, but many entries are likely SSA placeholders. Left in for now.
 }
 
 # ---------------------------------------------------------------------------
@@ -55,8 +71,14 @@ EXCLUDED_NAMES: set[str] = {
 
 ARPABET: ArpabetDict = cmudict.dict()
 
+# Valid ARPABET phonemes (extracted from CMU dict values)
+_VALID_ARPABET: set[str] = {p for prons in ARPABET.values() for pron in prons for p in pron}
+
 PRONUNCIATION_SEPARATOR = " | "
 STRESS_SEPARATOR = " | "
+
+# Pronunciation overrides (loaded at runtime via load_pronunciation_overrides)
+_pronunciation_overrides: dict[str, PronunciationList] = {}
 
 # Try to load g2p_en for neural OOV pronunciation
 _g2p_model = None
@@ -65,8 +87,52 @@ try:
 
     _g2p_model = _G2p()
     log.info("g2p_en neural model loaded -- will use for OOV names")
-except Exception:
-    log.info("g2p_en not available -- falling back to subword splitting for OOV names")
+except ImportError:
+    log.info("g2p_en not installed -- falling back to subword splitting for OOV names")
+except Exception as e:
+    log.warning("g2p_en failed to load (%s) -- falling back to subword splitting", e)
+
+
+# ---------------------------------------------------------------------------
+# Pronunciation overrides
+# ---------------------------------------------------------------------------
+
+
+def load_pronunciation_overrides(filepath: Path) -> dict[str, PronunciationList]:
+    """Load pronunciation overrides CSV that correct CMU dict errors.
+
+    Format: name,pronunciation (comments starting with # are ignored).
+    Multiple rows for the same name provide multiple pronunciations.
+    Returns a dict mapping lowercase name → list of ARPABET pronunciations.
+    """
+    global _pronunciation_overrides
+    overrides: dict[str, list[str]] = {}
+    if not filepath.exists():
+        return overrides
+    with open(filepath) as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#") or line.startswith("name"):
+                continue
+            parts = line.split(",", 1)
+            if len(parts) == 2:
+                name = parts[0].strip().lower()
+                pron = parts[1].strip()
+                if pron:
+                    overrides.setdefault(name, []).append(pron)
+    # Validate ARPABET phonemes
+    for name, prons in overrides.items():
+        for pron in prons:
+            for phoneme in pron.split():
+                if phoneme not in _VALID_ARPABET:
+                    log.warning(
+                        "Pronunciation override '%s': unknown ARPABET phoneme '%s'",
+                        name,
+                        phoneme,
+                    )
+    _pronunciation_overrides = overrides
+    log.info("Loaded %d pronunciation overrides", len(overrides))
+    return overrides
 
 
 # ---------------------------------------------------------------------------
@@ -94,7 +160,7 @@ def split_into_subwords(word: str) -> list[Phonemes]:
     word = word.lower()
     if word in ARPABET:
         return ARPABET[word][:MAX_PRONUNCIATION_VARIANTS]
-    midpoint = len(word) / 2
+    midpoint = len(word) // 2
     # Try split points ordered by distance from middle (prefer balanced splits)
     split_points = sorted(range(len(word)), key=lambda i: (i - midpoint) ** 2 - i)
     for i in split_points:
@@ -132,14 +198,15 @@ def _g2p_neural(name: str) -> PronunciationList:
 def get_grouping_pronunciations(name: str) -> PronunciationList:
     """Get pronunciations suitable for determining spelling variant groups.
 
-    Only uses high-confidence sources: CMU dictionary direct lookup and
-    subword splitting (which itself only combines known CMU entries).
-    Does NOT use the g2p_en neural model, because it can produce
-    incorrect English-centric pronunciations for non-English names
+    Checks pronunciation overrides first, then falls back to CMU dictionary
+    and subword splitting. Does NOT use the g2p_en neural model, because it
+    can produce incorrect English-centric pronunciations for non-English names
     (e.g., Juane → 'W EY1 N' instead of the correct Spanish pronunciation),
     causing unrelated names to merge.
     """
     lower = name.lower()
+    if lower in _pronunciation_overrides:
+        return _pronunciation_overrides[lower]
     if lower in ARPABET:
         return [" ".join(phonemes) for phonemes in ARPABET[lower]]
     return [" ".join(phonemes) for phonemes in split_into_subwords(name)]
@@ -150,11 +217,14 @@ def get_pronunciations(name: str) -> PronunciationList:
 
     Used for display, syllable counting, and feature extraction.
     Priority:
-    1. CMU dictionary direct lookup (may return multiple pronunciations)
-    2. g2p_en neural model if available (single pronunciation, high quality)
-    3. Recursive sub-word splitting (multiple pronunciations, lower quality)
+    1. Pronunciation overrides (manual corrections for CMU dict errors)
+    2. CMU dictionary direct lookup (may return multiple pronunciations)
+    3. g2p_en neural model if available (single pronunciation, high quality)
+    4. Recursive sub-word splitting (multiple pronunciations, lower quality)
     """
     lower = name.lower()
+    if lower in _pronunciation_overrides:
+        return _pronunciation_overrides[lower]
     if lower in ARPABET:
         return [" ".join(phonemes) for phonemes in ARPABET[lower]]
     neural = _g2p_neural(name)
@@ -281,6 +351,108 @@ def load_ssa_data(data_dir: Path) -> pl.DataFrame:
             excluded - jr_excluded,
             jr_excluded,
         )
+    return raw
+
+
+def load_nicknames(filepath: Path) -> tuple[dict[str, list[str]], dict[str, list[str]]]:
+    """Load nickname mappings CSV.
+
+    Returns two dicts:
+    - nickname_to_formal: maps nickname → list of formal names
+    - formal_to_nicknames: maps formal name → list of nicknames
+    """
+    nickname_to_formal: dict[str, list[str]] = {}
+    formal_to_nicknames: dict[str, list[str]] = {}
+
+    if not filepath.exists():
+        log.info("No nicknames file at %s", filepath)
+        return nickname_to_formal, formal_to_nicknames
+
+    log.info("Loading nicknames from %s", filepath)
+    with open(filepath) as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#") or line.startswith("nickname"):
+                continue
+            parts = line.split(",", 1)
+            if len(parts) == 2:
+                nick = parts[0].strip()
+                formal = parts[1].strip()
+                if nick and formal:
+                    nickname_to_formal.setdefault(nick, []).append(formal)
+                    formal_to_nicknames.setdefault(formal, []).append(nick)
+
+    log.info("Loaded %d nickname mappings", sum(len(v) for v in nickname_to_formal.values()))
+    return nickname_to_formal, formal_to_nicknames
+
+
+def add_nickname_columns(
+    df: pl.DataFrame,
+    nickname_to_formal: dict[str, list[str]],
+    formal_to_nicknames: dict[str, list[str]],
+) -> pl.DataFrame:
+    """Add nickname_of and nicknames columns based on loaded mappings.
+
+    nickname_of: for nicknames, lists the formal name(s) this is a nickname for
+    nicknames: for formal names, lists known nicknames that exist in the data
+    """
+    all_names = set(df["name"].to_list())
+    names_list = df["name"].to_list()
+
+    nickname_of_col = []
+    nicknames_col = []
+    for name in names_list:
+        # Is this name a nickname of something?
+        formals = nickname_to_formal.get(name, [])
+        # Only include formal names that exist in the data
+        formals = [f for f in formals if f in all_names]
+        nickname_of_col.append(" ".join(formals) if formals else None)
+
+        # Does this name have known nicknames?
+        nicks = formal_to_nicknames.get(name, [])
+        # Only include nicknames that exist in the data
+        nicks = [n for n in nicks if n in all_names]
+        nicknames_col.append(" ".join(nicks) if nicks else None)
+
+    return df.with_columns(
+        pl.Series("nickname_of", nickname_of_col, dtype=pl.String),
+        pl.Series("nicknames", nicknames_col, dtype=pl.String),
+    )
+
+
+def load_territory_data(data_dir: Path) -> pl.DataFrame | None:
+    """Load SSA territory baby name files (PR.TXT, etc.) into a DataFrame.
+
+    Territory files have 5 columns: territory,sex,year,name,count.
+    Returns None if no territory files are found.
+    """
+    territory_files = sorted(data_dir.glob("*.TXT"))
+    if not territory_files:
+        return None
+
+    log.info("Loading %d territory data files from %s", len(territory_files), data_dir)
+    frames: list[pl.DataFrame] = []
+    for filepath in territory_files:
+        frame = pl.read_csv(
+            filepath,
+            has_header=False,
+            new_columns=["territory", "sex", "year", "name", "count"],
+        )
+        frames.append(frame)
+
+    raw = pl.concat(frames)
+    # Normalize to match national data schema (drop territory column, match column order/types)
+    raw = raw.select(["name", "sex", "count", "year"]).cast({"count": pl.Int64, "year": pl.Int32})
+
+    # Apply same exclusions as national data
+    before = raw.height
+    raw = raw.filter(~pl.col("name").is_in(EXCLUDED_NAMES))
+    excluded = before - raw.height
+
+    if excluded:
+        log.info("Excluded %d territory rows (blocked names)", excluded)
+
+    log.info("Loaded %d territory rows", raw.height)
     return raw
 
 
@@ -469,6 +641,18 @@ def apply_forced_merges(df: pl.DataFrame, merges_path: Path) -> pl.DataFrame:
     if not pairs:
         return df
 
+    # Warn about sources that map to multiple different targets
+    source_targets: dict[str, set[str]] = {}
+    for source, target in pairs:
+        source_targets.setdefault(source, set()).add(target)
+    for source, targets in source_targets.items():
+        if len(targets) > 1:
+            log.warning(
+                "Forced merge conflict: '%s' maps to multiple targets: %s",
+                source,
+                sorted(targets),
+            )
+
     # Build (name, sex) → variant_group lookup
     names = df["name"].to_list()
     sexes = df["sex"].to_list()
@@ -523,7 +707,7 @@ def merge_spelling_variants(df: pl.DataFrame) -> pl.DataFrame:
                 "year_max": row["year_max"],
                 "year_peak": row["year_peak"],
                 "biblical": row["biblical"],
-                "is_palindrome": row.get("is_palindrome"),
+                "is_palindrome": row["is_palindrome"],
                 "pronunciations": set(row["pronunciations"] or []),
                 "sex": row["sex"],
             }
@@ -533,6 +717,7 @@ def merge_spelling_variants(df: pl.DataFrame) -> pl.DataFrame:
             if row["total_count"] > entry["_best_count"]:
                 entry["name"] = row["name"]
                 entry["_best_count"] = row["total_count"]
+                # year_peak follows the most popular spelling (the primary name)
                 if row["year_peak"] is not None:
                     entry["year_peak"] = row["year_peak"]
             entry["total_count"] += row["total_count"]
@@ -540,7 +725,7 @@ def merge_spelling_variants(df: pl.DataFrame) -> pl.DataFrame:
             entry["year_max"] = max(entry["year_max"], row["year_max"])
             if row["biblical"] and not entry["biblical"]:
                 entry["biblical"] = row["biblical"]
-            if row.get("is_palindrome"):
+            if row["is_palindrome"]:
                 entry["is_palindrome"] = 1
             if row["pronunciations"]:
                 entry["pronunciations"].update(row["pronunciations"])
@@ -635,12 +820,11 @@ def classify_unisex_names(
         if len(sex_counts) < 2:
             continue
         counts = list(sex_counts.values())
-        sexes = list(sex_counts.keys())
         minority = min(counts)
         total = sum(counts)
         name_pcts[name] = round(100 * minority / total, 1)
         # Dominant = the gender with more babies
-        name_dominant[name] = sexes[0] if counts[0] >= counts[1] else sexes[1]
+        name_dominant[name] = max(sex_counts, key=sex_counts.get)
 
     log.info(
         "Computed unisex share for %d names (min count %d, after %d)",
@@ -698,6 +882,8 @@ OUTPUT_COLUMNS: list[str] = [
     "alliteration_first",
     "unisex_pct",
     "unisex_dominant",
+    "nickname_of",
+    "nicknames",
 ]
 
 
@@ -789,6 +975,24 @@ def main() -> None:
         help="Path to forced spelling merges CSV (default: raw/forced_merges.csv)",
     )
     parser.add_argument(
+        "--territory-dir",
+        type=Path,
+        default=Path("raw/territories"),
+        help="Directory containing territory TXT files (default: raw/territories)",
+    )
+    parser.add_argument(
+        "--nicknames",
+        type=Path,
+        default=Path("raw/nicknames.csv"),
+        help="Path to nicknames CSV (default: raw/nicknames.csv)",
+    )
+    parser.add_argument(
+        "--pronunciation-overrides",
+        type=Path,
+        default=Path("raw/pronunciation_overrides.csv"),
+        help="Path to pronunciation overrides CSV (default: raw/pronunciation_overrides.csv)",
+    )
+    parser.add_argument(
         "-v",
         "--verbose",
         action="store_true",
@@ -801,30 +1005,85 @@ def main() -> None:
         format="%(asctime)s %(levelname)s %(message)s",
     )
 
+    # Stage timing helper
+    pipeline_start = time.perf_counter()
+    stage_start = pipeline_start
+
+    def _stage(label: str) -> None:
+        nonlocal stage_start
+        elapsed = time.perf_counter() - stage_start
+        log.info("  %-40s %.1fs", label, elapsed)
+        stage_start = time.perf_counter()
+
+    # Load pronunciation overrides (must be before any pronunciation calls)
+    load_pronunciation_overrides(args.pronunciation_overrides)
+    _stage("Load pronunciation overrides")
+
     # Load source data
     raw_data = load_ssa_data(args.data_dir)
+    _stage("Load SSA data")
+
+    # Merge territory data if available
+    territory_data = load_territory_data(args.territory_dir)
+    territory_rows = territory_data.height if territory_data is not None else 0
+    if territory_data is not None:
+        raw_data = pl.concat([raw_data, territory_data])
+        log.info("Combined national + territory data: %d total rows", raw_data.height)
+    _stage("Load territory data")
+
     biblical_names = load_biblical_names(args.biblical)
+    nickname_to_formal, formal_to_nicknames = load_nicknames(args.nicknames)
     peak_years = find_peak_popularity_years(raw_data)
+    _stage("Load reference data + peak years")
 
     # Aggregate across years
     df = aggregate_counts(raw_data)
+    _stage("Aggregate counts")
 
     # Enrich with metadata
     df = df.join(biblical_names.select("name", "biblical"), on="name", how="left")
     df = add_pronunciations(df)
+    _stage("Add pronunciations")
+
     df = build_spelling_variants(df)
+    _stage("Build spelling variants")
+
     df = apply_forced_merges(df, args.forced_merges)
+    _stage("Apply forced merges")
+
     df = df.join(peak_years, on=["name", "sex"], how="left")
     df = flag_palindromes(df)
 
     # Deduplicate and compute features
     df = merge_spelling_variants(df)
+    _stage("Merge spelling variants")
+
     df = compute_name_features(df)
+    _stage("Compute name features")
+
     df = classify_unisex_names(df)
+    df = add_nickname_columns(df, nickname_to_formal, formal_to_nicknames)
+    _stage("Classify unisex + nicknames")
 
     # Export
     export_csvs(df, args.output_dir)
-    log.info("Done!")
+    _stage("Export CSVs")
+
+    # Data quality summary
+    boys = df.filter(pl.col("sex") == "M").height
+    girls = df.filter(pl.col("sex") == "F").height
+    no_pron = df.filter(pl.col("pronunciations").list.len() == 0).height
+    total_elapsed = time.perf_counter() - pipeline_start
+    log.info(
+        "Done! %d boys + %d girls = %d names (%d without pronunciations, "
+        "%d territory rows) in %.1fs",
+        boys,
+        girls,
+        boys + girls,
+        no_pron,
+        territory_rows,
+        total_elapsed,
+    )
 
 
 if __name__ == "__main__":

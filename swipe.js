@@ -100,6 +100,12 @@ const swipe = (() => {
     );
   }
 
+  function escapeHtml(str) {
+    const el = document.createElement("span");
+    el.textContent = str;
+    return el.innerHTML;
+  }
+
   function decodePicks(encoded) {
     try {
       return JSON.parse(safeDecode(encoded));
@@ -454,10 +460,16 @@ const swipe = (() => {
       d.unisex_pct !== "" &&
       Number(d.unisex_pct) >= 30
     ) {
-      badges.push({ icon: "⚤", label: `${d.unisex_pct}% unisex` });
+      const minGender = d.unisex_dominant === "F" ? "♂" : "♀";
+      badges.push({
+        icon: "⚤",
+        label: `${d.unisex_pct}% ${minGender}`,
+      });
     }
     if (d.is_palindrome == 1) badges.push({ icon: "🔁", label: "Palindrome" });
     if (d.alliteration == 1) badges.push({ icon: "🔤", label: "Alliteration" });
+    if (d.nickname_of)
+      badges.push({ icon: "💬", label: `Short for ${d.nickname_of}` });
     for (const b of badges) {
       const span = document.createElement("span");
       span.className = "card-badge";
@@ -648,7 +660,7 @@ const swipe = (() => {
           v.gender === "M" ? "boys" : v.gender === "F" ? "girls" : "";
         const mismatch = v.gender && v.gender !== currentGdr;
         return (
-          `<strong>${v.name || "Someone"}</strong> shared ${n.toLocaleString()} ${gLabel} pick${n !== 1 ? "s" : ""}` +
+          `<strong>${escapeHtml(v.name || "Someone")}</strong> shared ${n.toLocaleString()} ${gLabel} pick${n !== 1 ? "s" : ""}` +
           (mismatch ? " ⚠️" : "")
         );
       });

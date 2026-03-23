@@ -17,7 +17,6 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 
-
 ROOT = Path(__file__).resolve().parent.parent
 
 
@@ -30,12 +29,16 @@ def load_cumulative(csv_path: str) -> tuple[list[int], list[float]]:
         for row in reader:
             ranks.append(int(row["rank"]))
             pcts.append(float(row["cumulative_pct"]))
+    if not ranks:
+        raise ValueError(f"No data found in {csv_path}")
     return ranks, pcts
 
 
 def find_threshold(ranks: list[int], pcts: list[float], target: float) -> tuple[int, float]:
     """Find the rank where cumulative_pct first reaches `target`."""
-    for r, p in zip(ranks, pcts):
+    if not ranks or not pcts:
+        return 0, 0.0
+    for r, p in zip(ranks, pcts, strict=True):
         if p >= target:
             return r, p
     return ranks[-1], pcts[-1]
@@ -64,9 +67,9 @@ def main() -> None:
     # Limit x-axis to 5000 names (the interesting part of the curve)
     x_limit = 5000
     b_r = [r for r in b_ranks if r <= x_limit]
-    b_p = [p for r, p in zip(b_ranks, b_pcts) if r <= x_limit]
+    b_p = [p for r, p in zip(b_ranks, b_pcts, strict=True) if r <= x_limit]
     g_r = [r for r in g_ranks if r <= x_limit]
-    g_p = [p for r, p in zip(g_ranks, g_pcts) if r <= x_limit]
+    g_p = [p for r, p in zip(g_ranks, g_pcts, strict=True) if r <= x_limit]
 
     # Key thresholds
     b90 = find_threshold(b_ranks, b_pcts, 90.0)

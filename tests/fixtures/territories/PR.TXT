@@ -1,0 +1,5 @@
+PR,F,2020,Paola,50
+PR,F,2020,Genesis,40
+PR,M,2020,Sebastian,60
+PR,M,2021,Sebastian,55
+PR,F,2021,Paola,45
