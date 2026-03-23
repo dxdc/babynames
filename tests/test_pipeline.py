@@ -352,6 +352,30 @@ class TestAddNicknameColumns:
         johnny_f = result.filter((pl.col("name") == "Johnny") & (pl.col("sex") == "F"))
         assert johnny_f["nickname_of"][0] is None
 
+    def test_nicknames_checks_existence_across_genders(self, nicknames_path) -> None:
+        """Nicknames column checks existence across all data, not just same gender."""
+        nick_to_formal, formal_to_nick = load_nicknames(nicknames_path)
+        # Johnny exists only as F, but John (M) should still list it as a nickname
+        df = pl.DataFrame(
+            {
+                "name": ["John", "Johnny"],
+                "sex": ["M", "F"],
+            }
+        )
+        result = add_nickname_columns(df, nick_to_formal, formal_to_nick)
+        john_m = result.filter(pl.col("name") == "John")
+        assert john_m["nicknames"][0] is not None
+        assert "Johnny" in john_m["nicknames"][0]
+
+    def test_nicknames_omits_nonexistent(self, nicknames_path) -> None:
+        """Nicknames that don't exist anywhere in the data are omitted."""
+        nick_to_formal, formal_to_nick = load_nicknames(nicknames_path)
+        # John has nicknames Johnny and Jack, but neither is in the data
+        df = pl.DataFrame({"name": ["John"], "sex": ["M"]})
+        result = add_nickname_columns(df, nick_to_formal, formal_to_nick)
+        john = result.filter(pl.col("name") == "John")
+        assert john["nicknames"][0] is None
+
 
 class TestJrSuffixStripping:
     def test_jr_suffix_removed(self, tmp_path) -> None:

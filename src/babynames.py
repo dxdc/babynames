@@ -402,15 +402,19 @@ def add_nickname_columns(
 ) -> pl.DataFrame:
     """Add nickname_of and nicknames columns based on loaded mappings.
 
-    Gender-aware: only links nicknames to formal names within the same gender.
-    nickname_of: for nicknames, lists the formal name(s) this is a nickname for
-    nicknames: for formal names, lists known nicknames that exist in the data
+    Gender-aware: uses gender-keyed lookups so male-only mappings don't
+    leak into female data and vice versa.
+    nickname_of: for nicknames, lists formal name(s) that exist in the same-gender data
+    nicknames: for formal names, lists known nicknames that exist anywhere in the data
     """
-    # Build per-gender name sets for existence checks
+    # Per-gender name sets for nickname_of existence checks
     names_by_sex: dict[str, set[str]] = {}
     for sex_val in ("M", "F"):
         sex_df = df.filter(pl.col("sex") == sex_val)
         names_by_sex[sex_val] = set(sex_df["name"].to_list())
+
+    # All names across both genders for nicknames existence checks
+    all_names = set(df["name"].to_list())
 
     names_list = df["name"].to_list()
     sex_list = df["sex"].to_list()
@@ -420,14 +424,14 @@ def add_nickname_columns(
     for name, sex in zip(names_list, sex_list, strict=True):
         sex_names = names_by_sex.get(sex, set())
 
-        # Is this name a nickname of something?
+        # Is this name a nickname of something? Only show if formal name exists in same gender.
         formals = nickname_to_formal.get((name, sex), [])
         formals = [f for f in formals if f in sex_names]
         nickname_of_col.append(" ".join(formals) if formals else None)
 
-        # Does this name have known nicknames?
+        # Does this name have known nicknames? Check existence across all data (either gender).
         nicks = formal_to_nicknames.get((name, sex), [])
-        nicks = [n for n in nicks if n in sex_names]
+        nicks = [n for n in nicks if n in all_names]
         nicknames_col.append(" ".join(nicks) if nicks else None)
 
     return df.with_columns(
