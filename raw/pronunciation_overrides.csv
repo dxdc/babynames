@@ -71,3 +71,40 @@ Ali,AH0 L IY1
 # Hymie: Yiddish diminutive of Hyman, not a variant of Jaime (Spanish)
 # Both produce HH AY1 M IY0 — override to distinguish
 Hymie,HH AY1 M IY2
+
+# Chi: Chinese/Vietnamese name pronounced "CHEE", not "KAI"
+# CMU says K AY1 — wrong; should have CH onset
+Chi,CH IY1
+
+# Dhillon: Punjabi surname/name, not a variant of Dylan
+# CMU gives D IH1 L AH0 N (same as Dylan) — Punjabi stress differs
+Dhillon,D IH0 L AO1 N
+
+# Kaori: Japanese name (kah-OH-ree, 3 syllables), not a variant of Corey
+# CMU gives K AO1 R IY0 (2 syllables, same as Corey)
+Kaori,K AH0 OW1 R IY0
+
+# Ohan: Armenian name, not a variant of Owen
+# Subword produces OW1 AH0 N matching Owen
+Ohan,OW0 HH AA1 N
+
+# Fe: Spanish/Filipino name meaning "faith", pronounced "FEH" not "FAY"
+# CMU gives F EY1 (same as Faye)
+Fe,F EH1
+
+# Kuiper: Dutch surname, pronounced "KOY-per" not "KOO-per"
+# CMU gives K UW1 P ER0 (same as Cooper)
+Kuiper,K OY1 P ER0
+
+# --- Forced-merge magnet fixes ---
+# These names are correctly force-merged to their target, but their
+# CMU/subword pronunciations act as "magnets" pulling in unrelated names.
+# Override to match the target's pronunciation to stop false attraction.
+
+# Keven: variant of Kevin — CMU gives K IY1 V AH0 N which pulls in Kievan
+# Override to match Kevin's K EH1 V IH0 N
+Keven,K EH1 V IH0 N
+
+# Ginna: variant of Gina — CMU gives JH IH1 N N AA1 which pulls in Jinnah
+# Override to match Gina's JH IY1 N AH0
+Ginna,JH IY1 N AH0

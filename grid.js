@@ -63,14 +63,25 @@ function initTable(data, onReady) {
           const val = cell.getValue();
           if (!val) return "";
           const names = val.split(" ");
-          if (names.length <= 5) return names.join(", ");
-          return names.slice(0, 5).join(", ") + " \u2026+" + (names.length - 5);
+          const el = cell.getElement();
+          const expanded = el._variantsExpanded;
+          if (expanded || names.length <= 3) return names.join(", ");
+          const summary = names.slice(0, 3).join(", ");
+          const badge = document.createElement("span");
+          badge.className = "variants-badge";
+          badge.textContent = "+" + (names.length - 3);
+          badge.title = "Click to expand";
+          badge.onclick = function (e) {
+            e.stopPropagation();
+            el._variantsExpanded = true;
+            cell.getRow().reformat();
+          };
+          const frag = document.createDocumentFragment();
+          frag.appendChild(document.createTextNode(summary + " "));
+          frag.appendChild(badge);
+          return frag;
         },
-        tooltip: function (e, cell) {
-          const val = cell.getValue();
-          if (!val) return "";
-          return val.split(" ").join(", ");
-        },
+        tooltip: false,
       },
       {
         title: "Count",
