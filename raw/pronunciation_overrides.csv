@@ -63,6 +63,14 @@ Won,W AH1 N
 # Subword produces Y AA1 M IY1 which matches bad subword results for Jamee/Jame
 Yami,Y AH1 M IY0
 
+# Qianna: creative spelling of Kiana/Kianna (kee-AH-nah), not Jinna
+# Subword produces a second bad pronunciation JH IH1 N N AA1 matching Jinnah
+Qianna,K IY1 AH0 N AH0
+
+# Qian: Chinese name (chee-EN), not a variant of Jin
+# Subword produces second pronunciation JH IH1 N matching Jin/Gin
+Qian,K IY1 AA2 N
+
 # --- Genuine sound-alikes that should not merge (different origins) ---
 
 # Ali: Arabic name (ah-LEE), distinct from Ollie (AW-lee)
