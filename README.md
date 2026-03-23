@@ -144,7 +144,7 @@ python -m http.server 8000
 - **Biblical Names** (`raw/biblical_names.csv`): Categorized list of biblical names (Person, Place, God, Other).
 - **Forced Merges** (`raw/forced_merges.csv`): Manual spelling group overrides for names the phonetic algorithm splits incorrectly (e.g., Kaitlyn/Katelyn/Caitlin).
 - **Pronunciation Overrides** (`raw/pronunciation_overrides.csv`): Corrections for CMU dictionary entries that cause incorrect groupings (e.g., Jere ≠ Jerry).
-- **Nicknames** (`raw/nicknames.csv`): Curated nickname → formal name mappings (e.g., Matt → Matthew). Informational only — counts stay separate.
+- **Nicknames** (`raw/nicknames.csv`): Curated nickname → formal name mappings (e.g., Matt → Matthew) with gender column (M/F) so mappings only apply within the correct gender. Informational only — counts stay separate.
 - **Territory Names** (`raw/territories/`): SSA baby name data for US territories (Puerto Rico, Guam, American Samoa, etc.). ([Source](https://www.ssa.gov/oact/babynames/territory/namesbyterritory.zip))
 
 ## Contributing

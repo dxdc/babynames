@@ -354,15 +354,19 @@ def load_ssa_data(data_dir: Path) -> pl.DataFrame:
     return raw
 
 
-def load_nicknames(filepath: Path) -> tuple[dict[str, list[str]], dict[str, list[str]]]:
-    """Load nickname mappings CSV.
+def load_nicknames(
+    filepath: Path,
+) -> tuple[dict[tuple[str, str], list[str]], dict[tuple[str, str], list[str]]]:
+    """Load nickname mappings CSV with optional gender column.
 
-    Returns two dicts:
-    - nickname_to_formal: maps nickname → list of formal names
-    - formal_to_nicknames: maps formal name → list of nicknames
+    Returns two dicts keyed by (name, gender):
+    - nickname_to_formal: maps (nickname, gender) → list of formal names
+    - formal_to_nicknames: maps (formal_name, gender) → list of nicknames
+
+    If a row has no gender, entries are created for both M and F.
     """
-    nickname_to_formal: dict[str, list[str]] = {}
-    formal_to_nicknames: dict[str, list[str]] = {}
+    nickname_to_formal: dict[tuple[str, str], list[str]] = {}
+    formal_to_nicknames: dict[tuple[str, str], list[str]] = {}
 
     if not filepath.exists():
         log.info("No nicknames file at %s", filepath)
@@ -374,44 +378,56 @@ def load_nicknames(filepath: Path) -> tuple[dict[str, list[str]], dict[str, list
             line = line.strip()
             if not line or line.startswith("#") or line.startswith("nickname"):
                 continue
-            parts = line.split(",", 1)
-            if len(parts) == 2:
+            parts = line.split(",")
+            if len(parts) >= 2:
                 nick = parts[0].strip()
                 formal = parts[1].strip()
-                if nick and formal:
-                    nickname_to_formal.setdefault(nick, []).append(formal)
-                    formal_to_nicknames.setdefault(formal, []).append(nick)
+                gender = parts[2].strip() if len(parts) >= 3 else ""
+                if not nick or not formal:
+                    continue
+                genders = [gender] if gender in ("M", "F") else ["M", "F"]
+                for g in genders:
+                    nickname_to_formal.setdefault((nick, g), []).append(formal)
+                    formal_to_nicknames.setdefault((formal, g), []).append(nick)
 
-    log.info("Loaded %d nickname mappings", sum(len(v) for v in nickname_to_formal.values()))
+    total = sum(len(v) for v in nickname_to_formal.values()) // 2  # approx (M+F)
+    log.info("Loaded ~%d nickname mappings", total)
     return nickname_to_formal, formal_to_nicknames
 
 
 def add_nickname_columns(
     df: pl.DataFrame,
-    nickname_to_formal: dict[str, list[str]],
-    formal_to_nicknames: dict[str, list[str]],
+    nickname_to_formal: dict[tuple[str, str], list[str]],
+    formal_to_nicknames: dict[tuple[str, str], list[str]],
 ) -> pl.DataFrame:
     """Add nickname_of and nicknames columns based on loaded mappings.
 
+    Gender-aware: only links nicknames to formal names within the same gender.
     nickname_of: for nicknames, lists the formal name(s) this is a nickname for
     nicknames: for formal names, lists known nicknames that exist in the data
     """
-    all_names = set(df["name"].to_list())
+    # Build per-gender name sets for existence checks
+    names_by_sex: dict[str, set[str]] = {}
+    for sex_val in ("M", "F"):
+        sex_df = df.filter(pl.col("sex") == sex_val)
+        names_by_sex[sex_val] = set(sex_df["name"].to_list())
+
     names_list = df["name"].to_list()
+    sex_list = df["sex"].to_list()
 
     nickname_of_col = []
     nicknames_col = []
-    for name in names_list:
+    for name, sex in zip(names_list, sex_list, strict=True):
+        sex_names = names_by_sex.get(sex, set())
+
         # Is this name a nickname of something?
-        formals = nickname_to_formal.get(name, [])
-        # Only include formal names that exist in the data
-        formals = [f for f in formals if f in all_names]
+        formals = nickname_to_formal.get((name, sex), [])
+        formals = [f for f in formals if f in sex_names]
         nickname_of_col.append(" ".join(formals) if formals else None)
 
         # Does this name have known nicknames?
-        nicks = formal_to_nicknames.get(name, [])
-        # Only include nicknames that exist in the data
-        nicks = [n for n in nicks if n in all_names]
+        nicks = formal_to_nicknames.get((name, sex), [])
+        nicks = [n for n in nicks if n in sex_names]
         nicknames_col.append(" ".join(nicks) if nicks else None)
 
     return df.with_columns(

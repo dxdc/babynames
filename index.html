@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="Browse, filter, and swipe through 100k+ US baby names (1880–present). Phonetically de-duplicated so you only review each name once. Swipe with your partner and compare picks. Free."
+      content="Search and filter 100k+ US baby names (1880–present) on baby.dxdc.dev. Phonetically de-duplicated so you only review each unique name once. Filter by rank, syllables, decade, biblical, trending, and more. Swipe with your partner and compare picks. Free, no signup."
     />
     <meta
       name="keywords"
-      content="baby names, US baby names, SSA baby names, popular baby names, name popularity, baby name search, name finder, biblical names, unisex names, baby name swipe, couple baby name picker"
+      content="baby names, US baby names, SSA baby names, popular baby names, name popularity, baby name search, name finder, biblical names, unisex names, baby name swipe, couple baby name picker, trending baby names, baby name list, baby name explorer"
     />
     <title>Baby Names – Browse, Filter &amp; Swipe 100k+ US Names</title>
     <link rel="canonical" href="https://baby.dxdc.dev/" />
@@ -27,28 +27,31 @@
     <meta property="og:type" content="website" />
     <meta
       property="og:title"
-      content="Baby Names – Browse, Filter & Swipe 100k+ US Names"
+      content="Baby Names – Search, Filter & Swipe 100k+ US Baby Names"
     />
     <meta
       property="og:description"
-      content="Phonetically de-duplicated baby names from 1880–present. Swipe with your partner and compare picks. 12 filters, free CSV downloads."
+      content="Find the perfect baby name from 100k+ US names (1880–present). Phonetically de-duplicated so every name sounds unique. Filter by popularity, syllables, biblical, trending & more. Swipe with your partner to compare picks."
     />
     <meta property="og:url" content="https://baby.dxdc.dev/" />
     <meta
       property="og:image"
       content="https://baby.dxdc.dev/images/og-image.png"
     />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
     <meta property="og:site_name" content="Baby Names" />
+    <meta property="og:locale" content="en_US" />
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta
       name="twitter:title"
-      content="Baby Names – Browse, Filter & Swipe 100k+ US Names"
+      content="Baby Names – Search, Filter & Swipe 100k+ US Baby Names"
     />
     <meta
       name="twitter:description"
-      content="Phonetically de-duplicated baby names from 1880–present. Swipe with your partner and compare picks."
+      content="Find the perfect baby name from 100k+ US names (1880–present). Phonetically de-duplicated, 12+ filters, partner swipe mode. Free, no signup."
     />
     <meta
       name="twitter:image"
@@ -62,11 +65,14 @@
         "@type": "WebApplication",
         "name": "Baby Names",
         "url": "https://baby.dxdc.dev/",
-        "description": "Browse, filter, and swipe through 100k+ US baby names from 1880–present. Phonetically de-duplicated so you only review each name once.",
+        "description": "Search and filter 100k+ US baby names from 1880–present. Phonetically de-duplicated so you only review each unique name once. Features 12+ filters and a partner swipe mode.",
         "applicationCategory": "LifestyleApplication",
         "operatingSystem": "Any",
-        "offers": { "@type": "Offer", "price": "0" },
-        "isAccessibleForFree": true
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "isAccessibleForFree": true,
+        "inLanguage": "en",
+        "screenshot": "https://baby.dxdc.dev/images/og-image.png",
+        "featureList": "Baby name search, Phonetic deduplication, Popularity ranking, Partner swipe mode, Biblical name filter, Trending names, Syllable filter, Unisex names, CSV export"
       }
     </script>
 
@@ -1306,7 +1312,14 @@
   </head>
   <body>
     <nav class="top-nav">
-      <h1>👶 Baby Names</h1>
+      <h1>
+        <a
+          href="#"
+          id="title-link"
+          style="text-decoration: none; color: inherit"
+          >👶 Baby Names</a
+        >
+      </h1>
       <div class="nav-links">
         <a
           href="https://github.com/dxdc/babynames"
@@ -1888,7 +1901,8 @@
         </a>
       </div>
       <div>
-        Data from
+        100k+ baby names found on
+        <a href="https://baby.dxdc.dev/">baby.dxdc.dev</a> · Data from
         <a
           href="https://www.ssa.gov/oact/babynames/limits.html"
           target="_blank"

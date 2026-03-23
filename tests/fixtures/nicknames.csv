@@ -1,4 +1,4 @@
-nickname,formal_name
-Johnny,John
-Jim,James
-Jack,John
+nickname,formal_name,gender
+Johnny,John,M
+Jim,James,M
+Jack,John,M

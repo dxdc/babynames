@@ -116,11 +116,17 @@ const swipe = (() => {
 
   // Unicode-safe base64 (handles names like José, Noël)
   function safeEncode(str) {
-    return btoa(unescape(encodeURIComponent(str)));
+    return btoa(
+      Array.from(new TextEncoder().encode(str), (b) =>
+        String.fromCharCode(b),
+      ).join(""),
+    );
   }
 
   function safeDecode(str) {
-    return decodeURIComponent(escape(atob(str)));
+    return new TextDecoder().decode(
+      Uint8Array.from(atob(str), (c) => c.charCodeAt(0)),
+    );
   }
 
   // ---------------------------------------------------------------
@@ -299,7 +305,11 @@ const swipe = (() => {
       votersNote.style.display = "none";
     }
 
-    $("storage-warning").style.display = "";
+    const hasPicks =
+      Object.keys(liked).length > 0 ||
+      Object.keys(maybe).length > 0 ||
+      Object.keys(passed).length > 0;
+    $("storage-warning").style.display = hasPicks ? "" : "none";
   }
 
   function buildScopeOptions() {

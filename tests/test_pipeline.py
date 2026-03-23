@@ -294,15 +294,15 @@ class TestLoadBiblicalCategories:
 class TestLoadNicknames:
     def test_loads_mappings(self, nicknames_path) -> None:
         nick_to_formal, formal_to_nick = load_nicknames(nicknames_path)
-        assert "Johnny" in nick_to_formal
-        assert "John" in nick_to_formal["Johnny"]
-        assert "John" in formal_to_nick
-        assert "Johnny" in formal_to_nick["John"]
+        assert ("Johnny", "M") in nick_to_formal
+        assert "John" in nick_to_formal[("Johnny", "M")]
+        assert ("John", "M") in formal_to_nick
+        assert "Johnny" in formal_to_nick[("John", "M")]
 
     def test_multi_mapping(self, nicknames_path) -> None:
         nick_to_formal, _ = load_nicknames(nicknames_path)
         # Jack maps to John
-        assert "John" in nick_to_formal["Jack"]
+        assert "John" in nick_to_formal[("Jack", "M")]
 
     def test_nonexistent_file(self, tmp_path) -> None:
         nick_to_formal, formal_to_nick = load_nicknames(tmp_path / "nonexistent.csv")
@@ -313,14 +313,14 @@ class TestLoadNicknames:
 class TestAddNicknameColumns:
     def test_adds_columns(self, nicknames_path) -> None:
         nick_to_formal, formal_to_nick = load_nicknames(nicknames_path)
-        df = pl.DataFrame({"name": ["John", "Johnny", "James", "Jim", "Liam"]})
+        df = pl.DataFrame({"name": ["John", "Johnny", "James", "Jim", "Liam"], "sex": ["M"] * 5})
         result = add_nickname_columns(df, nick_to_formal, formal_to_nick)
         assert "nickname_of" in result.columns
         assert "nicknames" in result.columns
 
     def test_nickname_of_populated(self, nicknames_path) -> None:
         nick_to_formal, formal_to_nick = load_nicknames(nicknames_path)
-        df = pl.DataFrame({"name": ["John", "Johnny", "James", "Jim"]})
+        df = pl.DataFrame({"name": ["John", "Johnny", "James", "Jim"], "sex": ["M"] * 4})
         result = add_nickname_columns(df, nick_to_formal, formal_to_nick)
         johnny = result.filter(pl.col("name") == "Johnny")
         assert johnny["nickname_of"][0] is not None
@@ -328,7 +328,7 @@ class TestAddNicknameColumns:
 
     def test_nicknames_populated(self, nicknames_path) -> None:
         nick_to_formal, formal_to_nick = load_nicknames(nicknames_path)
-        df = pl.DataFrame({"name": ["John", "Johnny", "James", "Jim", "Jack"]})
+        df = pl.DataFrame({"name": ["John", "Johnny", "James", "Jim", "Jack"], "sex": ["M"] * 5})
         result = add_nickname_columns(df, nick_to_formal, formal_to_nick)
         john = result.filter(pl.col("name") == "John")
         assert john["nicknames"][0] is not None
@@ -337,11 +337,20 @@ class TestAddNicknameColumns:
     def test_only_existing_names(self, nicknames_path) -> None:
         nick_to_formal, formal_to_nick = load_nicknames(nicknames_path)
         # Jim maps to James, but James isn't in the data
-        df = pl.DataFrame({"name": ["Jim"]})
+        df = pl.DataFrame({"name": ["Jim"], "sex": ["M"]})
         result = add_nickname_columns(df, nick_to_formal, formal_to_nick)
         jim = result.filter(pl.col("name") == "Jim")
         # James doesn't exist in data, so nickname_of should be None
         assert jim["nickname_of"][0] is None
+
+    def test_gender_filtering(self, nicknames_path) -> None:
+        """Nicknames only link within same gender."""
+        nick_to_formal, formal_to_nick = load_nicknames(nicknames_path)
+        # Johnny→John is M-only; a female Johnny shouldn't link to John
+        df = pl.DataFrame({"name": ["John", "Johnny"], "sex": ["M", "F"]})
+        result = add_nickname_columns(df, nick_to_formal, formal_to_nick)
+        johnny_f = result.filter((pl.col("name") == "Johnny") & (pl.col("sex") == "F"))
+        assert johnny_f["nickname_of"][0] is None
 
 
 class TestJrSuffixStripping:
@@ -507,8 +516,8 @@ class TestMalformedCSVInputs:
         bad = tmp_path / "bad.csv"
         bad.write_text("nickname,formal_name\nNOCOMMA\nJohnny,John\n")
         nick_to_formal, formal_to_nick = load_nicknames(bad)
-        assert "Johnny" in nick_to_formal
-        assert len(nick_to_formal) == 1  # NOCOMMA was skipped
+        assert ("Johnny", "M") in nick_to_formal
+        assert len(nick_to_formal) == 2  # NOCOMMA was skipped; M+F entries for Johnny
 
 
 class TestForcedMergeConflicts:

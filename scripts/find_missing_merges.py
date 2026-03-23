@@ -84,9 +84,9 @@ RULES: list[tuple[str, str, str]] = [
     # -ette/-et
     (r"ette$", "et", "-ette→-et"),
     (r"et$", "ette", "-et→-ette"),
-    # Jay-/Ja-
-    (r"^Jay", "Ja", "Jay-→Ja-"),
-    (r"^Ja(?=[^y])", "Jay", "Ja-→Jay-"),
+    # Jay-/Ja- (require at least 4 chars to avoid matching standalone "Ja")
+    (r"^Jay(?=.)", "Ja", "Jay-→Ja-"),
+    (r"^Ja(?=[^y].)", "Jay", "Ja-→Jay-"),
 ]
 
 
@@ -141,6 +141,14 @@ def main() -> None:
     )
     parser.add_argument(
         "--min-count", type=int, default=100, help="Min total count to consider (default: 100)"
+    )
+    parser.add_argument(
+        "--max-ratio",
+        type=float,
+        default=0,
+        help="Max source/target count ratio (e.g., 0.05 = 5%%). "
+        "Filters out pairs where source is a large fraction of target, "
+        "suggesting distinct names rather than misspellings. 0 = no filter.",
     )
     args = parser.parse_args()
 
@@ -198,12 +206,18 @@ def main() -> None:
             seen_pairs.add(pair)
 
             # The higher-count name should be the target
+            # Use actual names from data (not transformed string which may have wrong case)
             if info["count"] >= match_info["count"]:
-                source, target = transformed, name
+                source, target = match_info["name"], info["name"]
                 source_count, target_count = match_info["count"], info["count"]
             else:
-                source, target = name, transformed
+                source, target = info["name"], match_info["name"]
                 source_count, target_count = info["count"], match_info["count"]
+
+            # Ratio filter: if source is a large fraction of target, likely distinct names
+            ratio = source_count / target_count if target_count else 1
+            if args.max_ratio and ratio > args.max_ratio:
+                continue
 
             candidates.append(
                 {
@@ -213,6 +227,7 @@ def main() -> None:
                     "source_count": source_count,
                     "target_count": target_count,
                     "combined": info["count"] + match_info["count"],
+                    "ratio": ratio,
                     "rule": desc,
                 }
             )
@@ -223,13 +238,13 @@ def main() -> None:
     print(f"\nFound {len(candidates)} candidate pairs\n")
     print(
         f"{'Source':<16} {'Target':<16} {'Sex':>3} {'Src Count':>10} "
-        f"{'Tgt Count':>10} {'Combined':>10} {'Rule'}"
+        f"{'Tgt Count':>10} {'Combined':>10} {'Ratio':>7} {'Rule'}"
     )
-    print("-" * 95)
+    print("-" * 103)
     for c in candidates:
         print(
             f"{c['source']:<16} {c['target']:<16} {c['sex']:>3} {c['source_count']:>10} "
-            f"{c['target_count']:>10} {c['combined']:>10} {c['rule']}"
+            f"{c['target_count']:>10} {c['combined']:>10} {c['ratio']:>6.1%} {c['rule']}"
         )
 
     if candidates:

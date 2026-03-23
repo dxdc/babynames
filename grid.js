@@ -1,7 +1,7 @@
 // Baby Names - Tabulator-based data grid
 // Loads CSV data and renders with filtering, sorting, virtual scrolling
 
-const DATA_VERSION = "2.1.0"; // bump when CSV schema or data changes
+const DATA_VERSION = "2.2.0"; // bump when CSV schema or data changes
 
 const DATA_URLS = {
   M: `data/boys.csv?v=${DATA_VERSION}`,
@@ -261,7 +261,7 @@ function detectYearRange(data) {
 function updatePageMeta() {
   if (!dataMinYear || !dataMaxYear) return;
   document.title =
-    "Baby Names \u2013 US Baby Name Search & Explorer (" +
+    "Baby Names \u2013 Search & Filter 100k+ US Baby Names (" +
     dataMinYear +
     "\u2013" +
     dataMaxYear +
@@ -708,6 +708,13 @@ document.getElementById("clear-filters").addEventListener("click", function () {
       el.setAttribute("aria-pressed", "false");
     });
   applyFilters();
+});
+
+// Title link — clear all filters and scroll to top
+document.getElementById("title-link").addEventListener("click", function (e) {
+  e.preventDefault();
+  document.getElementById("clear-filters").click();
+  window.scrollTo({ top: 0, behavior: "smooth" });
 });
 
 // Dark mode toggle
