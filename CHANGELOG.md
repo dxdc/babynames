@@ -12,14 +12,20 @@ Project audit — data quality, pronunciation fixes, nickname support, territory
 - **Pronunciation overrides** (`raw/pronunciation_overrides.csv`) — correct CMU dictionary errors that cause incorrect groupings. Fixes: Jere ≠ Jerry, Hugh ≠ Yu, Charron ≠ Karen, Tsai ≠ Cy.
 - **US territory data** — pipeline now loads SSA territory files (Puerto Rico, Guam, American Samoa, etc.) from `raw/territories/` and merges into national totals.
 - **Expanded excluded names** — added Infantof, Infantboy, Infantgirl, Infantmale, Infantfemale, Newborn, Noname, Unborn, Infboy, Wm, Jr to the filter list. Boy and Girl are kept as legitimate names.
-- **~70 new forced merges** — double/single consonant splits (Jenifer→Jennifer, Hanah→Hannah), vowel ending variants (Colten→Colton, Helyn→Helen), ph/f substitutions (Christofer→Christopher), and more.
+- **~115 forced merges** — double/single consonant splits (Jenifer→Jennifer, Hanah→Hannah), vowel ending variants (Colten→Colton, Helyn→Helen), ph/f substitutions (Christofer→Christopher, Jennipher→Jennifer, Josefine→Josephine), Jay/Ja variants (Jaymes→James), and more. Round 2 added ~45 merges targeting high-count typos (Johnn→John, Michaell→Michael, Wiliam→William, etc.) identified by the diagnostic script.
 - **Diagnostic script** (`scripts/find_missing_merges.py`) — reusable tool to detect candidate missing merges by applying substitution patterns. Run after SSA data updates.
 - Fixed `classify_unisex_names` dominant gender calculation to be explicit rather than relying on dict iteration order.
 - Fixed inconsistent `.get()` vs direct indexing in `merge_spelling_variants`.
 
+### Frontend
+
+- **Grid sorting fix** — added missing `sorter` property to Nickname Of, Biblical, and all hidden columns (Letter, Palindrome, Stresses, Phones, Alliteration). Clicking these column headers now sorts correctly.
+- **Nickname Of tooltip** — column now shows comma-separated names with a hover/tap tooltip for overflow, matching the Variations column behavior.
+- **Variations column** — tooltip now always shows on hover (not just when >5 names), and display always uses comma separation.
+
 ### Tests
 
-- 86 tests (was 57) — added coverage for forced merges, pronunciation overrides, nickname loading, Jr-suffix stripping, excluded names, biblical categories, subword splitting, and syllable estimation.
+- 110 tests (was 57) — added coverage for forced merges, pronunciation overrides, nickname loading, Jr-suffix stripping, excluded names, biblical categories, subword splitting, and syllable estimation.
 
 ## [2.1.0] - 2026-03-22
 

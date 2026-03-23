@@ -63,15 +63,13 @@ function initTable(data, onReady) {
           const val = cell.getValue();
           if (!val) return "";
           const names = val.split(" ");
-          if (names.length <= 5) return val;
+          if (names.length <= 5) return names.join(", ");
           return names.slice(0, 5).join(", ") + " \u2026+" + (names.length - 5);
         },
         tooltip: function (e, cell) {
           const val = cell.getValue();
           if (!val) return "";
-          const names = val.split(" ");
-          if (names.length <= 5) return "";
-          return names.join(", ");
+          return val.split(" ").join(", ");
         },
       },
       {
@@ -124,6 +122,7 @@ function initTable(data, onReady) {
       {
         title: "Biblical",
         field: "biblical",
+        sorter: "string",
         width: 80,
         headerFilter: false,
         formatter: function (cell) {
@@ -160,14 +159,24 @@ function initTable(data, onReady) {
       {
         title: "Nickname Of",
         field: "nickname_of",
+        sorter: "string",
         width: 120,
         headerFilter: false,
-        tooltip: "Formal name this is a nickname for.",
+        formatter: function (cell) {
+          var val = cell.getValue();
+          if (!val) return "";
+          return val.split(" ").join(", ");
+        },
+        tooltip: function (e, cell) {
+          var val = cell.getValue();
+          return val ? val.split(" ").join(", ") : "";
+        },
         responsive: 2,
       },
       {
         title: "Letter",
         field: "first_letter",
+        sorter: "string",
         width: 65,
         headerFilter: false,
         visible: false,
@@ -175,6 +184,7 @@ function initTable(data, onReady) {
       {
         title: "Palindrome",
         field: "is_palindrome",
+        sorter: "number",
         width: 90,
         headerFilter: false,
         visible: false,
@@ -185,18 +195,21 @@ function initTable(data, onReady) {
       {
         title: "Stresses",
         field: "stresses",
+        sorter: "string",
         headerFilter: false,
         visible: false,
       },
       {
         title: "Phones",
         field: "pronunciations",
+        sorter: "string",
         headerFilter: false,
         visible: false,
       },
       {
         title: "Alliteration",
         field: "alliteration",
+        sorter: "number",
         headerFilter: false,
         visible: false,
         formatter: function (cell) {
@@ -206,6 +219,7 @@ function initTable(data, onReady) {
       {
         title: "Allit. First",
         field: "alliteration_first",
+        sorter: "number",
         headerFilter: false,
         visible: false,
         formatter: function (cell) {
