@@ -21,3 +21,53 @@ Charron,SH EH1 R AH0 N
 # Tsai: Chinese name, not related to Cy
 # CMU lists S AY1 as alt — should keep the TS onset
 Tsai,T S AY1
+
+# --- Bad CMU dict entries (wrong alt pronunciations) ---
+
+# Cian: Irish name pronounced "KEE-an" (same as Kian)
+# CMU says SH IY1 N — which pulls Shean/Sheen into Kian's group
+Cian,K IY1 AH0 N
+
+# Hugo: CMU lists Y UW1 G OW0 as alt (no H) — causes merge with Yugo
+Hugo,HH Y UW1 G OW0
+
+# Tao: Chinese name with T onset — CMU lists D AW1 as alt, causing merge with Dow
+Tao,T AW1
+
+# Duell: surname/given name — CMU lists JH UW1 L as alt, causing merge with Jewel
+Duell,D UW1 L
+
+# --- Subword fallback corrections ---
+
+# Yasen: Bulgarian name meaning "ash tree", not a variant of Jason
+# Subword produces Y AA1 S EH1 N which matches Jasen
+Yasen,Y AH0 S EH1 N
+
+# Tjaden: German/Frisian name, not a variant of Jayden
+# Subword produces JH EY1 D AH0 N
+Tjaden,T Y AH1 D AH0 N
+
+# Ngai: Cantonese name with nasal onset, not a variant of Guy
+# Subword drops the nasal, producing G AY1
+Ngai,NG AY1
+
+# Xile: Chinese name, not a variant of Sheila
+# Subword produces SH IY1 L AH0
+Xile,K S AY1 L
+
+# Won: Korean name, not a variant of Juan
+# Subword produces W AH1 N / W AA1 N which matches Juan
+Won,W AH1 N
+
+# Yami: Japanese name, not a variant of Jamie
+# Subword produces Y AA1 M IY1 which matches bad subword results for Jamee/Jame
+Yami,Y AH1 M IY0
+
+# --- Genuine sound-alikes that should not merge (different origins) ---
+
+# Ali: Arabic name (ah-LEE), distinct from Ollie (AW-lee)
+Ali,AH0 L IY1
+
+# Hymie: Yiddish diminutive of Hyman, not a variant of Jaime (Spanish)
+# Both produce HH AY1 M IY0 — override to distinguish
+Hymie,HH AY1 M IY2
