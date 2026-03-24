@@ -240,8 +240,9 @@ function initTable(data, onReady) {
     if (onReady) onReady();
   });
 
-  // Row click → detail popup (useful on mobile where columns are hidden)
+  // Row tap → detail popup on mobile only (columns are hidden on narrow screens)
   table.on("rowClick", function (e, row) {
+    if (window.innerWidth > 768) return;
     const d = row.getData();
     const overlay = document.getElementById("name-detail-overlay");
     const body = document.getElementById("name-detail-body");
