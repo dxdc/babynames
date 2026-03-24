@@ -49,13 +49,19 @@ function initTable(data, onReady) {
         title: "Name",
         field: "name",
         sorter: "string",
-        minWidth: 120,
+        minWidth: 100,
+        headerFilter: false,
+      },
+      {
+        title: "Variations",
+        field: "spelling_variants",
+        sorter: "string",
+        minWidth: 140,
         headerFilter: false,
         formatter: function (cell) {
-          const name = cell.getValue();
-          const variants = cell.getRow().getData().spelling_variants;
-          if (!variants) return name;
-          const varList = variants.split(" ");
+          const val = cell.getValue();
+          if (!val) return "";
+          const varList = val.split(" ");
           const chips = varList
             .map(function (v) {
               return '<span class="variant-expand-chip">' + v + "</span>";
@@ -63,9 +69,6 @@ function initTable(data, onReady) {
             .join("");
           return (
             '<div><div class="name-cell">' +
-            '<span class="name-cell-label">' +
-            name +
-            "</span>" +
             '<span class="variant-badge" data-variants-toggle>' +
             '<span class="arrow">▸</span> ' +
             varList.length +
@@ -77,6 +80,11 @@ function initTable(data, onReady) {
             chips +
             "</div></div>"
           );
+        },
+        tooltip: function (e, cell) {
+          const val = cell.getValue();
+          if (!val) return "";
+          return val.split(" ").join(", ");
         },
       },
       {
