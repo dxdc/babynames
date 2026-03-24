@@ -35,46 +35,7 @@ function initTable(data, onReady) {
     height: "70vh",
     data: data,
     layout: "fitColumns",
-    responsiveLayout: "collapse",
-    responsiveLayoutCollapseFormatter: function (data) {
-      const chipFields = ["spelling_variants", "nickname_of"];
-      const el = document.createElement("div");
-      el.className = "collapse-row";
-      data.forEach(function (col) {
-        if (!col.value && col.value !== 0) return;
-        const row = document.createElement("div");
-        row.className = "collapse-row-item";
-        const title = document.createElement("span");
-        title.className = "collapse-row-title";
-        title.textContent = col.title + ": ";
-        row.appendChild(title);
-        if (chipFields.includes(col.field)) {
-          const chipWrap = document.createElement("span");
-          chipWrap.className = "collapse-row-chips";
-          col.value.split(" ").forEach(function (v) {
-            if (!v) return;
-            const chip = document.createElement("span");
-            chip.className = "variant-col-chip";
-            chip.textContent = v;
-            chipWrap.appendChild(chip);
-          });
-          row.appendChild(chipWrap);
-        } else {
-          const val = document.createElement("span");
-          val.className = "collapse-row-value";
-          if (col.field === "cumulative_pct") {
-            val.textContent = Number(col.value).toFixed(1) + "%";
-          } else if (col.field === "biblical") {
-            val.textContent = col.value || "";
-          } else {
-            val.textContent = col.value;
-          }
-          row.appendChild(val);
-        }
-        el.appendChild(row);
-      });
-      return el;
-    },
+    responsiveLayout: "hide",
     placeholder: "No matching names found",
     columns: [
       {
@@ -282,6 +243,66 @@ function initTable(data, onReady) {
   table.on("tableBuilt", function () {
     tableReady = true;
     if (onReady) onReady();
+  });
+
+  // Row click → detail popup (useful on mobile where columns are hidden)
+  table.on("rowClick", function (e, row) {
+    const d = row.getData();
+    const overlay = document.getElementById("name-detail-overlay");
+    const body = document.getElementById("name-detail-body");
+
+    let html = '<div class="detail-name">' + d.name + "</div>";
+
+    // Variants
+    if (d.spelling_variants) {
+      html += '<div class="detail-section">';
+      html += '<div class="detail-label">Spelling variations</div>';
+      html += '<div class="detail-chips">';
+      d.spelling_variants.split(" ").forEach(function (v) {
+        if (v) html += '<span class="variant-col-chip">' + v + "</span>";
+      });
+      html += "</div></div>";
+    }
+
+    // Stats
+    const stats = [];
+    stats.push("#" + d.rank);
+    if (d.total_count)
+      stats.push(Number(d.total_count).toLocaleString() + " babies");
+    if (d.syllables) stats.push(d.syllables + " syl");
+    if (d.year_min && d.year_max) stats.push(d.year_min + "–" + d.year_max);
+    if (d.year_peak) stats.push("peak " + d.year_peak);
+    if (stats.length) {
+      html += '<div class="detail-stats">' + stats.join(" · ") + "</div>";
+    }
+
+    // Badges
+    const badges = [];
+    if (d.biblical) badges.push("📖 " + d.biblical);
+    if (
+      d.year_peak &&
+      dataMaxYear &&
+      Number(d.year_peak) >= dataMaxYear - TRENDING_WINDOW
+    )
+      badges.push("📈 Trending");
+    if (d.unisex_pct) {
+      const sym = d.unisex_dominant === "M" ? "♂" : "♀";
+      badges.push("⚤ " + d.unisex_pct + "% " + sym);
+    }
+    if (d.nickname_of) {
+      badges.push("💬 " + d.nickname_of.split(" ").join(", "));
+    }
+    if (Number(d.is_palindrome)) badges.push("🔁 Palindrome");
+    if (badges.length) {
+      html += '<div class="detail-badges">';
+      badges.forEach(function (b) {
+        html += '<span class="detail-badge">' + b + "</span>";
+      });
+      html += "</div>";
+    }
+
+    body.innerHTML = html;
+    overlay.style.display = "";
   });
 }
 

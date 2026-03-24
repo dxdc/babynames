@@ -434,7 +434,7 @@
         }
       }
 
-      /* Variant chips — used in column and responsive collapse */
+      /* Variant chips — used in column and detail popup */
       .variant-col-chip {
         display: inline-block;
         font-size: 0.73rem;
@@ -446,35 +446,46 @@
         border: 1px solid var(--filter-border);
       }
 
-      /* Responsive collapse sub-row styling */
-      .collapse-row {
-        padding: 0.4rem 0.5rem;
+      /* Name detail popup */
+      .detail-name {
+        font-size: 1.8rem;
+        font-weight: 700;
+        text-align: center;
+        margin-bottom: 0.75rem;
+        padding-right: 1.5rem;
       }
-      .collapse-row-item {
-        display: flex;
-        align-items: baseline;
-        gap: 0.35rem;
-        padding: 0.2rem 0;
+      .detail-section {
+        margin-bottom: 0.6rem;
       }
-      .collapse-row-title {
+      .detail-label {
         font-size: 0.75rem;
         font-weight: 600;
         color: var(--pico-muted-color);
-        white-space: nowrap;
-        flex-shrink: 0;
+        margin-bottom: 0.3rem;
       }
-      .collapse-row-value {
-        font-size: 0.8rem;
-      }
-      .collapse-row-chips {
+      .detail-chips {
         display: flex;
         flex-wrap: wrap;
-        gap: 0.2rem;
+        gap: 0.25rem;
       }
-
-      /* Tabulator collapse toggle styling */
-      .tabulator-responsive-collapse-toggle {
-        cursor: pointer;
+      .detail-stats {
+        font-size: 0.85rem;
+        color: var(--muted-stronger, var(--pico-muted-color));
+        text-align: center;
+        margin-bottom: 0.6rem;
+      }
+      .detail-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.3rem;
+        justify-content: center;
+      }
+      .detail-badge {
+        font-size: 0.78rem;
+        padding: 0.15rem 0.5rem;
+        border-radius: 10px;
+        background: var(--chip-bg);
+        border: 1px solid var(--filter-border);
       }
 
       /* Tabulator theme overrides */
@@ -1404,6 +1415,52 @@
       </div>
     </nav>
 
+    <!-- Name detail popup (row click) -->
+    <div
+      id="name-detail-overlay"
+      role="dialog"
+      aria-label="Name details"
+      style="
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        background: rgba(0, 0, 0, 0.5);
+        overflow-y: auto;
+        padding: 2rem 1rem;
+      "
+    >
+      <div
+        style="
+          max-width: 400px;
+          margin: 0 auto;
+          background: var(--pico-background-color);
+          border-radius: 12px;
+          padding: 1.5rem;
+          position: relative;
+        "
+      >
+        <button
+          id="name-detail-close"
+          aria-label="Close"
+          style="
+            position: absolute;
+            top: 0.5rem;
+            right: 0.75rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--pico-muted-color);
+            line-height: 1;
+          "
+        >
+          &times;
+        </button>
+        <div id="name-detail-body"></div>
+      </div>
+    </div>
+
     <!-- About dialog -->
     <div
       id="about-overlay"
@@ -2172,6 +2229,22 @@
         }
         open.addEventListener("click", show);
         openNav.addEventListener("click", show);
+        close.addEventListener("click", hide);
+        overlay.addEventListener("click", function (e) {
+          if (e.target === overlay) hide();
+        });
+        document.addEventListener("keydown", function (e) {
+          if (e.key === "Escape" && overlay.style.display !== "none") hide();
+        });
+      })();
+
+      // Name detail popup close logic
+      (function () {
+        var overlay = document.getElementById("name-detail-overlay");
+        var close = document.getElementById("name-detail-close");
+        function hide() {
+          overlay.style.display = "none";
+        }
         close.addEventListener("click", hide);
         overlay.addEventListener("click", function (e) {
           if (e.target === overlay) hide();
