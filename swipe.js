@@ -458,7 +458,10 @@ const swipe = (() => {
     const badgeEl = $("card-badges");
     badgeEl.innerHTML = "";
     const badges = [];
-    if (d.biblical) badges.push({ icon: "📖", label: d.biblical });
+    if (d.biblical) {
+      const biblicalLabel = d.biblical === "Place" ? "Biblical Place" : "Biblical";
+      badges.push({ icon: "📖", label: biblicalLabel });
+    }
     const currentYear = new Date().getFullYear();
     if (d.year_peak && d.year_peak >= currentYear - 15) {
       badges.push({ icon: "📈", label: "Trending" });
