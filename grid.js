@@ -35,7 +35,46 @@ function initTable(data, onReady) {
     height: "70vh",
     data: data,
     layout: "fitColumns",
-    responsiveLayout: "hide",
+    responsiveLayout: "collapse",
+    responsiveLayoutCollapseFormatter: function (data) {
+      const chipFields = ["spelling_variants", "nickname_of"];
+      const el = document.createElement("div");
+      el.className = "collapse-row";
+      data.forEach(function (col) {
+        if (!col.value && col.value !== 0) return;
+        const row = document.createElement("div");
+        row.className = "collapse-row-item";
+        const title = document.createElement("span");
+        title.className = "collapse-row-title";
+        title.textContent = col.title + ": ";
+        row.appendChild(title);
+        if (chipFields.includes(col.field)) {
+          const chipWrap = document.createElement("span");
+          chipWrap.className = "collapse-row-chips";
+          col.value.split(" ").forEach(function (v) {
+            if (!v) return;
+            const chip = document.createElement("span");
+            chip.className = "variant-col-chip";
+            chip.textContent = v;
+            chipWrap.appendChild(chip);
+          });
+          row.appendChild(chipWrap);
+        } else {
+          const val = document.createElement("span");
+          val.className = "collapse-row-value";
+          if (col.field === "cumulative_pct") {
+            val.textContent = Number(col.value).toFixed(1) + "%";
+          } else if (col.field === "biblical") {
+            val.textContent = col.value || "";
+          } else {
+            val.textContent = col.value;
+          }
+          row.appendChild(val);
+        }
+        el.appendChild(row);
+      });
+      return el;
+    },
     placeholder: "No matching names found",
     columns: [
       {
@@ -62,7 +101,12 @@ function initTable(data, onReady) {
         formatter: function (cell) {
           const val = cell.getValue();
           if (!val) return "";
-          return val.split(" ").join(", ");
+          return val
+            .split(" ")
+            .map(function (v) {
+              return '<span class="variant-col-chip">' + v + "</span>";
+            })
+            .join("");
         },
         tooltip: function (e, cell) {
           const val = cell.getValue();

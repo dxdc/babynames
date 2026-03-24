@@ -434,6 +434,49 @@
         }
       }
 
+      /* Variant chips — used in column and responsive collapse */
+      .variant-col-chip {
+        display: inline-block;
+        font-size: 0.73rem;
+        padding: 0.1rem 0.45rem;
+        margin: 0.1rem;
+        border-radius: 10px;
+        background: var(--chip-bg);
+        color: var(--muted-stronger, var(--pico-muted-color));
+        border: 1px solid var(--filter-border);
+      }
+
+      /* Responsive collapse sub-row styling */
+      .collapse-row {
+        padding: 0.4rem 0.5rem;
+      }
+      .collapse-row-item {
+        display: flex;
+        align-items: baseline;
+        gap: 0.35rem;
+        padding: 0.2rem 0;
+      }
+      .collapse-row-title {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--pico-muted-color);
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+      .collapse-row-value {
+        font-size: 0.8rem;
+      }
+      .collapse-row-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.2rem;
+      }
+
+      /* Tabulator collapse toggle styling */
+      .tabulator-responsive-collapse-toggle {
+        cursor: pointer;
+      }
+
       /* Tabulator theme overrides */
       [data-theme="dark"] {
         & .tabulator {
