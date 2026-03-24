@@ -58,10 +58,28 @@ function initTable(data, onReady) {
             chipWrap.appendChild(chip);
           });
           row.appendChild(chipWrap);
+        } else if (col.field === "nickname_of") {
+          var chipWrap2 = document.createElement("span");
+          chipWrap2.className = "collapse-row-chips";
+          col.value.split(" ").forEach(function (v) {
+            if (!v) return;
+            var chip = document.createElement("span");
+            chip.className = "variant-col-chip";
+            chip.textContent = v;
+            chipWrap2.appendChild(chip);
+          });
+          row.appendChild(chipWrap2);
         } else {
           var val = document.createElement("span");
           val.className = "collapse-row-value";
-          val.textContent = col.value;
+          // Format specific fields for readability
+          if (col.field === "cumulative_pct") {
+            val.textContent = Number(col.value).toFixed(1) + "%";
+          } else if (col.field === "biblical") {
+            val.textContent = col.value || "";
+          } else {
+            val.textContent = col.value;
+          }
           row.appendChild(val);
         }
         el.appendChild(row);
