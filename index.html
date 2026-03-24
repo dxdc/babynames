@@ -1367,6 +1367,7 @@
           </svg>
           Girls
         </a>
+        <a href="#" id="about-link-nav" title="About this project">About</a>
         <button
           id="theme-toggle"
           class="toggle-btn"
@@ -2135,6 +2136,7 @@
       (function () {
         var overlay = document.getElementById("about-overlay");
         var open = document.getElementById("about-link");
+        var openNav = document.getElementById("about-link-nav");
         var close = document.getElementById("about-close");
         function show(e) {
           e.preventDefault();
@@ -2144,6 +2146,7 @@
           overlay.style.display = "none";
         }
         open.addEventListener("click", show);
+        openNav.addEventListener("click", show);
         close.addEventListener("click", hide);
         overlay.addEventListener("click", function (e) {
           if (e.target === overlay) hide();
