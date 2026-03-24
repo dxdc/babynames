@@ -25,7 +25,7 @@ g2p = [
 requires-dist = [
     { name = "cmudict", specifier = ">=1.1,<2" },
     { name = "g2p-en", marker = "extra == 'g2p'", specifier = ">=2.1,<3" },
-    { name = "nltk", specifier = ">=3.9.1" },
+    { name = "nltk", specifier = ">=3.9.3" },
     { name = "polars", specifier = ">=1.20,<2" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.4" },
