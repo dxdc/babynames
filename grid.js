@@ -259,8 +259,15 @@ function initTable(data, onReady) {
       const wrapper = badge.closest(".name-cell").parentElement;
       const expandEl = wrapper.querySelector(".variant-expand");
       if (!expandEl) return;
-      const isOpen = expandEl.classList.toggle("open");
-      badge.classList.toggle("open", isOpen);
+      // Toggle: read current state, flip it
+      var cur = expandEl.getAttribute("data-expanded");
+      // If never toggled, infer from screen width
+      if (cur === null) {
+        cur = window.innerWidth >= 769 ? "true" : "false";
+      }
+      var next = cur === "true" ? "false" : "true";
+      expandEl.setAttribute("data-expanded", next);
+      badge.setAttribute("data-open", next);
     });
 }
 

@@ -465,20 +465,14 @@
         color: var(--pico-color);
       }
       .variant-badge .arrow {
+        display: inline-block;
         font-size: 0.6rem;
         transition: transform 0.15s;
       }
-      .variant-badge.open .arrow {
-        transform: rotate(90deg);
-      }
       .variant-expand {
-        display: none;
         flex-wrap: wrap;
         gap: 0.25rem;
         padding: 0.35rem 0 0.1rem;
-      }
-      .variant-expand.open {
-        display: flex;
       }
       .variant-expand-chip {
         font-size: 0.73rem;
@@ -487,6 +481,36 @@
         background: var(--chip-bg);
         color: var(--muted-stronger, var(--pico-muted-color));
         border: 1px solid var(--filter-border);
+      }
+      /* Mobile (portrait): collapsed by default, open on toggle */
+      @media (max-width: 768px) {
+        .variant-expand {
+          display: none;
+        }
+        .variant-expand[data-expanded="true"] {
+          display: flex;
+        }
+        .variant-badge .arrow {
+          transform: rotate(0deg);
+        }
+        .variant-badge[data-open="true"] .arrow {
+          transform: rotate(90deg);
+        }
+      }
+      /* Desktop / landscape: show expanded by default, allow collapse */
+      @media (min-width: 769px) {
+        .variant-expand {
+          display: flex;
+        }
+        .variant-expand[data-expanded="false"] {
+          display: none;
+        }
+        .variant-badge .arrow {
+          transform: rotate(90deg);
+        }
+        .variant-badge[data-open="false"] .arrow {
+          transform: rotate(0deg);
+        }
       }
 
       /* Tabulator theme overrides */
