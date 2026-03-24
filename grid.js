@@ -62,27 +62,13 @@ function initTable(data, onReady) {
         formatter: function (cell) {
           const val = cell.getValue();
           if (!val) return "";
-          const names = val.split(" ");
-          const row = cell.getRow();
-          const data = row.getData();
-          if (data._variantsExpanded || names.length <= 5)
-            return names.join(", ");
-          const summary = names.slice(0, 5).join(", ");
-          const badge = document.createElement("span");
-          badge.className = "expand-badge";
-          badge.textContent = "+" + (names.length - 5);
-          badge.title = "Click to expand";
-          badge.addEventListener("click", function (e) {
-            e.stopPropagation();
-            data._variantsExpanded = true;
-            row.reformat();
-          });
-          const frag = document.createDocumentFragment();
-          frag.appendChild(document.createTextNode(summary + " "));
-          frag.appendChild(badge);
-          return frag;
+          return val.split(" ").join(", ");
         },
-        tooltip: false,
+        tooltip: function (e, cell) {
+          const val = cell.getValue();
+          if (!val) return "";
+          return val.split(" ").join(", ");
+        },
       },
       {
         title: "Count",
@@ -177,27 +163,13 @@ function initTable(data, onReady) {
         formatter: function (cell) {
           var val = cell.getValue();
           if (!val) return "";
-          var names = val.split(" ");
-          var row = cell.getRow();
-          var data = row.getData();
-          if (data._nicknameExpanded || names.length <= 5)
-            return names.join(", ");
-          var summary = names.slice(0, 5).join(", ");
-          var badge = document.createElement("span");
-          badge.className = "expand-badge";
-          badge.textContent = "+" + (names.length - 5);
-          badge.title = "Click to expand";
-          badge.addEventListener("click", function (e) {
-            e.stopPropagation();
-            data._nicknameExpanded = true;
-            row.reformat();
-          });
-          var frag = document.createDocumentFragment();
-          frag.appendChild(document.createTextNode(summary + " "));
-          frag.appendChild(badge);
-          return frag;
+          return val.split(" ").join(", ");
         },
-        tooltip: false,
+        tooltip: function (e, cell) {
+          var val = cell.getValue();
+          if (!val) return "";
+          return val.split(" ").join(", ");
+        },
         responsive: 2,
       },
       {
