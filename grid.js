@@ -37,42 +37,31 @@ function initTable(data, onReady) {
     layout: "fitColumns",
     responsiveLayout: "collapse",
     responsiveLayoutCollapseFormatter: function (data) {
-      var el = document.createElement("div");
+      const chipFields = ["spelling_variants", "nickname_of"];
+      const el = document.createElement("div");
       el.className = "collapse-row";
       data.forEach(function (col) {
         if (!col.value && col.value !== 0) return;
-        var row = document.createElement("div");
+        const row = document.createElement("div");
         row.className = "collapse-row-item";
-        var title = document.createElement("span");
+        const title = document.createElement("span");
         title.className = "collapse-row-title";
         title.textContent = col.title + ": ";
         row.appendChild(title);
-        if (col.field === "spelling_variants") {
-          var chipWrap = document.createElement("span");
+        if (chipFields.includes(col.field)) {
+          const chipWrap = document.createElement("span");
           chipWrap.className = "collapse-row-chips";
           col.value.split(" ").forEach(function (v) {
             if (!v) return;
-            var chip = document.createElement("span");
+            const chip = document.createElement("span");
             chip.className = "variant-col-chip";
             chip.textContent = v;
             chipWrap.appendChild(chip);
           });
           row.appendChild(chipWrap);
-        } else if (col.field === "nickname_of") {
-          var chipWrap2 = document.createElement("span");
-          chipWrap2.className = "collapse-row-chips";
-          col.value.split(" ").forEach(function (v) {
-            if (!v) return;
-            var chip = document.createElement("span");
-            chip.className = "variant-col-chip";
-            chip.textContent = v;
-            chipWrap2.appendChild(chip);
-          });
-          row.appendChild(chipWrap2);
         } else {
-          var val = document.createElement("span");
+          const val = document.createElement("span");
           val.className = "collapse-row-value";
-          // Format specific fields for readability
           if (col.field === "cumulative_pct") {
             val.textContent = Number(col.value).toFixed(1) + "%";
           } else if (col.field === "biblical") {
