@@ -65,7 +65,8 @@ function initTable(data, onReady) {
           const names = val.split(" ");
           const row = cell.getRow();
           const data = row.getData();
-          if (data._variantsExpanded || names.length <= 5) return names.join(", ");
+          if (data._variantsExpanded || names.length <= 5)
+            return names.join(", ");
           const summary = names.slice(0, 5).join(", ");
           const badge = document.createElement("span");
           badge.className = "expand-badge";
@@ -179,7 +180,8 @@ function initTable(data, onReady) {
           var names = val.split(" ");
           var row = cell.getRow();
           var data = row.getData();
-          if (data._nicknameExpanded || names.length <= 5) return names.join(", ");
+          if (data._nicknameExpanded || names.length <= 5)
+            return names.join(", ");
           var summary = names.slice(0, 5).join(", ");
           var badge = document.createElement("span");
           badge.className = "expand-badge";

@@ -484,9 +484,10 @@ const swipe = (() => {
     if (d.alliteration == 1) badges.push({ icon: "🔤", label: "Alliteration" });
     if (d.nickname_of) {
       var nnames = d.nickname_of.split(" ");
-      var nlabel = nnames.length <= 5
-        ? nnames.join(", ")
-        : nnames.slice(0, 5).join(", ") + " +" + (nnames.length - 5);
+      var nlabel =
+        nnames.length <= 5
+          ? nnames.join(", ")
+          : nnames.slice(0, 5).join(", ") + " +" + (nnames.length - 5);
       badges.push({ icon: "💬", label: `Short for ${nlabel}` });
     }
     for (const b of badges) {
