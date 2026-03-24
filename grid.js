@@ -176,12 +176,26 @@ function initTable(data, onReady) {
         formatter: function (cell) {
           var val = cell.getValue();
           if (!val) return "";
-          return val.split(" ").join(", ");
+          var names = val.split(" ");
+          var el = cell.getElement();
+          var expanded = el._nicknameExpanded;
+          if (expanded || names.length <= 5) return names.join(", ");
+          var summary = names.slice(0, 5).join(", ");
+          var badge = document.createElement("span");
+          badge.className = "expand-badge";
+          badge.textContent = "+" + (names.length - 5);
+          badge.title = "Click to expand";
+          badge.onclick = function (e) {
+            e.stopPropagation();
+            el._nicknameExpanded = true;
+            cell.getRow().reformat();
+          };
+          var frag = document.createDocumentFragment();
+          frag.appendChild(document.createTextNode(summary + " "));
+          frag.appendChild(badge);
+          return frag;
         },
-        tooltip: function (e, cell) {
-          var val = cell.getValue();
-          return val ? val.split(" ").join(", ") : "";
-        },
+        tooltip: false,
         responsive: 2,
       },
       {
