@@ -459,7 +459,8 @@ const swipe = (() => {
     badgeEl.innerHTML = "";
     const badges = [];
     if (d.biblical) {
-      const biblicalLabel = d.biblical === "Place" ? "Biblical Place" : "Biblical";
+      const biblicalLabel =
+        d.biblical === "Place" ? "Biblical Place" : "Biblical";
       badges.push({ icon: "📖", label: biblicalLabel });
     }
     const currentYear = new Date().getFullYear();
