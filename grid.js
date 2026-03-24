@@ -65,11 +65,11 @@ function initTable(data, onReady) {
           const names = val.split(" ");
           const el = cell.getElement();
           const expanded = el._variantsExpanded;
-          if (expanded || names.length <= 3) return names.join(", ");
-          const summary = names.slice(0, 3).join(", ");
+          if (expanded || names.length <= 5) return names.join(", ");
+          const summary = names.slice(0, 5).join(", ");
           const badge = document.createElement("span");
-          badge.className = "variants-badge";
-          badge.textContent = "+" + (names.length - 3);
+          badge.className = "expand-badge";
+          badge.textContent = "+" + (names.length - 5);
           badge.title = "Click to expand";
           badge.onclick = function (e) {
             e.stopPropagation();
