@@ -846,7 +846,7 @@
         border-radius: 10px;
         background: var(--chip-bg);
         color: var(--muted-stronger, var(--pico-muted-color));
-        border: 1px solid var(--filter-border);
+        border: none;
         white-space: nowrap;
       }
       .card-badge .badge-icon {
@@ -1374,6 +1374,7 @@
           </svg>
           Girls
         </a>
+        <a href="#" id="about-link" title="About this project">About</a>
         <button
           id="theme-toggle"
           class="toggle-btn"
@@ -1384,6 +1385,193 @@
         </button>
       </div>
     </nav>
+
+    <!-- About dialog -->
+    <div
+      id="about-overlay"
+      role="dialog"
+      aria-label="About Baby Names"
+      style="
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        background: rgba(0, 0, 0, 0.5);
+        overflow-y: auto;
+        padding: 2rem 1rem;
+      "
+    >
+      <div
+        style="
+          max-width: 640px;
+          margin: 0 auto;
+          background: var(--pico-background-color);
+          border-radius: 12px;
+          padding: 2rem;
+          position: relative;
+        "
+      >
+        <button
+          id="about-close"
+          aria-label="Close"
+          style="
+            position: absolute;
+            top: 0.75rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--pico-muted-color);
+            padding: 0;
+            line-height: 1;
+          "
+        >
+          &times;
+        </button>
+
+        <h2 style="margin-top: 0; font-size: 1.4rem">About Baby Names</h2>
+
+        <p>
+          Baby books are outdated &mdash; mostly name lists with no context for
+          how popular a name actually is, how it's spelled different ways, or
+          whether it peaked in 1953 or last year. This project was built to fill
+          that gap: a free, open-source tool that lets parents explore
+          <strong>100,000+</strong> names with real data behind every one.
+        </p>
+        <p>
+          All data comes from the
+          <a
+            href="https://www.ssa.gov/oact/babynames/limits.html"
+            target="_blank"
+            rel="noopener"
+            >US Social Security Administration</a
+          >
+          (1880&ndash;2024). Names that sound the same but are spelled
+          differently &mdash; like Jonathan, Johnathan, and Jonathon &mdash; are
+          grouped together using the
+          <a
+            href="https://en.wikipedia.org/wiki/CMU_Pronouncing_Dictionary"
+            target="_blank"
+            rel="noopener"
+            >CMU Pronouncing Dictionary</a
+          >, so you only review each distinct name once. Counts are combined
+          across all spellings.
+        </p>
+
+        <h3 style="font-size: 1.1rem">How names are classified</h3>
+        <table style="font-size: 0.85rem; width: 100%">
+          <thead>
+            <tr>
+              <th style="white-space: nowrap">Badge</th>
+              <th>Meaning</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="white-space: nowrap">📖 Biblical</td>
+              <td>
+                Name appears in the Bible &mdash; as a person (e.g., Sarah,
+                David), a place (e.g., Jordan, Eden), a name of God (e.g.,
+                Emmanuel), or other reference.
+              </td>
+            </tr>
+            <tr>
+              <td style="white-space: nowrap">📈 Trending</td>
+              <td>
+                Peak popularity was within the last 15 years &mdash; a name
+                that's hot right now or very recently.
+              </td>
+            </tr>
+            <tr>
+              <td style="white-space: nowrap">🕰️ Classic</td>
+              <td>
+                Peak popularity was before 1960. Think grandparent-era names
+                making a comeback &mdash; or timeless picks that never left.
+              </td>
+            </tr>
+            <tr>
+              <td style="white-space: nowrap">⚤ Unisex</td>
+              <td>
+                Used for both boys and girls, with at least 30% minority-gender
+                share. The percentage and minority gender symbol are shown
+                (e.g., "42% ♂" means 42% of babies with this name are boys).
+              </td>
+            </tr>
+            <tr>
+              <td style="white-space: nowrap">🔁 Palindrome</td>
+              <td>Reads the same forwards and backwards (e.g., Anna, Ava).</td>
+            </tr>
+            <tr>
+              <td style="white-space: nowrap">🔤 Alliteration</td>
+              <td>
+                Contains a repeated sound in its pronunciation (e.g., the "n"
+                sound appears twice in Nathan).
+              </td>
+            </tr>
+            <tr>
+              <td style="white-space: nowrap">💬 Nickname</td>
+              <td>
+                A short form of a longer name (e.g., Matt &rarr; Matthew, Liz
+                &rarr; Elizabeth). Counts are kept separate.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3 style="font-size: 1.1rem">Other columns</h3>
+        <ul style="font-size: 0.85rem; padding-left: 1.25rem">
+          <li>
+            <strong>Rank</strong> &mdash; Popularity rank within gender (1 =
+            most popular of all time).
+          </li>
+          <li>
+            <strong>Count</strong> &mdash; Total babies born with this name
+            across all spelling variants.
+          </li>
+          <li>
+            <strong>Years</strong> &mdash; First and last year the name appears
+            in SSA data.
+          </li>
+          <li>
+            <strong>Peak</strong> &mdash; The single year with the highest count
+            for the primary spelling.
+          </li>
+          <li>
+            <strong>Syllables</strong> &mdash; Counted from phonetic
+            pronunciation when available, otherwise estimated from spelling.
+          </li>
+          <li>
+            <strong>Spelling variants</strong> &mdash; Alternative spellings
+            grouped by pronunciation, sorted by popularity.
+          </li>
+        </ul>
+
+        <h3 style="font-size: 1.1rem">Swipe mode</h3>
+        <p style="font-size: 0.85rem">
+          Tap the <strong>&#9829;</strong> button to review names one at a time.
+          Swipe right to like, left to pass, up for maybe. Share your picks with
+          a partner and compare to find names you both love. Progress is saved
+          automatically in your browser.
+        </p>
+
+        <p
+          style="
+            font-size: 0.8rem;
+            color: var(--pico-muted-color);
+            margin-bottom: 0;
+          "
+        >
+          Free &amp; open source &mdash;
+          <a
+            href="https://github.com/dxdc/babynames"
+            target="_blank"
+            rel="noopener"
+            >view on GitHub</a
+          >.
+        </p>
+      </div>
+    </div>
 
     <main class="container-fluid" style="padding: 0 1rem">
       <div class="filter-panel">
@@ -1943,5 +2131,27 @@
     ></script>
     <script src="grid.js"></script>
     <script src="swipe.js"></script>
+    <script>
+      (function () {
+        var overlay = document.getElementById("about-overlay");
+        var open = document.getElementById("about-link");
+        var close = document.getElementById("about-close");
+        function show(e) {
+          e.preventDefault();
+          overlay.style.display = "";
+        }
+        function hide() {
+          overlay.style.display = "none";
+        }
+        open.addEventListener("click", show);
+        close.addEventListener("click", hide);
+        overlay.addEventListener("click", function (e) {
+          if (e.target === overlay) hide();
+        });
+        document.addEventListener("keydown", function (e) {
+          if (e.key === "Escape" && overlay.style.display !== "none") hide();
+        });
+      })();
+    </script>
   </body>
 </html>
