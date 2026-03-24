@@ -51,23 +51,33 @@ function initTable(data, onReady) {
         sorter: "string",
         minWidth: 100,
         headerFilter: false,
-      },
-      {
-        title: "Variations",
-        field: "spelling_variants",
-        sorter: "string",
-        minWidth: 140,
-        headerFilter: false,
-        responsive: 3,
         formatter: function (cell) {
-          const val = cell.getValue();
-          if (!val) return "";
-          return val.split(" ").join(", ");
+          const name = cell.getValue();
+          const variants = cell.getRow().getData().spelling_variants;
+          if (!variants) return name;
+          const varList = variants.split(" ");
+          const MAX_SHOW = 4;
+          let varStr;
+          if (varList.length <= MAX_SHOW) {
+            varStr = varList.join(", ");
+          } else {
+            varStr =
+              varList.slice(0, MAX_SHOW).join(", ") +
+              " +" +
+              (varList.length - MAX_SHOW) +
+              " more";
+          }
+          return (
+            name +
+            '<div class="name-variants">' +
+            varStr +
+            "</div>"
+          );
         },
         tooltip: function (e, cell) {
-          const val = cell.getValue();
-          if (!val) return "";
-          return val.split(" ").join(", ");
+          const variants = cell.getRow().getData().spelling_variants;
+          if (!variants) return "";
+          return "Variants: " + variants.split(" ").join(", ");
         },
       },
       {
