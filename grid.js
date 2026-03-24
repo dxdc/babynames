@@ -62,12 +62,7 @@ function initTable(data, onReady) {
         formatter: function (cell) {
           const val = cell.getValue();
           if (!val) return "";
-          return val
-            .split(" ")
-            .map(function (v) {
-              return '<span class="variant-col-chip">' + v + "</span>";
-            })
-            .join("");
+          return val.split(" ").join(", ");
         },
         tooltip: function (e, cell) {
           const val = cell.getValue();
