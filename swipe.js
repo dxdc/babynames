@@ -482,8 +482,14 @@ const swipe = (() => {
     }
     if (d.is_palindrome == 1) badges.push({ icon: "🔁", label: "Palindrome" });
     if (d.alliteration == 1) badges.push({ icon: "🔤", label: "Alliteration" });
-    if (d.nickname_of)
-      badges.push({ icon: "💬", label: `Short for ${d.nickname_of}` });
+    if (d.nickname_of) {
+      var nnames = d.nickname_of.split(" ");
+      var nlabel =
+        nnames.length <= 5
+          ? nnames.join(", ")
+          : nnames.slice(0, 5).join(", ") + " +" + (nnames.length - 5);
+      badges.push({ icon: "💬", label: `Short for ${nlabel}` });
+    }
     for (const b of badges) {
       const span = document.createElement("span");
       span.className = "card-badge";

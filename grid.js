@@ -63,19 +63,20 @@ function initTable(data, onReady) {
           const val = cell.getValue();
           if (!val) return "";
           const names = val.split(" ");
-          const el = cell.getElement();
-          const expanded = el._variantsExpanded;
-          if (expanded || names.length <= 3) return names.join(", ");
-          const summary = names.slice(0, 3).join(", ");
+          const row = cell.getRow();
+          const data = row.getData();
+          if (data._variantsExpanded || names.length <= 5)
+            return names.join(", ");
+          const summary = names.slice(0, 5).join(", ");
           const badge = document.createElement("span");
-          badge.className = "variants-badge";
-          badge.textContent = "+" + (names.length - 3);
+          badge.className = "expand-badge";
+          badge.textContent = "+" + (names.length - 5);
           badge.title = "Click to expand";
-          badge.onclick = function (e) {
+          badge.addEventListener("click", function (e) {
             e.stopPropagation();
-            el._variantsExpanded = true;
-            cell.getRow().reformat();
-          };
+            data._variantsExpanded = true;
+            row.reformat();
+          });
           const frag = document.createDocumentFragment();
           frag.appendChild(document.createTextNode(summary + " "));
           frag.appendChild(badge);
@@ -176,12 +177,27 @@ function initTable(data, onReady) {
         formatter: function (cell) {
           var val = cell.getValue();
           if (!val) return "";
-          return val.split(" ").join(", ");
+          var names = val.split(" ");
+          var row = cell.getRow();
+          var data = row.getData();
+          if (data._nicknameExpanded || names.length <= 5)
+            return names.join(", ");
+          var summary = names.slice(0, 5).join(", ");
+          var badge = document.createElement("span");
+          badge.className = "expand-badge";
+          badge.textContent = "+" + (names.length - 5);
+          badge.title = "Click to expand";
+          badge.addEventListener("click", function (e) {
+            e.stopPropagation();
+            data._nicknameExpanded = true;
+            row.reformat();
+          });
+          var frag = document.createDocumentFragment();
+          frag.appendChild(document.createTextNode(summary + " "));
+          frag.appendChild(badge);
+          return frag;
         },
-        tooltip: function (e, cell) {
-          var val = cell.getValue();
-          return val ? val.split(" ").join(", ") : "";
-        },
+        tooltip: false,
         responsive: 2,
       },
       {

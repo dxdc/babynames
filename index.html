@@ -496,7 +496,8 @@
           border: 1px solid var(--filter-border);
         }
 
-        /* Spelling variants expand badge */
+        /* Expand badge (variants, nicknames) */
+        & .expand-badge,
         & .variants-badge {
           display: inline-block;
           background: var(--pico-primary-background);
@@ -510,6 +511,7 @@
           line-height: 1.5;
           white-space: nowrap;
         }
+        & .expand-badge:hover,
         & .variants-badge:hover {
           filter: brightness(1.2);
         }
