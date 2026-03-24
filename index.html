@@ -434,80 +434,47 @@
         }
       }
 
-      /* Variant badge + expandable list in Variations column */
-      .name-cell {
-        display: flex;
-        align-items: center;
-        gap: 0.4rem;
-        min-width: 0;
-      }
-      .variant-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.15rem;
-        font-size: 0.7rem;
-        padding: 0.1rem 0.4rem;
-        border-radius: 10px;
-        background: var(--chip-bg);
-        color: var(--muted-stronger, var(--pico-muted-color));
-        border: 1px solid var(--filter-border);
-        cursor: pointer;
-        white-space: nowrap;
-        flex-shrink: 0;
-        user-select: none;
-        transition: all 0.15s;
-      }
-      .variant-badge:hover {
-        border-color: var(--chip-active);
-        color: var(--pico-color);
-      }
-      .variant-badge .arrow {
+      /* Variant chips — used in column and responsive collapse */
+      .variant-col-chip {
         display: inline-block;
-        font-size: 0.6rem;
-        transition: transform 0.15s;
-      }
-      .variant-expand {
-        flex-wrap: wrap;
-        gap: 0.25rem;
-        padding: 0.35rem 0 0.1rem;
-      }
-      .variant-expand-chip {
         font-size: 0.73rem;
         padding: 0.1rem 0.45rem;
+        margin: 0.1rem;
         border-radius: 10px;
         background: var(--chip-bg);
         color: var(--muted-stronger, var(--pico-muted-color));
         border: 1px solid var(--filter-border);
       }
-      /* Mobile (portrait): collapsed by default, open on toggle */
-      @media (max-width: 768px) {
-        .variant-expand {
-          display: none;
-        }
-        .variant-expand[data-expanded="true"] {
-          display: flex;
-        }
-        .variant-badge .arrow {
-          transform: rotate(0deg);
-        }
-        .variant-badge[data-open="true"] .arrow {
-          transform: rotate(90deg);
-        }
+
+      /* Responsive collapse sub-row styling */
+      .collapse-row {
+        padding: 0.4rem 0.5rem;
       }
-      /* Desktop / landscape: show expanded by default, allow collapse */
-      @media (min-width: 769px) {
-        .variant-expand {
-          display: flex;
-        }
-        .variant-expand[data-expanded="false"] {
-          display: none;
-        }
-        .variant-badge .arrow {
-          transform: rotate(90deg);
-        }
-        .variant-badge[data-open="false"] .arrow {
-          transform: rotate(0deg);
-        }
+      .collapse-row-item {
+        display: flex;
+        align-items: baseline;
+        gap: 0.35rem;
+        padding: 0.2rem 0;
+      }
+      .collapse-row-title {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--pico-muted-color);
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+      .collapse-row-value {
+        font-size: 0.8rem;
+      }
+      .collapse-row-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.2rem;
+      }
+
+      /* Tabulator collapse toggle styling */
+      .tabulator-responsive-collapse-toggle {
+        cursor: pointer;
       }
 
       /* Tabulator theme overrides */

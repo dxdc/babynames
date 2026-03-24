@@ -35,7 +35,39 @@ function initTable(data, onReady) {
     height: "70vh",
     data: data,
     layout: "fitColumns",
-    responsiveLayout: "hide",
+    responsiveLayout: "collapse",
+    responsiveLayoutCollapseFormatter: function (data) {
+      var el = document.createElement("div");
+      el.className = "collapse-row";
+      data.forEach(function (col) {
+        if (!col.value && col.value !== 0) return;
+        var row = document.createElement("div");
+        row.className = "collapse-row-item";
+        var title = document.createElement("span");
+        title.className = "collapse-row-title";
+        title.textContent = col.title + ": ";
+        row.appendChild(title);
+        if (col.field === "spelling_variants") {
+          var chipWrap = document.createElement("span");
+          chipWrap.className = "collapse-row-chips";
+          col.value.split(" ").forEach(function (v) {
+            if (!v) return;
+            var chip = document.createElement("span");
+            chip.className = "variant-col-chip";
+            chip.textContent = v;
+            chipWrap.appendChild(chip);
+          });
+          row.appendChild(chipWrap);
+        } else {
+          var val = document.createElement("span");
+          val.className = "collapse-row-value";
+          val.textContent = col.value;
+          row.appendChild(val);
+        }
+        el.appendChild(row);
+      });
+      return el;
+    },
     placeholder: "No matching names found",
     columns: [
       {
@@ -58,28 +90,16 @@ function initTable(data, onReady) {
         sorter: "string",
         minWidth: 140,
         headerFilter: false,
+        responsive: 3,
         formatter: function (cell) {
           const val = cell.getValue();
           if (!val) return "";
-          const varList = val.split(" ");
-          const chips = varList
+          return val
+            .split(" ")
             .map(function (v) {
-              return '<span class="variant-expand-chip">' + v + "</span>";
+              return '<span class="variant-col-chip">' + v + "</span>";
             })
             .join("");
-          return (
-            '<div><div class="name-cell">' +
-            '<span class="variant-badge" data-variants-toggle>' +
-            '<span class="arrow">▸</span> ' +
-            varList.length +
-            " var" +
-            (varList.length === 1 ? "" : "s") +
-            "</span>" +
-            "</div>" +
-            '<div class="variant-expand">' +
-            chips +
-            "</div></div>"
-          );
         },
         tooltip: function (e, cell) {
           const val = cell.getValue();
@@ -256,27 +276,6 @@ function initTable(data, onReady) {
     tableReady = true;
     if (onReady) onReady();
   });
-
-  // Delegated click handler for variant badge expand/collapse
-  document
-    .getElementById("table-container")
-    .addEventListener("click", function (e) {
-      const badge = e.target.closest("[data-variants-toggle]");
-      if (!badge) return;
-      e.stopPropagation();
-      const wrapper = badge.closest(".name-cell").parentElement;
-      const expandEl = wrapper.querySelector(".variant-expand");
-      if (!expandEl) return;
-      // Toggle: read current state, flip it
-      var cur = expandEl.getAttribute("data-expanded");
-      // If never toggled, infer from screen width
-      if (cur === null) {
-        cur = window.innerWidth >= 769 ? "true" : "false";
-      }
-      var next = cur === "true" ? "false" : "true";
-      expandEl.setAttribute("data-expanded", next);
-      badge.setAttribute("data-open", next);
-    });
 }
 
 // ---------------------------------------------------------------
