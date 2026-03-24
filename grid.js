@@ -49,35 +49,34 @@ function initTable(data, onReady) {
         title: "Name",
         field: "name",
         sorter: "string",
-        minWidth: 100,
+        minWidth: 120,
         headerFilter: false,
         formatter: function (cell) {
           const name = cell.getValue();
           const variants = cell.getRow().getData().spelling_variants;
           if (!variants) return name;
           const varList = variants.split(" ");
-          const MAX_SHOW = 4;
-          let varStr;
-          if (varList.length <= MAX_SHOW) {
-            varStr = varList.join(", ");
-          } else {
-            varStr =
-              varList.slice(0, MAX_SHOW).join(", ") +
-              " +" +
-              (varList.length - MAX_SHOW) +
-              " more";
-          }
+          const chips = varList
+            .map(function (v) {
+              return '<span class="variant-expand-chip">' + v + "</span>";
+            })
+            .join("");
           return (
+            '<div><div class="name-cell">' +
+            '<span class="name-cell-label">' +
             name +
-            '<div class="name-variants">' +
-            varStr +
-            "</div>"
+            "</span>" +
+            '<span class="variant-badge" data-variants-toggle>' +
+            '<span class="arrow">▸</span> ' +
+            varList.length +
+            " var" +
+            (varList.length === 1 ? "" : "s") +
+            "</span>" +
+            "</div>" +
+            '<div class="variant-expand">' +
+            chips +
+            "</div></div>"
           );
-        },
-        tooltip: function (e, cell) {
-          const variants = cell.getRow().getData().spelling_variants;
-          if (!variants) return "";
-          return "Variants: " + variants.split(" ").join(", ");
         },
       },
       {
@@ -249,6 +248,20 @@ function initTable(data, onReady) {
     tableReady = true;
     if (onReady) onReady();
   });
+
+  // Delegated click handler for variant badge expand/collapse
+  document
+    .getElementById("table-container")
+    .addEventListener("click", function (e) {
+      const badge = e.target.closest("[data-variants-toggle]");
+      if (!badge) return;
+      e.stopPropagation();
+      const wrapper = badge.closest(".name-cell").parentElement;
+      const expandEl = wrapper.querySelector(".variant-expand");
+      if (!expandEl) return;
+      const isOpen = expandEl.classList.toggle("open");
+      badge.classList.toggle("open", isOpen);
+    });
 }
 
 // ---------------------------------------------------------------
