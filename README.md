@@ -51,7 +51,9 @@ Boys' names are more concentrated (fewer names to reach 90%), while girls' names
 
 ## About
 
-Baby books are outdated — mostly name lists with no context for popularity, spelling variations, or historical trends. This project fills that gap.
+Baby books are outdated — mostly name lists with no context for how popular a name actually is, how it's spelled different ways, or whether it peaked in 1953 or last year. This project fills that gap: a free, open-source tool that lets parents explore 100,000+ names with real data behind every one.
+
+All data comes from the [US Social Security Administration](https://www.ssa.gov/oact/babynames/limits.html) (1880–2024). Names that sound the same but are spelled differently are grouped using the [CMU Pronouncing Dictionary](https://en.wikipedia.org/wiki/CMU_Pronouncing_Dictionary), so you only review each distinct name once. Counts are combined across all spellings.
 
 ## Development
 

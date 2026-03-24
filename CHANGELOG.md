@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented in this file. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Frontend
+
+- **About dialog** — new "About" link in the nav opens a modal explaining how the project works, why it was created, and what every badge and column means. Closes on Escape, backdrop click, or close button.
+- **Simplified biblical badges** — swipe card badges now show "Biblical" (or "Biblical Place") instead of raw category names like "Person" or "God", which read confusingly after the book icon.
+- **Badge styling** — removed borders from card badges so they look like passive tags rather than clickable buttons.
+
 ## [2.2.0] - 2026-03-22
 
 Project audit — data quality, pronunciation fixes, nickname support, territory data.
