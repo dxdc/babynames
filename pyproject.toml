@@ -7,7 +7,7 @@ requires-python = ">=3.12"
 dependencies = [
     "polars>=1.20,<2",
     "cmudict>=1.1,<2",
-    "nltk>=3.9.3",
+    "nltk>=3.9.4",
 ]
 
 [project.optional-dependencies]
