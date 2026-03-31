@@ -1355,6 +1355,398 @@
           font-size: 1.4rem;
         }
       }
+
+      /* ---------------------------------------------------------------
+         ELO Battle Mode
+         --------------------------------------------------------------- */
+
+      .elo-launch-btn {
+        padding: 0.3rem 0.8rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        border-radius: 4px;
+        cursor: pointer;
+        border: none;
+        background: oklch(0.55 0.15 290);
+        color: #fff;
+        transition: opacity 0.15s;
+        &:hover { opacity: 0.85; }
+      }
+
+      .elo-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 200;
+        background: var(--pico-background-color);
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+      }
+
+      .elo-overlay button {
+        --pico-background-color: transparent;
+        --pico-border-color: transparent;
+        --pico-primary-inverse: var(--pico-color);
+        --pico-form-element-color: var(--pico-color);
+        --pico-box-shadow: none;
+        background: transparent;
+        border: none;
+        padding: 0;
+        margin: 0;
+        font: inherit;
+        color: inherit;
+        cursor: pointer;
+      }
+
+      .elo-close-btn {
+        position: fixed;
+        top: 0.75rem;
+        right: 0.75rem;
+        z-index: 210;
+        font-size: 1.2rem;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: var(--chip-bg) !important;
+        border: 1px solid var(--filter-border) !important;
+        color: var(--pico-color);
+      }
+
+      .elo-screen {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 1rem;
+      }
+
+      /* Intro */
+      .elo-intro-content {
+        max-width: 420px;
+        width: 100%;
+        text-align: center;
+      }
+      .elo-intro-content h2 {
+        font-size: 1.8rem;
+        margin-bottom: 0.25rem;
+      }
+      .elo-subtitle {
+        color: var(--pico-muted-color);
+        font-size: 0.9rem;
+        margin-bottom: 1.5rem;
+      }
+      .elo-intro-field {
+        text-align: left;
+        margin-bottom: 1rem;
+        & label {
+          font-size: 0.8rem;
+          font-weight: 600;
+          display: block;
+          margin-bottom: 0.3rem;
+        }
+        & input {
+          width: 100%;
+          padding: 0.4rem 0.6rem;
+          font-size: 0.9rem;
+          border: 1px solid var(--filter-border);
+          border-radius: 6px;
+          background: var(--filter-bg);
+          color: var(--pico-color);
+        }
+      }
+      .elo-veto-row {
+        display: flex;
+        gap: 0.5rem;
+        & input { flex: 1; }
+      }
+      .elo-veto-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.3rem;
+        margin-top: 0.5rem;
+      }
+      .elo-veto-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.2rem 0.5rem;
+        font-size: 0.8rem;
+        border-radius: 10px;
+        background: oklch(0.85 0.08 15);
+        color: oklch(0.3 0.1 15);
+        border: 1px solid oklch(0.75 0.1 15);
+      }
+      [data-theme="dark"] .elo-veto-chip {
+        background: oklch(0.3 0.06 15);
+        color: oklch(0.8 0.08 15);
+        border-color: oklch(0.4 0.08 15);
+      }
+      .elo-veto-remove {
+        font-size: 0.9rem;
+        line-height: 1;
+        opacity: 0.7;
+        &:hover { opacity: 1; }
+      }
+      .elo-veto-empty {
+        font-size: 0.8rem;
+        color: var(--pico-muted-color);
+      }
+      .elo-pool-info {
+        font-size: 0.85rem;
+        color: var(--pico-muted-color);
+        margin: 1rem 0 0.5rem;
+      }
+      .elo-resume-info {
+        font-size: 0.85rem;
+        color: var(--pico-muted-color);
+        padding: 0.5rem;
+        background: var(--filter-bg);
+        border-radius: 6px;
+        margin-bottom: 0.5rem;
+      }
+      .elo-intro-actions {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: center;
+        margin-top: 1.25rem;
+      }
+
+      /* Action buttons */
+      .elo-action-btn {
+        padding: 0.5rem 1.25rem;
+        font-size: 0.9rem;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.15s;
+        &.primary {
+          background: oklch(0.55 0.15 290) !important;
+          color: #fff !important;
+          &:hover { opacity: 0.85; }
+        }
+        &.secondary {
+          background: var(--chip-bg) !important;
+          border: 1px solid var(--filter-border) !important;
+          color: var(--pico-color) !important;
+          &:hover { border-color: var(--chip-active) !important; }
+        }
+        &.small {
+          padding: 0.3rem 0.75rem;
+          font-size: 0.8rem;
+        }
+        &.muted {
+          color: var(--pico-muted-color) !important;
+        }
+      }
+
+      /* Battle screen */
+      .elo-battle-header {
+        text-align: center;
+        padding: 1rem 0 0.25rem;
+        font-size: 0.85rem;
+        color: var(--pico-muted-color);
+        font-weight: 600;
+      }
+      .elo-convergence {
+        display: inline-block;
+        margin-left: 0.75rem;
+        font-size: 0.8rem;
+        font-weight: 400;
+        &.converged {
+          color: oklch(0.55 0.18 145);
+          font-weight: 600;
+        }
+      }
+      .elo-top-preview {
+        text-align: center;
+        font-size: 0.78rem;
+        color: var(--pico-muted-color);
+        padding: 0 1rem 0.5rem;
+        min-height: 1.2em;
+      }
+
+      .elo-arena {
+        display: flex;
+        align-items: stretch;
+        justify-content: center;
+        gap: 1rem;
+        padding: 0.5rem 1rem;
+        flex: 1;
+        max-height: 60vh;
+      }
+
+      .elo-fighter-card {
+        flex: 1;
+        max-width: 300px;
+        border-radius: 16px;
+        background: var(--filter-bg) !important;
+        border: 2px solid var(--filter-border) !important;
+        padding: 0 !important;
+        transition: transform 0.25s ease, opacity 0.2s ease,
+          border-color 0.2s ease, box-shadow 0.2s ease;
+        cursor: pointer;
+        display: flex;
+        &:hover {
+          border-color: oklch(0.55 0.15 290) !important;
+          transform: scale(1.02);
+        }
+        &:active {
+          transform: scale(0.98);
+        }
+      }
+      .elo-card-inner {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 1rem;
+        width: 100%;
+      }
+      .elo-card-win {
+        border-color: oklch(0.55 0.18 145) !important;
+        box-shadow: 0 0 20px oklch(0.55 0.18 145 / 0.3) !important;
+      }
+      .elo-card-lose {
+        opacity: 0.4;
+        transform: scale(0.95);
+      }
+
+      .elo-fighter-name {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        text-align: center;
+      }
+      .elo-fighter-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+        justify-content: center;
+        margin-bottom: 0.5rem;
+        min-height: 1.5em;
+      }
+      .elo-badge {
+        font-size: 0.73rem;
+        padding: 0.1rem 0.4rem;
+        border-radius: 8px;
+        background: var(--chip-bg);
+        border: 1px solid var(--filter-border);
+      }
+      .elo-fighter-stats {
+        font-size: 0.8rem;
+        color: var(--pico-muted-color);
+        text-align: center;
+        margin-bottom: 0.3rem;
+      }
+      .elo-fighter-rating {
+        font-size: 0.75rem;
+        color: var(--pico-muted-color);
+        opacity: 0.6;
+      }
+
+      .elo-vs {
+        display: flex;
+        align-items: center;
+        font-size: 1.4rem;
+        font-weight: 800;
+        color: var(--pico-muted-color);
+        opacity: 0.4;
+        flex-shrink: 0;
+      }
+
+      .elo-battle-actions {
+        display: flex;
+        justify-content: center;
+        gap: 0.75rem;
+        padding: 0.75rem 0;
+      }
+      .elo-keyboard-hint {
+        text-align: center;
+        font-size: 0.75rem;
+        color: var(--pico-muted-color);
+        opacity: 0.5;
+        padding-bottom: 1rem;
+      }
+
+      /* Leaderboard */
+      .elo-results-content {
+        max-width: 500px;
+        width: 100%;
+        text-align: center;
+      }
+      .elo-results-content h2 {
+        margin-bottom: 0.25rem;
+      }
+      .elo-results-stats {
+        font-size: 0.85rem;
+        color: var(--pico-muted-color);
+        margin-bottom: 1rem;
+      }
+      .elo-leaderboard {
+        text-align: left;
+        max-height: 55vh;
+        overflow-y: auto;
+      }
+      .elo-lb-row {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.4rem 0.75rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        &:nth-child(even) {
+          background: var(--filter-bg);
+        }
+      }
+      .elo-lb-top3 {
+        font-weight: 600;
+        font-size: 1rem;
+        padding: 0.5rem 0.75rem;
+      }
+      .elo-lb-rank {
+        width: 2rem;
+        text-align: center;
+        flex-shrink: 0;
+      }
+      .elo-lb-name {
+        flex: 1;
+      }
+      .elo-lb-rating {
+        font-weight: 600;
+        width: 3.5rem;
+        text-align: right;
+      }
+      .elo-lb-record {
+        font-size: 0.75rem;
+        color: var(--pico-muted-color);
+        width: 4rem;
+        text-align: right;
+      }
+      .elo-lb-stable {
+        width: 1.5rem;
+        text-align: center;
+        font-size: 0.8rem;
+      }
+      .elo-results-actions {
+        display: flex;
+        justify-content: center;
+        gap: 0.75rem;
+        margin-top: 1.25rem;
+      }
+      .elo-empty {
+        color: var(--pico-muted-color);
+        padding: 2rem;
+      }
+
+      @media (max-width: 480px) {
+        .elo-fighter-name { font-size: 1.5rem; }
+        .elo-arena { gap: 0.5rem; padding: 0.5rem; }
+        .elo-vs { font-size: 1rem; }
+        .elo-card-inner { padding: 1.5rem 0.75rem; }
+      }
     </style>
   </head>
   <body>
@@ -1850,6 +2242,13 @@
           >
             ♥ Swipe
           </button>
+          <button
+            class="elo-launch-btn"
+            id="elo-launch"
+            title="Head-to-head ELO battle to find your favourite name"
+          >
+            ⚔ Battle
+          </button>
         </div>
       </div>
 
@@ -2136,6 +2535,140 @@
           </div>
         </div>
       </div>
+
+      <!-- ELO Battle Mode Overlay -->
+      <div
+        id="elo-overlay"
+        class="elo-overlay"
+        style="display: none"
+        role="dialog"
+        aria-label="ELO Battle Mode"
+      >
+        <button class="elo-close-btn" id="elo-close" aria-label="Close">
+          ✕
+        </button>
+
+        <!-- Intro Screen -->
+        <div id="elo-intro" class="elo-screen">
+          <div class="elo-intro-content">
+            <h2>⚔ Name Battle</h2>
+            <p class="elo-subtitle">
+              Two names enter. One wins. After enough battles, your true
+              favourites rise to the top.
+            </p>
+
+            <div class="elo-intro-field">
+              <label for="elo-voter-name">Your name</label>
+              <input
+                type="text"
+                id="elo-voter-name"
+                placeholder="Optional"
+                autocomplete="off"
+              />
+            </div>
+
+            <div class="elo-intro-field">
+              <label>Vetoed names <small>(never shown)</small></label>
+              <div class="elo-veto-row">
+                <input
+                  type="text"
+                  id="elo-veto-input"
+                  placeholder="Add a name to veto…"
+                  autocomplete="off"
+                />
+                <button class="elo-action-btn small" id="elo-veto-add-btn">
+                  Add
+                </button>
+              </div>
+              <div id="elo-veto-list" class="elo-veto-list"></div>
+            </div>
+
+            <p class="elo-pool-info">
+              <span id="elo-pool-size">0</span> names in the battle pool
+            </p>
+
+            <p
+              id="elo-resume-info"
+              class="elo-resume-info"
+              style="display: none"
+            ></p>
+
+            <div class="elo-intro-actions">
+              <button class="elo-action-btn primary" id="elo-start-btn">
+                Start Battling
+              </button>
+              <button
+                class="elo-action-btn secondary"
+                id="elo-start-fresh"
+                style="display: none"
+              >
+                Start Fresh
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Battle Screen -->
+        <div id="elo-battle" class="elo-screen" style="display: none">
+          <div class="elo-battle-header">
+            <span id="elo-comparison-count">0</span> battles
+            <span id="elo-convergence" class="elo-convergence" style="display: none"></span>
+          </div>
+          <div id="elo-top-preview" class="elo-top-preview"></div>
+
+          <div class="elo-arena">
+            <button class="elo-fighter-card" id="elo-left-card" aria-label="Pick left name">
+              <div class="elo-card-inner" id="elo-left-btn">
+                <div class="elo-fighter-name" id="elo-left-name"></div>
+                <div class="elo-fighter-badges" id="elo-left-badges"></div>
+                <div class="elo-fighter-stats" id="elo-left-stats"></div>
+                <div class="elo-fighter-rating" id="elo-left-rating"></div>
+              </div>
+            </button>
+
+            <div class="elo-vs">VS</div>
+
+            <button class="elo-fighter-card" id="elo-right-card" aria-label="Pick right name">
+              <div class="elo-card-inner" id="elo-right-btn">
+                <div class="elo-fighter-name" id="elo-right-name"></div>
+                <div class="elo-fighter-badges" id="elo-right-badges"></div>
+                <div class="elo-fighter-stats" id="elo-right-stats"></div>
+                <div class="elo-fighter-rating" id="elo-right-rating"></div>
+              </div>
+            </button>
+          </div>
+
+          <div class="elo-battle-actions">
+            <button class="elo-action-btn small muted" id="elo-skip-btn" title="Skip (↓)">
+              Skip
+            </button>
+            <button class="elo-action-btn small" id="elo-leaderboard-btn">
+              Leaderboard
+            </button>
+          </div>
+
+          <div class="elo-keyboard-hint">
+            ← Left &nbsp;|&nbsp; Right → &nbsp;|&nbsp; ↓ Skip
+          </div>
+        </div>
+
+        <!-- Results / Leaderboard Screen -->
+        <div id="elo-results" class="elo-screen" style="display: none">
+          <div class="elo-results-content">
+            <h2>🏆 Leaderboard</h2>
+            <p id="elo-results-stats" class="elo-results-stats"></p>
+            <div id="elo-leaderboard" class="elo-leaderboard"></div>
+            <div class="elo-results-actions">
+              <button class="elo-action-btn primary" id="elo-results-close">
+                ← Keep Battling
+              </button>
+              <button class="elo-action-btn secondary" id="elo-results-done">
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </main>
 
     <footer class="site-footer">
@@ -2214,6 +2747,7 @@
     ></script>
     <script src="grid.js"></script>
     <script src="swipe.js"></script>
+    <script src="elo.js"></script>
     <script>
       (function () {
         var overlay = document.getElementById("about-overlay");
