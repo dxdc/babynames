@@ -13,6 +13,7 @@ const elo = (() => {
   const INITIAL_RATING = 1500;
   const STORAGE_PREFIX = "bn_elo_";
   const MIN_COMPARISONS_FOR_STABLE = 8; // Name needs this many comparisons to be "stable"
+  const BUILTIN_VETOES = ["james"]; // Hard vetoes — cannot be removed by the user
   const CONVERGENCE_THRESHOLD = 0.85; // 85% of top-20 names stable = converged
 
   // ---------------------------------------------------------------
@@ -136,6 +137,7 @@ const elo = (() => {
   }
 
   function removeVeto(name) {
+    if (BUILTIN_VETOES.includes(name.toLowerCase())) return; // Can't remove built-in vetoes
     delete vetoes[name.toLowerCase()];
     rebuildPool();
     saveSession();
@@ -265,8 +267,8 @@ const elo = (() => {
     sessionId = `${STORAGE_PREFIX}${getGender()}`;
     loadSession();
 
-    // Ensure default vetoes
-    if (!vetoes["james"]) vetoes["james"] = true;
+    // Ensure built-in vetoes are always present
+    for (const v of BUILTIN_VETOES) vetoes[v] = true;
 
     rebuildPool();
 
@@ -329,15 +331,20 @@ const elo = (() => {
       return;
     }
     for (const name of names) {
+      const builtin = BUILTIN_VETOES.includes(name);
       const chip = document.createElement("span");
-      chip.className = "elo-veto-chip";
-      chip.innerHTML =
-        `${name} <button class="elo-veto-remove" data-name="${name}">×</button>`;
-      chip.querySelector("button").addEventListener("click", () => {
-        removeVeto(name);
-        renderVetoList();
-        $("elo-pool-size").textContent = pool.length.toLocaleString();
-      });
+      chip.className = `elo-veto-chip${builtin ? " builtin" : ""}`;
+      if (builtin) {
+        chip.textContent = name + " (locked)";
+      } else {
+        chip.innerHTML =
+          `${name} <button class="elo-veto-remove" data-name="${name}">×</button>`;
+        chip.querySelector("button").addEventListener("click", () => {
+          removeVeto(name);
+          renderVetoList();
+          $("elo-pool-size").textContent = pool.length.toLocaleString();
+        });
+      }
       container.appendChild(chip);
     }
   }
@@ -358,7 +365,8 @@ const elo = (() => {
 
   function startFresh() {
     ratings = {};
-    vetoes = { james: true }; // Keep James vetoed
+    vetoes = {};
+    for (const v of BUILTIN_VETOES) vetoes[v] = true;
     history = [];
     totalComparisons = 0;
     rebuildPool();
