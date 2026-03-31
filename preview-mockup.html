@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Baby Names — UI Mockup Preview</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2.1.1/css/pico.min.css">
+  <style>
+    :root {
+      --accent: oklch(0.55 0.15 290);
+      --accent-soft: oklch(0.55 0.15 290 / 0.12);
+      --win: oklch(0.55 0.18 145);
+      --win-soft: oklch(0.55 0.18 145 / 0.1);
+      --lose: oklch(0.6 0.15 30);
+      --bg-card: oklch(0.97 0.005 290);
+      --bg-card-hover: oklch(0.95 0.01 290);
+      --border-soft: oklch(0.88 0.02 290);
+      --text-muted: oklch(0.55 0.02 290);
+    }
+    [data-theme="dark"] {
+      --bg-card: oklch(0.2 0.01 290);
+      --bg-card-hover: oklch(0.24 0.015 290);
+      --border-soft: oklch(0.32 0.02 290);
+      --text-muted: oklch(0.6 0.02 290);
+    }
+    body { padding: 0; margin: 0; font-family: system-ui, -apple-system, sans-serif; }
+    .mockup-nav {
+      position: sticky; top: 0; z-index: 100;
+      background: var(--pico-background-color);
+      border-bottom: 1px solid var(--border-soft);
+      padding: 0.75rem 1rem;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .mockup-nav h2 { margin: 0; font-size: 1.1rem; }
+    .section-label {
+      text-align: center; padding: 2rem 1rem 0.5rem;
+      font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.1em; color: var(--accent);
+    }
+    .section-divider { border-top: 2px solid var(--accent-soft); margin: 0 1rem; }
+
+    /* ======= SCREEN 1: ONBOARDING ======= */
+    .onboard { max-width: 440px; margin: 0 auto; padding: 1.5rem 1rem; }
+    .onboard h1 { font-size: 1.6rem; text-align: center; margin-bottom: 0.25rem; }
+    .onboard .subtitle {
+      text-align: center; color: var(--text-muted); font-size: 0.9rem;
+      margin-bottom: 1.5rem; line-height: 1.4;
+    }
+    .onboard-input {
+      width: 100%; padding: 0.5rem 0.75rem; font-size: 1rem;
+      border: 1.5px solid var(--border-soft); border-radius: 10px;
+      background: var(--bg-card); color: var(--pico-color);
+      margin-bottom: 0.25rem;
+    }
+    .sync-status { font-size: 0.78rem; color: var(--win); margin-bottom: 1rem; }
+
+    /* Accordion */
+    .accordion { margin-bottom: 0.75rem; }
+    .accordion-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0.6rem 0.75rem; border-radius: 10px; cursor: pointer;
+      background: var(--bg-card); border: 1px solid var(--border-soft);
+      font-weight: 600; font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+    .accordion-header:hover { background: var(--bg-card-hover); }
+    .accordion-value { color: var(--text-muted); font-weight: 400; font-size: 0.82rem; }
+    .accordion-body {
+      max-height: 0; overflow: hidden; transition: max-height 0.3s ease;
+      padding: 0 0.75rem;
+    }
+    .accordion.open .accordion-body { max-height: 300px; padding: 0.75rem; }
+    .accordion.open .accordion-header { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+
+    /* Step badges */
+    .step-badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 1.4rem; height: 1.4rem; border-radius: 50%;
+      background: var(--accent); color: #fff; font-size: 0.7rem;
+      font-weight: 700; margin-right: 0.5rem; flex-shrink: 0;
+    }
+
+    /* Origin chips */
+    .origin-chip {
+      display: inline-flex; padding: 0.3rem 0.65rem; font-size: 0.8rem;
+      font-weight: 600; border-radius: 20px; cursor: pointer;
+      background: var(--bg-card); border: 1.5px solid var(--border-soft);
+      color: var(--pico-color); transition: all 0.15s; margin: 0.15rem;
+    }
+    .origin-chip.active { background: var(--accent); color: #fff; border-color: transparent; }
+    .origin-chip:hover:not(.active) { border-color: var(--accent); }
+
+    /* Scope pills */
+    .scope-pills { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+    .scope-pill {
+      padding: 0.35rem 0.75rem; border-radius: 20px; font-size: 0.82rem;
+      font-weight: 600; cursor: pointer; border: 1.5px solid var(--border-soft);
+      background: var(--bg-card); color: var(--pico-color); transition: all 0.15s;
+    }
+    .scope-pill.active { background: var(--accent); color: #fff; border-color: transparent; }
+
+    .pool-count {
+      text-align: center; font-size: 0.85rem; color: var(--text-muted);
+      padding: 0.75rem 0; font-weight: 500;
+    }
+    .resume-box {
+      background: var(--accent-soft); border-radius: 10px; padding: 0.6rem 0.75rem;
+      font-size: 0.82rem; color: var(--pico-color); margin-bottom: 0.75rem;
+    }
+
+    .btn-primary {
+      display: block; width: 100%; padding: 0.75rem; font-size: 1rem;
+      font-weight: 700; border-radius: 12px; border: none; cursor: pointer;
+      background: var(--accent); color: #fff; transition: opacity 0.15s;
+    }
+    .btn-primary:hover { opacity: 0.85; }
+    .btn-secondary {
+      display: block; width: 100%; padding: 0.6rem; font-size: 0.9rem;
+      font-weight: 600; border-radius: 10px; border: 1.5px solid var(--border-soft);
+      background: transparent; color: var(--pico-color); cursor: pointer;
+      margin-top: 0.5rem;
+    }
+
+    /* ======= SCREEN 2: BATTLE ======= */
+    .battle { max-width: 600px; margin: 0 auto; padding: 0.75rem 1rem; }
+    .battle-header {
+      text-align: center; padding: 0.5rem 0;
+      font-size: 0.82rem; color: var(--text-muted); font-weight: 600;
+    }
+    .battle-lead {
+      text-align: center; font-size: 0.75rem; color: var(--text-muted);
+      margin-bottom: 0.5rem;
+    }
+    .arena {
+      display: flex; gap: 0.75rem; align-items: stretch;
+    }
+    .fighter {
+      flex: 1; border-radius: 16px; padding: 1.25rem 0.75rem;
+      background: var(--bg-card); border: 2px solid var(--border-soft);
+      cursor: pointer; text-align: center;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+    .fighter:hover { border-color: var(--accent); transform: scale(1.02); box-shadow: 0 4px 20px oklch(0.55 0.15 290 / 0.15); }
+    .fighter:active { transform: scale(0.97); }
+    .fighter.win {
+      border-color: var(--win); box-shadow: 0 0 24px oklch(0.55 0.18 145 / 0.3);
+      animation: pulse-win 0.4s ease;
+    }
+    @keyframes pulse-win {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.04); }
+      100% { transform: scale(1); }
+    }
+    .fighter-name { font-size: 1.5rem; font-weight: 800; margin-bottom: 0.3rem; }
+    .fighter-meaning {
+      font-size: 0.8rem; color: var(--text-muted); font-style: italic;
+      margin-bottom: 0.4rem;
+    }
+    .fighter-origins { display: flex; gap: 0.2rem; flex-wrap: wrap; justify-content: center; margin-bottom: 0.35rem; }
+    .fighter-origin-tag {
+      font-size: 0.65rem; padding: 0.1rem 0.4rem; border-radius: 10px;
+      background: var(--accent-soft); color: var(--accent); font-weight: 600;
+    }
+    .fighter-stats { font-size: 0.75rem; color: var(--text-muted); }
+    .fighter-veto {
+      margin-top: 0.5rem; font-size: 0.7rem; color: var(--lose);
+      cursor: pointer; opacity: 0.5; transition: opacity 0.15s;
+    }
+    .fighter-veto:hover { opacity: 1; }
+
+    .vs-divider {
+      display: flex; align-items: center; font-size: 1rem;
+      font-weight: 800; color: var(--text-muted); opacity: 0.3; flex-shrink: 0;
+    }
+
+    .battle-actions {
+      display: flex; justify-content: center; gap: 0.75rem;
+      padding: 0.75rem 0 0.25rem;
+    }
+    .battle-btn {
+      padding: 0.4rem 1rem; border-radius: 8px; font-size: 0.8rem;
+      font-weight: 600; border: 1px solid var(--border-soft);
+      background: var(--bg-card); color: var(--text-muted); cursor: pointer;
+    }
+    .battle-hint {
+      text-align: center; font-size: 0.72rem; color: var(--text-muted);
+      opacity: 0.4; padding-bottom: 0.5rem;
+    }
+
+    /* ======= SCREEN 3: LEADERBOARD ======= */
+    .leaderboard { max-width: 500px; margin: 0 auto; padding: 1rem; }
+    .leaderboard h2 { text-align: center; margin-bottom: 0.25rem; }
+    .lb-stats {
+      text-align: center; font-size: 0.82rem; color: var(--text-muted);
+      margin-bottom: 1rem;
+    }
+
+    .lb-row {
+      display: flex; align-items: center; gap: 0.5rem;
+      padding: 0.5rem 0.75rem; border-radius: 10px; cursor: pointer;
+      transition: background 0.15s;
+    }
+    .lb-row:hover { background: var(--bg-card); }
+    .lb-row.top3 { font-weight: 700; font-size: 1rem; padding: 0.6rem 0.75rem; }
+    .lb-rank { width: 2rem; text-align: center; flex-shrink: 0; }
+    .lb-main { flex: 1; }
+    .lb-name { font-weight: 600; }
+    .lb-meaning { font-size: 0.72rem; color: var(--text-muted); font-style: italic; }
+    .lb-conf {
+      width: 3rem; height: 6px; background: var(--border-soft);
+      border-radius: 3px; overflow: hidden; flex-shrink: 0;
+    }
+    .lb-conf-fill { height: 100%; background: var(--win); border-radius: 3px; }
+    .lb-star {
+      font-size: 1.2rem; cursor: pointer; opacity: 0.3;
+      transition: all 0.2s; flex-shrink: 0;
+    }
+    .lb-star.active { opacity: 1; transform: scale(1.2); }
+
+    /* Expanded row detail */
+    .lb-detail {
+      display: none; padding: 0.5rem 0.75rem 0.75rem 2.5rem;
+      font-size: 0.8rem; color: var(--text-muted);
+      border-bottom: 1px solid var(--border-soft);
+    }
+    .lb-detail.open { display: block; }
+    .lb-detail-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1rem;
+    }
+    .lb-detail-label { font-weight: 600; color: var(--pico-color); }
+
+    /* ======= SCREEN 4: PARTNER OVERLAP ======= */
+    .overlap { max-width: 500px; margin: 0 auto; padding: 0 1rem 2rem; }
+    .overlap h3 { text-align: center; margin-bottom: 0.5rem; }
+    .overlap-count { text-align: center; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem; }
+
+    .overlap-card {
+      background: var(--win-soft); border: 1.5px solid var(--win);
+      border-radius: 12px; padding: 0.75rem; margin-bottom: 0.5rem;
+      display: flex; align-items: center; gap: 0.75rem;
+    }
+    .overlap-card.hot { background: oklch(0.95 0.08 90); border-color: oklch(0.7 0.15 90); }
+    [data-theme="dark"] .overlap-card.hot { background: oklch(0.22 0.05 90); }
+    .overlap-fire { font-size: 1.5rem; }
+    .overlap-info { flex: 1; }
+    .overlap-name { font-weight: 700; font-size: 1.05rem; }
+    .overlap-conf { font-size: 0.75rem; color: var(--win); font-weight: 600; }
+    .overlap-positions { font-size: 0.78rem; color: var(--text-muted); }
+
+    .sbs-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.25rem 0.75rem;
+      margin-top: 1rem; font-size: 0.82rem;
+    }
+    .sbs-header { font-weight: 700; padding-bottom: 0.3rem; border-bottom: 1.5px solid var(--border-soft); }
+    .sbs-cell { padding: 0.2rem 0; }
+    .sbs-match { font-weight: 700; color: var(--win); }
+    .sbs-cell small { color: var(--text-muted); font-size: 0.7rem; }
+
+    /* ======= SCREEN 5: VICTORY ======= */
+    .victory { text-align: center; padding: 3rem 1rem; max-width: 440px; margin: 0 auto; }
+    .victory h2 { font-size: 1.8rem; margin-bottom: 0.5rem; }
+    .victory-emoji { font-size: 4rem; margin-bottom: 1rem; animation: bounce 0.6s ease infinite alternate; }
+    @keyframes bounce {
+      from { transform: translateY(0); }
+      to { transform: translateY(-10px); }
+    }
+    .shortlist {
+      display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center;
+      margin: 1.5rem 0;
+    }
+    .shortlist-name {
+      padding: 0.5rem 1rem; border-radius: 12px; font-weight: 700;
+      font-size: 1.1rem; background: var(--win-soft); border: 1.5px solid var(--win);
+      color: var(--pico-color);
+      animation: pop-in 0.3s ease backwards;
+    }
+    .shortlist-name:nth-child(1) { animation-delay: 0.1s; }
+    .shortlist-name:nth-child(2) { animation-delay: 0.2s; }
+    .shortlist-name:nth-child(3) { animation-delay: 0.3s; }
+    @keyframes pop-in {
+      from { transform: scale(0.5); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    /* Dark mode toggle */
+    .theme-btn {
+      padding: 0.3rem 0.6rem; font-size: 0.8rem; border-radius: 6px;
+      border: 1px solid var(--border-soft); background: var(--bg-card);
+      cursor: pointer; color: var(--pico-color);
+    }
+  </style>
+</head>
+<body>
+  <nav class="mockup-nav">
+    <h2>👶 Baby Names — UI Mockup</h2>
+    <button class="theme-btn" onclick="document.documentElement.setAttribute('data-theme', document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark')">🌙 Theme</button>
+  </nav>
+
+  <!-- ===== SCREEN 1: ONBOARDING / INTRO ===== -->
+  <div class="section-label">Screen 1: Onboarding</div>
+  <div class="section-divider"></div>
+  <div class="onboard">
+    <h1>⚔ Name Battle</h1>
+    <p class="subtitle">
+      39,000+ names from US SSA, UK ONS, and Australian registries.<br>
+      Three steps to find your perfect name.
+    </p>
+
+    <input class="onboard-input" placeholder="Your name (e.g., Ben)" value="Ben">
+    <div class="sync-status">✓ Synced — 47 battles saved</div>
+
+    <!-- Accordion: Scope -->
+    <div class="accordion open" onclick="this.classList.toggle('open')">
+      <div class="accordion-header">
+        <span><span class="step-badge">1</span> How many names?</span>
+        <span class="accordion-value">Top 250</span>
+      </div>
+      <div class="accordion-body">
+        <div class="scope-pills">
+          <span class="scope-pill">Top 100</span>
+          <span class="scope-pill active">Top 250</span>
+          <span class="scope-pill">Top 500</span>
+          <span class="scope-pill">Top 1000</span>
+          <span class="scope-pill">Exclude top 1000</span>
+          <span class="scope-pill">All</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Accordion: Origins -->
+    <div class="accordion" onclick="this.classList.toggle('open')">
+      <div class="accordion-header">
+        <span><span class="step-badge">2</span> Name origins</span>
+        <span class="accordion-value">English, Celtic</span>
+      </div>
+      <div class="accordion-body">
+        <div style="display:flex;flex-wrap:wrap;gap:0.2rem;margin-bottom:0.5rem;">
+          <span class="origin-chip active">English</span>
+          <span class="origin-chip active">Celtic</span>
+          <span class="origin-chip">Germanic</span>
+          <span class="origin-chip">Biblical</span>
+        </div>
+        <small style="color:var(--text-muted)">e.g., English: Oliver, Henry, William · Celtic: Brian, Owen, Dylan</small>
+      </div>
+    </div>
+
+    <!-- Accordion: Vetoes -->
+    <div class="accordion" onclick="this.classList.toggle('open')">
+      <div class="accordion-header">
+        <span><span class="step-badge">3</span> Vetoed names</span>
+        <span class="accordion-value">2 names</span>
+      </div>
+      <div class="accordion-body">
+        <div style="display:flex;gap:0.3rem;flex-wrap:wrap;margin-bottom:0.5rem;">
+          <span style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.2rem 0.5rem;font-size:0.8rem;border-radius:10px;background:oklch(0.85 0.08 15);color:oklch(0.3 0.1 15);border:1px solid oklch(0.75 0.1 15)">James ×</span>
+          <span style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.2rem 0.5rem;font-size:0.8rem;border-radius:10px;background:oklch(0.85 0.08 15);color:oklch(0.3 0.1 15);border:1px solid oklch(0.75 0.1 15)">Kevin ×</span>
+        </div>
+        <input class="onboard-input" placeholder="Add a name to veto…" style="font-size:0.85rem;padding:0.35rem 0.6rem;">
+      </div>
+    </div>
+
+    <!-- Accordion: Siblings -->
+    <div class="accordion" onclick="this.classList.toggle('open')">
+      <div class="accordion-header">
+        <span>👨‍👩‍👦 Siblings</span>
+        <span class="accordion-value">None</span>
+      </div>
+      <div class="accordion-body">
+        <small style="color:var(--text-muted);display:block;margin-bottom:0.4rem;">Names of existing siblings — we'll check compatibility</small>
+        <input class="onboard-input" placeholder="e.g., Thomas, Jessica" style="font-size:0.85rem;padding:0.35rem 0.6rem;">
+      </div>
+    </div>
+
+    <!-- Accordion: Gender -->
+    <div class="accordion" onclick="this.classList.toggle('open')">
+      <div class="accordion-header">
+        <span>♂ Gender</span>
+        <span class="accordion-value">Boys</span>
+      </div>
+      <div class="accordion-body">
+        <div class="scope-pills">
+          <span class="scope-pill active">Boys</span>
+          <span class="scope-pill">Girls</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="pool-count">187 names in the battle pool</div>
+
+    <div class="resume-box">
+      47 battles · Top: Oliver (1580±95), Theodore (1540±110), Henry (1520±85)
+    </div>
+
+    <button class="btn-primary">Start Battling</button>
+    <button class="btn-secondary">Start Fresh</button>
+
+    <p style="text-align:center;font-size:0.78rem;color:var(--text-muted);margin-top:1rem;line-height:1.5;">
+      <strong>How it works:</strong> Tap the name you like more. Keep going and your favourites rise to the top. Send the link to your partner and we'll compare your lists.
+    </p>
+  </div>
+
+  <!-- ===== SCREEN 2: BATTLE ===== -->
+  <div class="section-label">Screen 2: Battle</div>
+  <div class="section-divider"></div>
+  <div class="battle">
+    <div class="battle-header">⚔ Battle #47</div>
+    <div class="battle-lead">Leading: Oliver · Theodore · Henry</div>
+
+    <div class="arena">
+      <div class="fighter" onclick="this.classList.add('win')">
+        <div class="fighter-name">Theodore</div>
+        <div class="fighter-meaning">"Gift of God"</div>
+        <div class="fighter-origins">
+          <span class="fighter-origin-tag">english</span>
+          <span class="fighter-origin-tag">biblical</span>
+        </div>
+        <div class="fighter-stats">#42 · 2 syl · peak 1904</div>
+        <div class="fighter-veto" onclick="event.stopPropagation()">🚫 Veto</div>
+      </div>
+
+      <div class="vs-divider">VS</div>
+
+      <div class="fighter" onclick="this.classList.add('win')">
+        <div class="fighter-name">Sebastian</div>
+        <div class="fighter-meaning">"Venerable"</div>
+        <div class="fighter-origins">
+          <span class="fighter-origin-tag">biblical</span>
+        </div>
+        <div class="fighter-stats">#87 · 4 syl · peak 2018</div>
+        <div class="fighter-veto" onclick="event.stopPropagation()">🚫 Veto</div>
+      </div>
+    </div>
+
+    <div class="battle-actions">
+      <button class="battle-btn">Skip</button>
+      <button class="battle-btn">🏆 Leaderboard</button>
+    </div>
+    <div class="battle-hint">Tap the name you prefer · ← → keyboard</div>
+  </div>
+
+  <!-- ===== SCREEN 3: LEADERBOARD ===== -->
+  <div class="section-label">Screen 3: Leaderboard (tap to expand)</div>
+  <div class="section-divider"></div>
+  <div class="leaderboard">
+    <h2>🏆 Leaderboard</h2>
+    <div class="lb-stats">47 battles · 187 pool · 65% stable</div>
+
+    <!-- Row 1 — expandable -->
+    <div class="lb-row top3" onclick="this.nextElementSibling.classList.toggle('open')">
+      <span class="lb-rank">🥇</span>
+      <div class="lb-main">
+        <div class="lb-name">Oliver</div>
+        <div class="lb-meaning">"Olive tree" · english</div>
+      </div>
+      <div class="lb-conf"><div class="lb-conf-fill" style="width:88%"></div></div>
+      <span class="lb-star active" onclick="event.stopPropagation();this.classList.toggle('active')">⭐</span>
+    </div>
+    <div class="lb-detail">
+      <div class="lb-detail-grid">
+        <div><span class="lb-detail-label">Rating</span> 1580 ± 95</div>
+        <div><span class="lb-detail-label">Record</span> 10W 2L</div>
+        <div><span class="lb-detail-label">Rank</span> #42 of 39,295</div>
+        <div><span class="lb-detail-label">Peak</span> 2020 (trending)</div>
+        <div><span class="lb-detail-label">Syllables</span> 3</div>
+        <div><span class="lb-detail-label">Origin</span> English, Latin</div>
+        <div><span class="lb-detail-label">Meaning</span> From the olive tree — symbol of peace</div>
+        <div><span class="lb-detail-label">Nicknames</span> Ollie, Oli</div>
+      </div>
+    </div>
+
+    <!-- Row 2 -->
+    <div class="lb-row top3" onclick="this.nextElementSibling.classList.toggle('open')">
+      <span class="lb-rank">🥈</span>
+      <div class="lb-main">
+        <div class="lb-name">Theodore</div>
+        <div class="lb-meaning">"Gift of God" · english, biblical</div>
+      </div>
+      <div class="lb-conf"><div class="lb-conf-fill" style="width:72%"></div></div>
+      <span class="lb-star active" onclick="event.stopPropagation();this.classList.toggle('active')">⭐</span>
+    </div>
+    <div class="lb-detail">
+      <div class="lb-detail-grid">
+        <div><span class="lb-detail-label">Rating</span> 1540 ± 110</div>
+        <div><span class="lb-detail-label">Record</span> 8W 3L</div>
+        <div><span class="lb-detail-label">Rank</span> #120 of 39,295</div>
+        <div><span class="lb-detail-label">Peak</span> 2024 (trending)</div>
+        <div><span class="lb-detail-label">Syllables</span> 3</div>
+        <div><span class="lb-detail-label">Origin</span> English, Greek</div>
+        <div><span class="lb-detail-label">Meaning</span> God's gift — from Greek "theos" (god) + "doron" (gift)</div>
+        <div><span class="lb-detail-label">Nicknames</span> Theo, Ted, Teddy</div>
+      </div>
+    </div>
+
+    <!-- Row 3 -->
+    <div class="lb-row top3">
+      <span class="lb-rank">🥉</span>
+      <div class="lb-main">
+        <div class="lb-name">Henry</div>
+        <div class="lb-meaning">"Ruler of the home" · english, germanic</div>
+      </div>
+      <div class="lb-conf"><div class="lb-conf-fill" style="width:90%"></div></div>
+      <span class="lb-star" onclick="this.classList.toggle('active')">⭐</span>
+    </div>
+
+    <!-- Row 4-6 -->
+    <div class="lb-row">
+      <span class="lb-rank">4.</span>
+      <div class="lb-main"><div class="lb-name">Arthur</div><div class="lb-meaning">"Bear king" · celtic</div></div>
+      <div class="lb-conf"><div class="lb-conf-fill" style="width:60%"></div></div>
+      <span class="lb-star" onclick="this.classList.toggle('active')">⭐</span>
+    </div>
+    <div class="lb-row">
+      <span class="lb-rank">5.</span>
+      <div class="lb-main"><div class="lb-name">Felix</div><div class="lb-meaning">"Happy, lucky" · biblical</div></div>
+      <div class="lb-conf"><div class="lb-conf-fill" style="width:55%"></div></div>
+      <span class="lb-star" onclick="this.classList.toggle('active')">⭐</span>
+    </div>
+    <div class="lb-row">
+      <span class="lb-rank">6.</span>
+      <div class="lb-main"><div class="lb-name">Hugo</div><div class="lb-meaning">"Mind, intellect" · germanic</div></div>
+      <div class="lb-conf"><div class="lb-conf-fill" style="width:45%"></div></div>
+      <span class="lb-star" onclick="this.classList.toggle('active')">⭐</span>
+    </div>
+
+    <div style="display:flex;justify-content:center;gap:0.75rem;margin-top:1.25rem;">
+      <button class="btn-secondary" style="width:auto;padding:0.5rem 1rem;">← Keep Battling</button>
+      <button class="btn-secondary" style="width:auto;padding:0.5rem 1rem;">📤 Share</button>
+      <button class="btn-secondary" style="width:auto;padding:0.5rem 1rem;">Compare</button>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN 4: PARTNER OVERLAP ===== -->
+  <div class="section-label">Screen 4: Partner Overlap</div>
+  <div class="section-divider"></div>
+  <div class="overlap">
+    <h3>🔥 You + Yon</h3>
+    <div class="overlap-count">4 names in common from your top 20</div>
+
+    <div class="overlap-card hot">
+      <span class="overlap-fire">🔥</span>
+      <div class="overlap-info">
+        <div class="overlap-name">Oliver</div>
+        <div class="overlap-conf">High confidence — you both love this one</div>
+        <div class="overlap-positions">You: #1 (1580) · Yon: #2 (1560)</div>
+      </div>
+    </div>
+
+    <div class="overlap-card hot">
+      <span class="overlap-fire">🔥</span>
+      <div class="overlap-info">
+        <div class="overlap-name">Theodore</div>
+        <div class="overlap-conf">High confidence — strong match</div>
+        <div class="overlap-positions">You: #2 (1540) · Yon: #4 (1510)</div>
+      </div>
+    </div>
+
+    <div class="overlap-card">
+      <span class="overlap-fire">💛</span>
+      <div class="overlap-info">
+        <div class="overlap-name">Felix</div>
+        <div class="overlap-conf">Growing confidence — keep battling</div>
+        <div class="overlap-positions">You: #5 (1490) · Yon: #8 (1460)</div>
+      </div>
+    </div>
+
+    <div class="overlap-card">
+      <span class="overlap-fire">💛</span>
+      <div class="overlap-info">
+        <div class="overlap-name">Arthur</div>
+        <div class="overlap-conf">Still exploring — needs more battles</div>
+        <div class="overlap-positions">You: #4 (1500) · Yon: #12 (1420)</div>
+      </div>
+    </div>
+
+    <h3 style="margin-top:2rem;">📊 Side by Side</h3>
+    <div class="sbs-grid">
+      <div class="sbs-header">Ben</div>
+      <div class="sbs-header">Yon</div>
+      <div class="sbs-cell"><span class="sbs-match">1. Oliver</span> <small>1580</small></div>
+      <div class="sbs-cell">1. Henry <small>1590</small></div>
+      <div class="sbs-cell"><span class="sbs-match">2. Theodore</span> <small>1540</small></div>
+      <div class="sbs-cell"><span class="sbs-match">2. Oliver</span> <small>1560</small></div>
+      <div class="sbs-cell">3. Henry <small>1520</small></div>
+      <div class="sbs-cell">3. Liam <small>1530</small></div>
+      <div class="sbs-cell"><span class="sbs-match">4. Arthur</span> <small>1500</small></div>
+      <div class="sbs-cell"><span class="sbs-match">4. Theodore</span> <small>1510</small></div>
+      <div class="sbs-cell"><span class="sbs-match">5. Felix</span> <small>1490</small></div>
+      <div class="sbs-cell">5. Owen <small>1500</small></div>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN 5: VICTORY / SHORTLIST ===== -->
+  <div class="section-label">Screen 5: Victory (when rankings converge)</div>
+  <div class="section-divider"></div>
+  <div class="victory">
+    <div class="victory-emoji">🎉</div>
+    <h2>Your Top Names</h2>
+    <p style="color:var(--text-muted);">Rankings have stabilised after 120 battles.</p>
+    <div class="shortlist">
+      <span class="shortlist-name">Oliver</span>
+      <span class="shortlist-name">Theodore</span>
+      <span class="shortlist-name">Henry</span>
+      <span class="shortlist-name">Arthur</span>
+      <span class="shortlist-name">Felix</span>
+    </div>
+    <button class="btn-primary" style="max-width:300px;margin:0 auto;">📤 Share with Partner</button>
+  </div>
+
+  <div style="padding:3rem;text-align:center;color:var(--text-muted);font-size:0.8rem;">
+    End of mockup — all screens above are static HTML previews
+  </div>
+</body>
+</html>
