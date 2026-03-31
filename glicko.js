@@ -278,8 +278,10 @@ const glicko = (() => {
 
     let filtered = fullDeck;
 
-    // Apply scope limit (top N by rank)
-    if (scopeLimit > 0 && scopeLimit < filtered.length) {
+    // Apply scope limit (top N by rank, or exclude top N if negative)
+    if (scopeLimit < 0) {
+      filtered = filtered.slice(Math.abs(scopeLimit));
+    } else if (scopeLimit > 0 && scopeLimit < filtered.length) {
       filtered = filtered.slice(0, scopeLimit);
     }
 
@@ -310,6 +312,7 @@ const glicko = (() => {
       totalComparisons,
       scopeLimit,
       activeOrigins,
+      shortlist,
     };
   }
 
@@ -320,6 +323,7 @@ const glicko = (() => {
     totalComparisons = data.totalComparisons || 0;
     scopeLimit = data.scopeLimit || 250;
     activeOrigins = data.activeOrigins || [];
+    shortlist = data.shortlist || {};
   }
 
   function debounceSave() {
@@ -380,7 +384,8 @@ const glicko = (() => {
   // Screens
   // ---------------------------------------------------------------
 
-  const SCREENS = ["elo-intro", "elo-battle", "elo-results"];
+  const SCREENS = ["elo-intro", "elo-battle", "elo-results", "elo-victory"];
+  let shortlist = {}; // rank -> true (starred names)
 
   function showScreen(id) {
     for (const s of SCREENS) $(s).style.display = s === id ? "" : "none";
@@ -395,8 +400,14 @@ const glicko = (() => {
     $("elo-close").addEventListener("click", closeGlicko);
     $("elo-start-btn").addEventListener("click", startBattling);
     $("elo-start-fresh").addEventListener("click", startFresh);
-    $("elo-left-card").addEventListener("click", () => pickWinner("left"));
-    $("elo-right-card").addEventListener("click", () => pickWinner("right"));
+    $("elo-left-card").addEventListener("click", (e) => {
+      if (e.target.closest(".elo-fighter-veto")) return;
+      pickWinner("left");
+    });
+    $("elo-right-card").addEventListener("click", (e) => {
+      if (e.target.closest(".elo-fighter-veto")) return;
+      pickWinner("right");
+    });
     $("elo-skip-btn").addEventListener("click", skipPair);
     $("elo-leaderboard-btn").addEventListener("click", showResults);
     $("elo-results-close").addEventListener("click", () => {
@@ -405,7 +416,26 @@ const glicko = (() => {
     });
     $("elo-results-done").addEventListener("click", closeGlicko);
 
-    // Veto
+    // Victory screen
+    const victoryShare = $("elo-victory-share");
+    if (victoryShare) victoryShare.addEventListener("click", shareRankings);
+    const victoryBack = $("elo-victory-back");
+    if (victoryBack) victoryBack.addEventListener("click", () => {
+      showScreen("elo-battle");
+      nextBattle();
+    });
+
+    // Veto buttons on battle cards
+    $("elo-left-veto").addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (currentPair) { addVeto(currentPair.left.name); nextBattle(); }
+    });
+    $("elo-right-veto").addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (currentPair) { addVeto(currentPair.right.name); nextBattle(); }
+    });
+
+    // Veto input
     $("elo-veto-add-btn").addEventListener("click", addVetoFromInput);
     $("elo-veto-input").addEventListener("keydown", (e) => {
       if (e.key === "Enter") addVetoFromInput();
@@ -444,18 +474,46 @@ const glicko = (() => {
       if (e.key === "Enter") loadPartnerComparison();
     });
 
-    // Scope selector
-    const scopeEl = $("elo-scope-select");
-    if (scopeEl) {
-      scopeEl.addEventListener("change", function () {
-        scopeLimit = Number(this.value) || 0;
+    // Accordion toggles
+    document.querySelectorAll(".elo-accordion-header").forEach((header) => {
+      header.addEventListener("click", function () {
+        const acc = this.closest(".elo-accordion");
+        // Close others
+        document.querySelectorAll(".elo-accordion.open").forEach((a) => {
+          if (a !== acc) a.classList.remove("open");
+        });
+        acc.classList.toggle("open");
+      });
+    });
+
+    // Scope pills
+    document.querySelectorAll(".elo-scope-pill").forEach((pill) => {
+      pill.addEventListener("click", function () {
+        document.querySelectorAll(".elo-scope-pill").forEach((p) => p.classList.remove("active"));
+        this.classList.add("active");
+        scopeLimit = Number(this.dataset.scope) || 0;
+        $("elo-acc-scope-val").textContent = this.textContent;
         rebuildPool();
         updatePoolInfo();
         debounceSave();
       });
-    }
+    });
 
-    // Origin filter chips
+    // Gender pills
+    document.querySelectorAll(".elo-gender-pill").forEach((pill) => {
+      pill.addEventListener("click", function () {
+        document.querySelectorAll(".elo-gender-pill").forEach((p) => p.classList.remove("active"));
+        this.classList.add("active");
+        $("elo-acc-gender-val").textContent = this.textContent;
+        // Trigger gender switch in grid.js
+        const genderBtn = document.querySelector(`.gender-btn[data-gender="${this.dataset.gender}"]`);
+        if (genderBtn) genderBtn.click();
+        rebuildPool();
+        updatePoolInfo();
+      });
+    });
+
+    // Origin chips
     document.querySelectorAll(".elo-origin-chip").forEach((chip) => {
       chip.addEventListener("click", function () {
         const origin = this.dataset.origin;
@@ -467,6 +525,8 @@ const glicko = (() => {
           activeOrigins.push(origin);
           this.classList.add("active");
         }
+        const val = activeOrigins.length ? activeOrigins.map((o) => o[0].toUpperCase() + o.slice(1)).join(", ") : "All";
+        $("elo-acc-origins-val").textContent = val;
         rebuildPool();
         updatePoolInfo();
         debounceSave();
@@ -569,6 +629,8 @@ const glicko = (() => {
     const container = $("elo-veto-list");
     container.innerHTML = "";
     const names = Object.keys(vetoes).sort();
+    const valEl = $("elo-acc-vetoes-val");
+    if (valEl) valEl.textContent = names.length ? `${names.length} name${names.length > 1 ? "s" : ""}` : "0 names";
     if (!names.length) {
       container.innerHTML = '<span class="elo-veto-empty">No vetoed names</span>';
       return;
@@ -646,17 +708,15 @@ const glicko = (() => {
 
     // Left card
     $("elo-left-name").textContent = left.name;
+    $("elo-left-meaning").textContent = (left.meaning || "").slice(0, 60);
     $("elo-left-stats").textContent = buildStats(left);
-    const lr = ratings[left.rank] || {};
-    $("elo-left-rating").textContent = `${lr.mu || INITIAL_RATING} ± ${lr.phi || INITIAL_RD}`;
-    renderBadges($("elo-left-badges"), left);
+    renderOriginTags($("elo-left-origins"), left);
 
     // Right card
     $("elo-right-name").textContent = right.name;
+    $("elo-right-meaning").textContent = (right.meaning || "").slice(0, 60);
     $("elo-right-stats").textContent = buildStats(right);
-    const rr = ratings[right.rank] || {};
-    $("elo-right-rating").textContent = `${rr.mu || INITIAL_RATING} ± ${rr.phi || INITIAL_RD}`;
-    renderBadges($("elo-right-badges"), right);
+    renderOriginTags($("elo-right-origins"), right);
 
     // Progress
     $("elo-comparison-count").textContent = totalComparisons.toLocaleString();
@@ -704,22 +764,14 @@ const glicko = (() => {
     return parts.join(" · ");
   }
 
-  function renderBadges(container, row) {
+  function renderOriginTags(container, row) {
     container.innerHTML = "";
-    const badges = [];
-    if (row.biblical) badges.push({ icon: "📖", label: row.biblical === "Place" ? "Biblical Place" : "Biblical" });
-    const yr = new Date().getFullYear();
-    if (row.year_peak && row.year_peak >= yr - 15) badges.push({ icon: "📈", label: "Trending" });
-    else if (row.year_peak && row.year_peak < 1960) badges.push({ icon: "🕰️", label: "Classic" });
-    if (row.nickname_of) {
-      const nicks = row.nickname_of.split(" ");
-      badges.push({ icon: "💬", label: `Short for ${nicks.slice(0, 3).join(", ")}` });
-    }
-    for (const b of badges) {
-      const span = document.createElement("span");
-      span.className = "elo-badge";
-      span.innerHTML = `<span class="badge-icon">${b.icon}</span>${b.label}`;
-      container.appendChild(span);
+    const origins = (row.origin || "").split("|").filter(Boolean);
+    for (const o of origins) {
+      const tag = document.createElement("span");
+      tag.className = "elo-fighter-origin-tag";
+      tag.textContent = o;
+      container.appendChild(tag);
     }
   }
 
@@ -772,28 +824,90 @@ const glicko = (() => {
 
     for (let i = 0; i < board.length; i++) {
       const entry = board[i];
-      const row = document.createElement("div");
-      row.className = "elo-lb-row";
-      if (i < 3) row.classList.add("elo-lb-top3");
-
+      const nameData = pool.find((r) => r.rank === entry.rank) || {};
       const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}.`;
-      const settled = entry.phi <= CONVERGENCE_RD;
-
-      // Confidence bar (RD: 350=empty → 30=full)
       const confPct = Math.max(0, Math.min(100, ((INITIAL_RD - entry.phi) / (INITIAL_RD - 30)) * 100));
+      const starred = !!shortlist[entry.rank];
 
+      // Main row
+      const row = document.createElement("div");
+      row.className = `elo-lb-row${i < 3 ? " elo-lb-top3" : ""}`;
       row.innerHTML =
         `<span class="elo-lb-rank">${medal}</span>` +
-        `<span class="elo-lb-name">${entry.name}</span>` +
-        `<span class="elo-lb-rating">${entry.mu} <span class="elo-lb-rd">±${entry.phi}</span></span>` +
-        `<span class="elo-lb-conf"><span class="elo-lb-conf-bar" style="width:${confPct}%"></span></span>` +
-        `<span class="elo-lb-record">${entry.wins}W ${entry.losses}L</span>` +
-        `<span class="elo-lb-stable">${settled ? "✓" : "…"}</span>`;
+        `<div class="elo-lb-main"><div class="elo-lb-name">${entry.name}</div>` +
+        `<div class="elo-lb-meaning">${((nameData.meaning || "").slice(0, 50))}${nameData.origin ? " · " + nameData.origin.replace(/\|/g, ", ") : ""}</div></div>` +
+        `<div class="elo-lb-conf"><div class="elo-lb-conf-fill" style="width:${confPct}%"></div></div>` +
+        `<span class="elo-lb-star${starred ? " active" : ""}" data-rank="${entry.rank}">⭐</span>`;
+
+      // Detail row (hidden by default)
+      const detail = document.createElement("div");
+      detail.className = "elo-lb-detail";
+      detail.innerHTML =
+        `<div class="elo-lb-detail-grid">` +
+        `<div><span class="elo-lb-detail-label">Rating</span> ${entry.mu} ± ${entry.phi}</div>` +
+        `<div><span class="elo-lb-detail-label">Record</span> ${entry.wins}W ${entry.losses}L</div>` +
+        `<div><span class="elo-lb-detail-label">Rank</span> #${entry.rank}</div>` +
+        `<div><span class="elo-lb-detail-label">Peak</span> ${nameData.year_peak || "—"}</div>` +
+        `<div><span class="elo-lb-detail-label">Syllables</span> ${nameData.syllables || "—"}</div>` +
+        `<div><span class="elo-lb-detail-label">Origin</span> ${(nameData.detailed_origin || nameData.origin || "—").replace(/\|/g, ", ")}</div>` +
+        `<div><span class="elo-lb-detail-label">Meaning</span> ${(nameData.meaning || "—").slice(0, 100)}</div>` +
+        `<div><span class="elo-lb-detail-label">Nicknames</span> ${nameData.nicknames || "—"}</div>` +
+        `</div>`;
+
+      // Toggle detail on row click
+      row.addEventListener("click", (e) => {
+        if (e.target.closest(".elo-lb-star")) return;
+        detail.classList.toggle("open");
+      });
+
+      // Star toggle
+      row.querySelector(".elo-lb-star").addEventListener("click", (e) => {
+        e.stopPropagation();
+        const rank = Number(e.target.dataset.rank);
+        if (shortlist[rank]) {
+          delete shortlist[rank];
+          e.target.classList.remove("active");
+        } else {
+          shortlist[rank] = true;
+          e.target.classList.add("active");
+        }
+        debounceSave();
+      });
 
       container.appendChild(row);
+      container.appendChild(detail);
+    }
+
+    // Check for convergence → victory screen
+    const conv2 = getConvergenceInfo();
+    if (conv2.converged && totalComparisons >= 50) {
+      showVictory();
+      return;
     }
 
     renderComparison();
+  }
+
+  // ---------------------------------------------------------------
+  // Victory screen
+  // ---------------------------------------------------------------
+
+  function showVictory() {
+    showScreen("elo-victory");
+    const top = getLeaderboard(5);
+    const container = $("elo-victory-shortlist");
+    container.innerHTML = "";
+    for (const entry of top) {
+      const pill = document.createElement("span");
+      pill.className = "elo-shortlist-name";
+      pill.textContent = entry.name;
+      container.appendChild(pill);
+    }
+    // Fire confetti if available
+    if (typeof confetti === "function") {
+      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+      setTimeout(() => confetti({ particleCount: 50, spread: 100, origin: { y: 0.5 } }), 300);
+    }
   }
 
   // ---------------------------------------------------------------
@@ -931,18 +1045,20 @@ const glicko = (() => {
       if (overlaps.length) {
         for (const o of overlaps) {
           const hot = o.myPos <= 5 && o.theirPos <= 5;
-          const row = document.createElement("div");
-          row.className = `elo-compare-row ${hot ? "elo-compare-hot" : ""}`;
+          const card = document.createElement("div");
+          card.className = `elo-overlap-card${hot ? " hot" : ""}`;
 
-          const confLabel = o.combinedConf === "high" ? "high confidence" :
-            o.combinedConf === "medium" ? "growing confidence" : "still exploring";
+          const confLabel = o.combinedConf === "high" ? "High confidence — you both love this one" :
+            o.combinedConf === "medium" ? "Growing confidence — keep battling" : "Still exploring — needs more battles";
 
-          row.innerHTML =
-            `<span class="elo-compare-name">${hot ? "🔥 " : ""}${o.name}</span>` +
-            `<span class="elo-compare-score">${o.combinedMu} (${confLabel})</span>` +
-            `<span class="elo-compare-pos">You: #${o.myPos}</span>` +
-            `<span class="elo-compare-pos">${partner.name}: #${o.theirPos}</span>`;
-          container.appendChild(row);
+          card.innerHTML =
+            `<span class="elo-overlap-fire">${hot ? "🔥" : "💛"}</span>` +
+            `<div class="elo-overlap-info">` +
+            `<div class="elo-overlap-name">${o.name}</div>` +
+            `<div class="elo-overlap-conf">${confLabel}</div>` +
+            `<div class="elo-overlap-pos">You: #${o.myPos} (${o.myMu}) · ${partner.name}: #${o.theirPos} (${o.theirMu})</div>` +
+            `</div>`;
+          container.appendChild(card);
         }
       } else {
         const empty = document.createElement("p");
@@ -958,7 +1074,7 @@ const glicko = (() => {
       container.appendChild(sideH);
 
       const grid = document.createElement("div");
-      grid.className = "elo-side-by-side";
+      grid.className = "elo-sbs-grid";
 
       // Headers
       grid.innerHTML =

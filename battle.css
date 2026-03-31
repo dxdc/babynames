@@ -1,0 +1,386 @@
+/* ===== Battle Mode (Glicko-2) ===== */
+
+:root {
+  --b-accent: oklch(0.55 0.15 290);
+  --b-accent-soft: oklch(0.55 0.15 290 / 0.12);
+  --b-win: oklch(0.55 0.18 145);
+  --b-win-soft: oklch(0.55 0.18 145 / 0.1);
+  --b-lose: oklch(0.6 0.15 30);
+  --b-bg-card: oklch(0.97 0.005 290);
+  --b-bg-card-hover: oklch(0.95 0.01 290);
+  --b-border: oklch(0.88 0.02 290);
+  --b-muted: oklch(0.55 0.02 290);
+}
+[data-theme="dark"] {
+  --b-bg-card: oklch(0.2 0.01 290);
+  --b-bg-card-hover: oklch(0.24 0.015 290);
+  --b-border: oklch(0.32 0.02 290);
+  --b-muted: oklch(0.6 0.02 290);
+}
+
+/* Launch button */
+.elo-launch-btn {
+  padding: 0.3rem 0.8rem; font-size: 0.8rem; font-weight: 600;
+  border-radius: 4px; cursor: pointer; border: none;
+  background: var(--b-accent); color: #fff; transition: opacity 0.15s;
+}
+.elo-launch-btn:hover { opacity: 0.85; }
+
+/* Overlay */
+.elo-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: var(--pico-background-color);
+  display: flex; flex-direction: column; overflow-y: auto;
+}
+.elo-overlay button {
+  --pico-background-color: transparent; --pico-border-color: transparent;
+  --pico-box-shadow: none;
+  background: transparent; border: none; padding: 0; margin: 0;
+  font: inherit; color: inherit; cursor: pointer;
+}
+.elo-close-btn {
+  position: fixed; top: 0.75rem; right: 0.75rem; z-index: 210;
+  font-size: 1.2rem; width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%; background: var(--b-bg-card) !important;
+  border: 1px solid var(--b-border) !important;
+}
+.elo-screen {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: flex-start; padding: 1.5rem 1rem;
+  overflow-y: auto;
+}
+
+/* ===== Screen 1: Onboarding ===== */
+.elo-onboard { max-width: 440px; width: 100%; text-align: center; }
+.elo-onboard h1 { font-size: 1.6rem; margin-bottom: 0.25rem; }
+.elo-subtitle {
+  color: var(--b-muted); font-size: 0.88rem;
+  margin-bottom: 1.5rem; line-height: 1.5;
+}
+.elo-input {
+  width: 100%; padding: 0.5rem 0.75rem; font-size: 1rem;
+  border: 1.5px solid var(--b-border); border-radius: 10px;
+  background: var(--b-bg-card); color: var(--pico-color);
+  margin-bottom: 0.25rem; box-sizing: border-box;
+}
+.elo-server-status {
+  font-size: 0.78rem; text-align: center; margin-bottom: 1rem;
+  color: var(--b-muted);
+}
+.elo-server-status.synced { color: var(--b-win); }
+.elo-server-status.offline { color: var(--b-lose); }
+
+/* Accordion */
+.elo-accordion { margin-bottom: 0.6rem; text-align: left; }
+.elo-accordion-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0.6rem 0.75rem; border-radius: 10px; cursor: pointer;
+  background: var(--b-bg-card); border: 1px solid var(--b-border);
+  font-weight: 600; font-size: 0.9rem; transition: all 0.2s;
+}
+.elo-accordion-header:hover { background: var(--b-bg-card-hover); }
+.elo-accordion-value { color: var(--b-muted); font-weight: 400; font-size: 0.82rem; }
+.elo-accordion-body {
+  max-height: 0; overflow: hidden; transition: max-height 0.3s ease;
+  padding: 0 0.75rem;
+}
+.elo-accordion.open .elo-accordion-body { max-height: 300px; padding: 0.75rem; }
+.elo-accordion.open .elo-accordion-header {
+  border-bottom-left-radius: 0; border-bottom-right-radius: 0;
+  border-bottom: 1px solid var(--b-border);
+}
+
+/* Step badges */
+.elo-step-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 1.4rem; height: 1.4rem; border-radius: 50%;
+  background: var(--b-accent); color: #fff; font-size: 0.7rem;
+  font-weight: 700; margin-right: 0.5rem; flex-shrink: 0;
+}
+
+/* Scope pills */
+.elo-scope-pills { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+.elo-scope-pill, .elo-gender-pill {
+  padding: 0.35rem 0.75rem; border-radius: 20px; font-size: 0.82rem;
+  font-weight: 600; cursor: pointer; border: 1.5px solid var(--b-border);
+  background: var(--b-bg-card); color: var(--pico-color); transition: all 0.15s;
+}
+.elo-scope-pill.active, .elo-gender-pill.active {
+  background: var(--b-accent); color: #fff; border-color: transparent;
+}
+
+/* Origin chips */
+.elo-origin-chips { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-bottom: 0.4rem; }
+.elo-origin-chip {
+  display: inline-flex; padding: 0.3rem 0.65rem; font-size: 0.8rem;
+  font-weight: 600; border-radius: 20px; cursor: pointer;
+  background: var(--b-bg-card); border: 1.5px solid var(--b-border);
+  color: var(--pico-color); transition: all 0.15s;
+}
+.elo-origin-chip.active { background: var(--b-accent); color: #fff; border-color: transparent; }
+.elo-origin-chip:hover:not(.active) { border-color: var(--b-accent); }
+.elo-origin-hint { font-size: 0.72rem; color: var(--b-muted); display: block; }
+
+/* Veto */
+.elo-veto-row { display: flex; gap: 0.5rem; }
+.elo-veto-row .elo-input { flex: 1; margin-bottom: 0; font-size: 0.85rem; padding: 0.35rem 0.6rem; }
+.elo-veto-list { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.5rem; }
+.elo-veto-chip {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  padding: 0.2rem 0.5rem; font-size: 0.8rem; border-radius: 10px;
+  background: oklch(0.85 0.08 15); color: oklch(0.3 0.1 15);
+  border: 1px solid oklch(0.75 0.1 15);
+}
+[data-theme="dark"] .elo-veto-chip {
+  background: oklch(0.3 0.06 15); color: oklch(0.8 0.08 15);
+  border-color: oklch(0.4 0.08 15);
+}
+.elo-veto-remove { font-size: 0.9rem; line-height: 1; opacity: 0.7; }
+.elo-veto-remove:hover { opacity: 1; }
+.elo-veto-empty { font-size: 0.8rem; color: var(--b-muted); }
+
+/* Pool + resume */
+.elo-pool-count {
+  text-align: center; font-size: 0.85rem; color: var(--b-muted);
+  padding: 0.75rem 0; font-weight: 500;
+}
+.elo-resume-box {
+  background: var(--b-accent-soft); border-radius: 10px;
+  padding: 0.6rem 0.75rem; font-size: 0.82rem;
+  margin-bottom: 0.75rem; text-align: center;
+}
+
+/* Buttons */
+.elo-btn-primary {
+  display: block; width: 100%; padding: 0.75rem; font-size: 1rem;
+  font-weight: 700; border-radius: 12px; border: none !important; cursor: pointer;
+  background: var(--b-accent) !important; color: #fff !important;
+  transition: opacity 0.15s;
+}
+.elo-btn-primary:hover { opacity: 0.85; }
+.elo-btn-secondary {
+  display: block; width: 100%; padding: 0.6rem; font-size: 0.9rem;
+  font-weight: 600; border-radius: 10px;
+  border: 1.5px solid var(--b-border) !important;
+  background: transparent !important; color: var(--pico-color) !important;
+  cursor: pointer; margin-top: 0.5rem;
+}
+.elo-action-btn.small {
+  padding: 0.35rem 0.75rem; font-size: 0.82rem; font-weight: 600;
+  border-radius: 8px; background: var(--b-accent) !important;
+  color: #fff !important;
+}
+
+/* ===== Screen 2: Battle ===== */
+.elo-battle-header {
+  text-align: center; padding: 0.75rem 0 0.25rem;
+  font-size: 0.85rem; color: var(--b-muted); font-weight: 600;
+}
+.elo-convergence {
+  display: inline-block; margin-left: 0.75rem; font-size: 0.8rem; font-weight: 400;
+}
+.elo-convergence.converged { color: var(--b-win); font-weight: 600; }
+.elo-battle-lead {
+  text-align: center; font-size: 0.78rem; color: var(--b-muted);
+  padding: 0 1rem 0.5rem; min-height: 1.2em;
+}
+
+.elo-arena {
+  display: flex; align-items: stretch; justify-content: center;
+  gap: 0.75rem; padding: 0.5rem 1rem; flex: 1; max-height: 65vh;
+}
+.elo-fighter {
+  flex: 1; max-width: 300px; border-radius: 16px; padding: 1.5rem 1rem !important;
+  background: var(--b-bg-card) !important; border: 2px solid var(--b-border) !important;
+  text-align: center; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.elo-fighter:hover {
+  border-color: var(--b-accent) !important; transform: scale(1.02);
+  box-shadow: 0 4px 20px oklch(0.55 0.15 290 / 0.15);
+}
+.elo-fighter:active { transform: scale(0.97); }
+.elo-fighter.elo-card-win {
+  border-color: var(--b-win) !important;
+  box-shadow: 0 0 24px oklch(0.55 0.18 145 / 0.3) !important;
+  animation: elo-pulse-win 0.4s ease;
+}
+.elo-fighter.elo-card-lose { opacity: 0.4; transform: scale(0.95); }
+@keyframes elo-pulse-win {
+  0% { transform: scale(1); } 50% { transform: scale(1.04); } 100% { transform: scale(1); }
+}
+
+.elo-fighter-name { font-size: 1.5rem; font-weight: 800; margin-bottom: 0.3rem; }
+.elo-fighter-meaning {
+  font-size: 0.8rem; color: var(--b-muted); font-style: italic;
+  margin-bottom: 0.4rem; min-height: 1.2em;
+}
+.elo-fighter-origins {
+  display: flex; gap: 0.2rem; flex-wrap: wrap; justify-content: center;
+  margin-bottom: 0.35rem; min-height: 1.5em;
+}
+.elo-fighter-origin-tag {
+  font-size: 0.65rem; padding: 0.1rem 0.4rem; border-radius: 10px;
+  background: var(--b-accent-soft); color: var(--b-accent); font-weight: 600;
+}
+.elo-fighter-stats { font-size: 0.75rem; color: var(--b-muted); }
+.elo-fighter-veto {
+  margin-top: 0.5rem; font-size: 0.7rem; color: var(--b-lose);
+  opacity: 0.4; transition: opacity 0.15s;
+}
+.elo-fighter-veto:hover { opacity: 1; }
+
+.elo-vs {
+  display: flex; align-items: center; font-size: 1.2rem;
+  font-weight: 800; color: var(--b-muted); opacity: 0.3; flex-shrink: 0;
+}
+.elo-battle-actions {
+  display: flex; justify-content: center; gap: 0.75rem; padding: 0.75rem 0 0.25rem;
+}
+.elo-battle-btn {
+  padding: 0.4rem 1rem; border-radius: 8px; font-size: 0.82rem;
+  font-weight: 600; border: 1px solid var(--b-border) !important;
+  background: var(--b-bg-card) !important; color: var(--b-muted) !important;
+}
+.elo-battle-hint {
+  text-align: center; font-size: 0.72rem; color: var(--b-muted);
+  opacity: 0.4; padding-bottom: 0.5rem;
+}
+
+/* ===== Screen 3: Leaderboard ===== */
+.elo-results-wrap { max-width: 500px; width: 100%; }
+.elo-lb-stats {
+  text-align: center; font-size: 0.82rem; color: var(--b-muted); margin-bottom: 1rem;
+}
+.elo-leaderboard { max-height: 55vh; overflow-y: auto; }
+
+.elo-lb-row {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.5rem 0.75rem; border-radius: 10px; cursor: pointer;
+  transition: background 0.15s;
+}
+.elo-lb-row:hover { background: var(--b-bg-card); }
+.elo-lb-row.elo-lb-top3 { font-weight: 700; font-size: 1rem; padding: 0.6rem 0.75rem; }
+.elo-lb-rank { width: 2rem; text-align: center; flex-shrink: 0; }
+.elo-lb-main { flex: 1; }
+.elo-lb-name { font-weight: 600; }
+.elo-lb-meaning { font-size: 0.72rem; color: var(--b-muted); font-style: italic; }
+.elo-lb-conf {
+  width: 3rem; height: 6px; background: var(--b-border);
+  border-radius: 3px; overflow: hidden; flex-shrink: 0;
+}
+.elo-lb-conf-fill { height: 100%; background: var(--b-win); border-radius: 3px; }
+.elo-lb-star {
+  font-size: 1.2rem; cursor: pointer; opacity: 0.3;
+  transition: all 0.2s; flex-shrink: 0;
+}
+.elo-lb-star.active { opacity: 1; transform: scale(1.15); }
+
+/* Expanded detail row */
+.elo-lb-detail {
+  display: none; padding: 0.5rem 0.75rem 0.75rem 2.5rem;
+  font-size: 0.8rem; color: var(--b-muted);
+  border-bottom: 1px solid var(--b-border);
+}
+.elo-lb-detail.open { display: block; }
+.elo-lb-detail-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1rem;
+}
+.elo-lb-detail-label { font-weight: 600; color: var(--pico-color); }
+
+/* Share & compare */
+.elo-share-section {
+  display: flex; justify-content: center; gap: 0.75rem; margin-top: 1.25rem;
+}
+.elo-partner-input-row {
+  display: flex; gap: 0.5rem; max-width: 400px; margin: 0.75rem auto 0;
+}
+.elo-partner-input-row .elo-input { flex: 1; margin-bottom: 0; }
+.elo-results-actions {
+  display: flex; justify-content: center; gap: 0.75rem; margin-top: 1.25rem;
+}
+
+/* Comparison */
+.elo-compare-section { margin-top: 1.5rem; text-align: center; }
+.elo-compare-section h3 { margin-bottom: 0.5rem; }
+
+.elo-overlap-card {
+  background: var(--b-win-soft); border: 1.5px solid var(--b-win);
+  border-radius: 12px; padding: 0.75rem; margin-bottom: 0.5rem;
+  display: flex; align-items: center; gap: 0.75rem; text-align: left;
+}
+.elo-overlap-card.hot {
+  background: oklch(0.95 0.08 90); border-color: oklch(0.7 0.15 90);
+}
+[data-theme="dark"] .elo-overlap-card.hot {
+  background: oklch(0.22 0.05 90); border-color: oklch(0.5 0.1 90);
+}
+.elo-overlap-fire { font-size: 1.5rem; flex-shrink: 0; }
+.elo-overlap-info { flex: 1; }
+.elo-overlap-name { font-weight: 700; font-size: 1.05rem; }
+.elo-overlap-conf { font-size: 0.75rem; color: var(--b-win); font-weight: 600; }
+.elo-overlap-pos { font-size: 0.78rem; color: var(--b-muted); }
+
+.elo-sbs-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 0.25rem 0.75rem;
+  margin-top: 1rem; font-size: 0.82rem; text-align: left;
+}
+.elo-sbs-header {
+  font-weight: 700; padding-bottom: 0.3rem;
+  border-bottom: 1.5px solid var(--b-border);
+}
+.elo-sbs-cell { padding: 0.2rem 0; }
+.elo-sbs-cell small { color: var(--b-muted); font-size: 0.7rem; }
+.elo-sbs-match { font-weight: 700; color: var(--b-win); }
+
+/* ===== Screen 4: Victory ===== */
+.elo-victory-wrap { text-align: center; padding: 2rem 0; }
+.elo-victory-emoji {
+  font-size: 4rem; margin-bottom: 1rem;
+  animation: elo-bounce 0.6s ease infinite alternate;
+}
+@keyframes elo-bounce {
+  from { transform: translateY(0); } to { transform: translateY(-10px); }
+}
+.elo-shortlist {
+  display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center;
+  margin: 1.5rem 0;
+}
+.elo-shortlist-name {
+  padding: 0.5rem 1rem; border-radius: 12px; font-weight: 700;
+  font-size: 1.1rem; background: var(--b-win-soft);
+  border: 1.5px solid var(--b-win); color: var(--pico-color);
+  animation: elo-pop-in 0.3s ease backwards;
+}
+.elo-shortlist-name:nth-child(1) { animation-delay: 0.1s; }
+.elo-shortlist-name:nth-child(2) { animation-delay: 0.2s; }
+.elo-shortlist-name:nth-child(3) { animation-delay: 0.3s; }
+.elo-shortlist-name:nth-child(4) { animation-delay: 0.4s; }
+.elo-shortlist-name:nth-child(5) { animation-delay: 0.5s; }
+@keyframes elo-pop-in {
+  from { transform: scale(0.5); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* Toast */
+.elo-toast {
+  position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%);
+  background: oklch(0.25 0 0 / 0.9); color: #fff;
+  padding: 0.5rem 1.25rem; border-radius: 8px; font-size: 0.85rem;
+  z-index: 300; animation: elo-toast-in 0.2s ease;
+}
+@keyframes elo-toast-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* ===== Mobile ===== */
+@media (max-width: 480px) {
+  .elo-fighter-name { font-size: 1.2rem; }
+  .elo-arena { gap: 0.4rem; padding: 0.4rem; }
+  .elo-vs { font-size: 0.9rem; }
+  .elo-fighter { padding: 1rem 0.5rem !important; }
+  .elo-onboard { padding: 0.5rem 0; }
+}

@@ -88,6 +88,7 @@
       integrity="sha384-h6YJYE5DvmtMkD1FrlGQD/DdUleEwlr2WuSOZtaY5rlUQ+trMq4A+IFfWRpTg7NC"
       crossorigin="anonymous"
     />
+    <link rel="stylesheet" href="battle.css" />
     <style>
       :root {
         --pico-font-size: 15px;
@@ -2719,187 +2720,142 @@
         </div>
       </div>
 
-      <!-- ELO Battle Mode Overlay -->
-      <div
-        id="elo-overlay"
-        class="elo-overlay"
-        style="display: none"
-        role="dialog"
-        aria-label="ELO Battle Mode"
-      >
-        <button class="elo-close-btn" id="elo-close" aria-label="Close">
-          ✕
-        </button>
+      <!-- Battle Mode Overlay (Glicko-2) -->
+      <div id="elo-overlay" class="elo-overlay" style="display:none" role="dialog" aria-label="Name Battle">
+        <button class="elo-close-btn" id="elo-close" aria-label="Close">✕</button>
 
-        <!-- Intro Screen -->
+        <!-- Screen 1: Onboarding -->
         <div id="elo-intro" class="elo-screen">
-          <div class="elo-intro-content">
-            <h2>⚔ Name Battle</h2>
-            <p class="elo-subtitle">
-              Two names enter. One wins. After enough battles, your true
-              favourites rise to the top.
-            </p>
-
-            <div class="elo-intro-field">
-              <label for="elo-voter-name">Your name</label>
-              <input
-                type="text"
-                id="elo-voter-name"
-                placeholder="Optional"
-                autocomplete="off"
-              />
-            </div>
-
-            <div class="elo-intro-field">
-              <label>Vetoed names <small>(never shown)</small></label>
-              <div class="elo-veto-row">
-                <input
-                  type="text"
-                  id="elo-veto-input"
-                  placeholder="Add a name to veto…"
-                  autocomplete="off"
-                />
-                <button class="elo-action-btn small" id="elo-veto-add-btn">
-                  Add
-                </button>
-              </div>
-              <div id="elo-veto-list" class="elo-veto-list"></div>
-            </div>
-
-            <div class="elo-intro-field">
-              <label>How many names to battle?</label>
-              <select id="elo-scope-select" class="elo-scope-select">
-                <option value="100">Top 100</option>
-                <option value="250" selected>Top 250</option>
-                <option value="500">Top 500</option>
-                <option value="0">All</option>
-              </select>
-            </div>
-
-            <div class="elo-intro-field">
-              <label>Filter by origin</label>
-              <div class="elo-origin-chips">
-                <span class="elo-origin-chip" data-origin="english">English</span>
-                <span class="elo-origin-chip" data-origin="celtic">Celtic</span>
-                <span class="elo-origin-chip" data-origin="germanic">Germanic</span>
-                <span class="elo-origin-chip" data-origin="biblical">Biblical</span>
-              </div>
-              <small class="elo-origin-hint">Select none for all origins</small>
-            </div>
-
-            <p class="elo-pool-info">
-              <span id="elo-pool-size">0</span> names in the battle pool
-            </p>
-
+          <div class="elo-onboard">
+            <h1>⚔ Name Battle</h1>
+            <p class="elo-subtitle">Tap the name you like more. Keep going and your favourites rise to the top. Send the link to your partner and we'll compare your lists.</p>
+            <input class="elo-input" type="text" id="elo-voter-name" placeholder="Your name (e.g., Ben)" autocomplete="off">
             <p id="elo-server-status" class="elo-server-status"></p>
 
-            <p
-              id="elo-resume-info"
-              class="elo-resume-info"
-              style="display: none"
-            ></p>
-
-            <div class="elo-intro-actions">
-              <button class="elo-action-btn primary" id="elo-start-btn">
-                Start Battling
-              </button>
-              <button
-                class="elo-action-btn secondary"
-                id="elo-start-fresh"
-                style="display: none"
-              >
-                Start Fresh
-              </button>
+            <div class="elo-accordion" id="elo-acc-scope">
+              <div class="elo-accordion-header"><span><span class="elo-step-badge">1</span> How many names?</span><span class="elo-accordion-value" id="elo-acc-scope-val">Top 250</span></div>
+              <div class="elo-accordion-body">
+                <div class="elo-scope-pills" id="elo-scope-pills">
+                  <span class="elo-scope-pill" data-scope="100">Top 100</span>
+                  <span class="elo-scope-pill active" data-scope="250">Top 250</span>
+                  <span class="elo-scope-pill" data-scope="500">Top 500</span>
+                  <span class="elo-scope-pill" data-scope="1000">Top 1000</span>
+                  <span class="elo-scope-pill" data-scope="-1000">Exclude top 1000</span>
+                  <span class="elo-scope-pill" data-scope="0">All</span>
+                </div>
+              </div>
             </div>
+
+            <div class="elo-accordion" id="elo-acc-origins">
+              <div class="elo-accordion-header"><span><span class="elo-step-badge">2</span> Name origins</span><span class="elo-accordion-value" id="elo-acc-origins-val">All</span></div>
+              <div class="elo-accordion-body">
+                <div class="elo-origin-chips">
+                  <span class="elo-origin-chip" data-origin="english">English</span>
+                  <span class="elo-origin-chip" data-origin="celtic">Celtic</span>
+                  <span class="elo-origin-chip" data-origin="germanic">Germanic</span>
+                  <span class="elo-origin-chip" data-origin="biblical">Biblical</span>
+                </div>
+                <small class="elo-origin-hint">e.g., English: Oliver, Henry · Celtic: Brian, Owen · Germanic: William, Richard</small>
+              </div>
+            </div>
+
+            <div class="elo-accordion" id="elo-acc-vetoes">
+              <div class="elo-accordion-header"><span><span class="elo-step-badge">3</span> Vetoed names</span><span class="elo-accordion-value" id="elo-acc-vetoes-val">0 names</span></div>
+              <div class="elo-accordion-body">
+                <div class="elo-veto-row">
+                  <input type="text" class="elo-input" id="elo-veto-input" placeholder="Add a name to veto…" autocomplete="off">
+                  <button class="elo-action-btn small" id="elo-veto-add-btn">Add</button>
+                </div>
+                <div id="elo-veto-list" class="elo-veto-list"></div>
+              </div>
+            </div>
+
+            <div class="elo-accordion" id="elo-acc-siblings">
+              <div class="elo-accordion-header"><span>👨‍👩‍👦 Siblings</span><span class="elo-accordion-value" id="elo-acc-siblings-val">None</span></div>
+              <div class="elo-accordion-body">
+                <small class="elo-origin-hint" style="margin-bottom:0.4rem;display:block">Names of existing siblings — we'll check compatibility</small>
+                <input type="text" class="elo-input" id="elo-siblings-input" placeholder="e.g., Thomas, Jessica" autocomplete="off">
+              </div>
+            </div>
+
+            <div class="elo-accordion" id="elo-acc-gender">
+              <div class="elo-accordion-header"><span>♂♀ Gender</span><span class="elo-accordion-value" id="elo-acc-gender-val">Boys</span></div>
+              <div class="elo-accordion-body">
+                <div class="elo-scope-pills">
+                  <span class="elo-gender-pill active" data-gender="M">Boys</span>
+                  <span class="elo-gender-pill" data-gender="F">Girls</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="elo-pool-count"><span id="elo-pool-size">0</span> names in the battle pool</div>
+            <div id="elo-resume-info" class="elo-resume-box" style="display:none"></div>
+            <button class="elo-btn-primary" id="elo-start-btn">Start Battling</button>
+            <button class="elo-btn-secondary" id="elo-start-fresh" style="display:none">Start Fresh</button>
           </div>
         </div>
 
-        <!-- Battle Screen -->
-        <div id="elo-battle" class="elo-screen" style="display: none">
-          <div class="elo-battle-header">
-            <span id="elo-comparison-count">0</span> battles
-            <span id="elo-convergence" class="elo-convergence" style="display: none"></span>
-          </div>
-          <div id="elo-top-preview" class="elo-top-preview"></div>
-
+        <!-- Screen 2: Battle -->
+        <div id="elo-battle" class="elo-screen" style="display:none">
+          <div class="elo-battle-header">⚔ Battle #<span id="elo-comparison-count">0</span><span id="elo-convergence" class="elo-convergence" style="display:none"></span></div>
+          <div id="elo-top-preview" class="elo-battle-lead"></div>
           <div class="elo-arena">
-            <button class="elo-fighter-card" id="elo-left-card" aria-label="Pick left name">
-              <div class="elo-card-inner" id="elo-left-btn">
-                <div class="elo-fighter-name" id="elo-left-name"></div>
-                <div class="elo-fighter-badges" id="elo-left-badges"></div>
-                <div class="elo-fighter-stats" id="elo-left-stats"></div>
-                <div class="elo-fighter-rating" id="elo-left-rating"></div>
-              </div>
+            <button class="elo-fighter" id="elo-left-card" aria-label="Pick left name">
+              <div class="elo-fighter-name" id="elo-left-name"></div>
+              <div class="elo-fighter-meaning" id="elo-left-meaning"></div>
+              <div class="elo-fighter-origins" id="elo-left-origins"></div>
+              <div class="elo-fighter-stats" id="elo-left-stats"></div>
+              <div class="elo-fighter-veto" id="elo-left-veto">🚫 Veto</div>
             </button>
-
             <div class="elo-vs">VS</div>
-
-            <button class="elo-fighter-card" id="elo-right-card" aria-label="Pick right name">
-              <div class="elo-card-inner" id="elo-right-btn">
-                <div class="elo-fighter-name" id="elo-right-name"></div>
-                <div class="elo-fighter-badges" id="elo-right-badges"></div>
-                <div class="elo-fighter-stats" id="elo-right-stats"></div>
-                <div class="elo-fighter-rating" id="elo-right-rating"></div>
-              </div>
+            <button class="elo-fighter" id="elo-right-card" aria-label="Pick right name">
+              <div class="elo-fighter-name" id="elo-right-name"></div>
+              <div class="elo-fighter-meaning" id="elo-right-meaning"></div>
+              <div class="elo-fighter-origins" id="elo-right-origins"></div>
+              <div class="elo-fighter-stats" id="elo-right-stats"></div>
+              <div class="elo-fighter-veto" id="elo-right-veto">🚫 Veto</div>
             </button>
           </div>
-
           <div class="elo-battle-actions">
-            <button class="elo-action-btn small muted" id="elo-skip-btn" title="Skip (↓)">
-              Skip
-            </button>
-            <button class="elo-action-btn small" id="elo-leaderboard-btn">
-              Leaderboard
-            </button>
+            <button class="elo-battle-btn" id="elo-skip-btn">Skip</button>
+            <button class="elo-battle-btn" id="elo-leaderboard-btn">🏆 Leaderboard</button>
           </div>
+          <div class="elo-battle-hint">Tap the name you prefer · ← → keyboard</div>
+        </div>
 
-          <div class="elo-keyboard-hint">
-            ← Left &nbsp;|&nbsp; Right → &nbsp;|&nbsp; ↓ Skip
+        <!-- Screen 3: Leaderboard -->
+        <div id="elo-results" class="elo-screen" style="display:none">
+          <div class="elo-results-wrap">
+            <h2 style="text-align:center">🏆 Leaderboard</h2>
+            <p id="elo-results-stats" class="elo-lb-stats"></p>
+            <div id="elo-leaderboard" class="elo-leaderboard"></div>
+            <div class="elo-share-section">
+              <button class="elo-btn-secondary" id="elo-share-btn" style="width:auto;padding:0.5rem 1rem">📤 Share</button>
+              <button class="elo-btn-secondary" id="elo-add-partner-btn" style="width:auto;padding:0.5rem 1rem">Compare</button>
+            </div>
+            <div id="elo-partner-input-row" class="elo-partner-input-row" style="display:none">
+              <input type="text" class="elo-input" id="elo-partner-url" placeholder="Partner's name or link…" autocomplete="off">
+              <button class="elo-action-btn small" id="elo-partner-go">Load</button>
+            </div>
+            <div id="elo-compare-section" class="elo-compare-section" style="display:none">
+              <div id="elo-compare-results"></div>
+            </div>
+            <div class="elo-results-actions">
+              <button class="elo-btn-primary" id="elo-results-close" style="width:auto;padding:0.5rem 1.25rem">← Keep Battling</button>
+              <button class="elo-btn-secondary" id="elo-results-done" style="width:auto;padding:0.5rem 1.25rem">Done</button>
+            </div>
           </div>
         </div>
 
-        <!-- Results / Leaderboard Screen -->
-        <div id="elo-results" class="elo-screen" style="display: none">
-          <div class="elo-results-content">
-            <h2>🏆 Leaderboard</h2>
-            <p id="elo-results-stats" class="elo-results-stats"></p>
-            <div id="elo-leaderboard" class="elo-leaderboard"></div>
-
-            <!-- Sharing -->
-            <div class="elo-share-section">
-              <button class="elo-action-btn small" id="elo-share-btn">
-                Share My Rankings
-              </button>
-              <button class="elo-action-btn small muted" id="elo-add-partner-btn">
-                Load Partner's Rankings
-              </button>
-            </div>
-            <div id="elo-partner-input-row" class="elo-partner-input-row" style="display: none">
-              <input
-                type="text"
-                id="elo-partner-url"
-                placeholder="Paste partner's link…"
-                autocomplete="off"
-              />
-              <button class="elo-action-btn small" id="elo-partner-go">
-                Load
-              </button>
-            </div>
-
-            <!-- Comparison -->
-            <div id="elo-compare-section" class="elo-compare-section" style="display: none">
-              <h3>🔥 Overlap</h3>
-              <div id="elo-compare-results" class="elo-compare-results"></div>
-            </div>
-
-            <div class="elo-results-actions">
-              <button class="elo-action-btn primary" id="elo-results-close">
-                ← Keep Battling
-              </button>
-              <button class="elo-action-btn secondary" id="elo-results-done">
-                Done
-              </button>
-            </div>
+        <!-- Screen 4: Victory -->
+        <div id="elo-victory" class="elo-screen" style="display:none">
+          <div class="elo-victory-wrap">
+            <div class="elo-victory-emoji">🎉</div>
+            <h2>Your Top Names</h2>
+            <p style="color:var(--b-muted)">Rankings have stabilised. Here are your favourites.</p>
+            <div id="elo-victory-shortlist" class="elo-shortlist"></div>
+            <button class="elo-btn-primary" id="elo-victory-share" style="max-width:300px;margin:1rem auto 0">📤 Share with Partner</button>
+            <button class="elo-btn-secondary" id="elo-victory-back" style="max-width:300px;margin:0.5rem auto 0">← Keep Battling</button>
           </div>
         </div>
       </div>
@@ -2981,6 +2937,7 @@
     ></script>
     <script src="grid.js"></script>
     <script src="swipe.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.4/dist/confetti.browser.min.js"></script>
     <script src="glicko.js"></script>
     <script>
       (function () {
