@@ -1741,6 +1741,88 @@
         padding: 2rem;
       }
 
+      /* Sharing & Comparison */
+      .elo-share-section {
+        display: flex;
+        justify-content: center;
+        gap: 0.75rem;
+        margin-top: 1.25rem;
+      }
+      .elo-partner-input-row {
+        display: flex;
+        gap: 0.5rem;
+        max-width: 400px;
+        margin: 0.75rem auto 0;
+        & input {
+          flex: 1;
+          padding: 0.4rem 0.6rem;
+          font-size: 0.85rem;
+          border: 1px solid var(--filter-border);
+          border-radius: 6px;
+          background: var(--filter-bg);
+          color: var(--pico-color);
+        }
+      }
+      .elo-compare-section {
+        margin-top: 1.5rem;
+        text-align: center;
+        & h3 { margin-bottom: 0.5rem; }
+      }
+      .elo-compare-count {
+        font-size: 0.85rem;
+        color: var(--pico-muted-color);
+        margin-bottom: 0.5rem;
+      }
+      .elo-compare-empty {
+        font-size: 0.85rem;
+        color: var(--pico-muted-color);
+        padding: 1rem;
+      }
+      .elo-compare-row {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.4rem 0.75rem;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        text-align: left;
+        &:nth-child(even) { background: var(--filter-bg); }
+      }
+      .elo-compare-hot {
+        font-weight: 600;
+        font-size: 0.95rem;
+        background: oklch(0.95 0.05 90) !important;
+      }
+      [data-theme="dark"] .elo-compare-hot {
+        background: oklch(0.25 0.05 90) !important;
+      }
+      .elo-compare-name {
+        flex: 1;
+        font-weight: 600;
+      }
+      .elo-compare-pos {
+        font-size: 0.78rem;
+        color: var(--pico-muted-color);
+        white-space: nowrap;
+      }
+      .elo-toast {
+        position: fixed;
+        bottom: 2rem;
+        left: 50%;
+        transform: translateX(-50%);
+        background: oklch(0.25 0 0 / 0.9);
+        color: #fff;
+        padding: 0.5rem 1.25rem;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        z-index: 300;
+        animation: elo-toast-in 0.2s ease;
+      }
+      @keyframes elo-toast-in {
+        from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+        to { opacity: 1; transform: translateX(-50%) translateY(0); }
+      }
+
       @media (max-width: 480px) {
         .elo-fighter-name { font-size: 1.5rem; }
         .elo-arena { gap: 0.5rem; padding: 0.5rem; }
@@ -2658,6 +2740,34 @@
             <h2>🏆 Leaderboard</h2>
             <p id="elo-results-stats" class="elo-results-stats"></p>
             <div id="elo-leaderboard" class="elo-leaderboard"></div>
+
+            <!-- Sharing -->
+            <div class="elo-share-section">
+              <button class="elo-action-btn small" id="elo-share-btn">
+                Share My Rankings
+              </button>
+              <button class="elo-action-btn small muted" id="elo-add-partner-btn">
+                Load Partner's Rankings
+              </button>
+            </div>
+            <div id="elo-partner-input-row" class="elo-partner-input-row" style="display: none">
+              <input
+                type="text"
+                id="elo-partner-url"
+                placeholder="Paste partner's link…"
+                autocomplete="off"
+              />
+              <button class="elo-action-btn small" id="elo-partner-go">
+                Load
+              </button>
+            </div>
+
+            <!-- Comparison -->
+            <div id="elo-compare-section" class="elo-compare-section" style="display: none">
+              <h3>🔥 Overlap</h3>
+              <div id="elo-compare-results" class="elo-compare-results"></div>
+            </div>
+
             <div class="elo-results-actions">
               <button class="elo-action-btn primary" id="elo-results-close">
                 ← Keep Battling

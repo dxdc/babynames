@@ -255,6 +255,19 @@ const elo = (() => {
       voterName = this.value.trim();
       saveSession();
     });
+
+    // Sharing
+    $("elo-share-btn").addEventListener("click", shareRankings);
+    $("elo-add-partner-btn").addEventListener("click", () => {
+      const row = $("elo-partner-input-row");
+      row.style.display = row.style.display === "none" ? "" : "none";
+      $("elo-partner-url").value = "";
+      $("elo-partner-url").focus();
+    });
+    $("elo-partner-go").addEventListener("click", loadPartnerFromInput);
+    $("elo-partner-url").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") loadPartnerFromInput();
+    });
   }
 
   // ---------------------------------------------------------------
@@ -544,13 +557,219 @@ const elo = (() => {
 
       container.appendChild(row);
     }
+
+    renderComparison();
+  }
+
+  // ---------------------------------------------------------------
+  // Sharing — encode top-N rankings as URL, load partner's rankings
+  // ---------------------------------------------------------------
+
+  let partnerData = []; // [{ name, gender, rankings: [{ rank, name, rating }] }]
+
+  function safeEncode(str) {
+    return btoa(
+      Array.from(new TextEncoder().encode(str), (b) =>
+        String.fromCharCode(b),
+      ).join(""),
+    );
+  }
+
+  function safeDecode(str) {
+    return new TextDecoder().decode(
+      Uint8Array.from(atob(str), (c) => c.charCodeAt(0)),
+    );
+  }
+
+  function encodeRankings() {
+    const top = getLeaderboard(30);
+    return safeEncode(
+      JSON.stringify({
+        n: voterName || "Partner",
+        g: getGender(),
+        t: top.map((e) => ({ r: e.rank, n: e.name, s: e.rating })),
+      }),
+    );
+  }
+
+  function decodeRankings(encoded) {
+    try {
+      return JSON.parse(safeDecode(encoded));
+    } catch {
+      return null;
+    }
+  }
+
+  function shareRankings() {
+    if (!voterName) {
+      const name = prompt("Enter your name (so your partner knows whose rankings these are):");
+      if (!name) return;
+      voterName = name.trim();
+      saveSession();
+      $("elo-voter-name").value = voterName;
+    }
+    const top = getLeaderboard(30);
+    if (!top.length) {
+      alert("No rankings yet — do some battles first!");
+      return;
+    }
+    const encoded = encodeRankings();
+    const url = `${location.origin}${location.pathname}#elo=${encoded}`;
+    if (navigator.share) {
+      navigator.share({
+        title: `${voterName}'s name rankings`,
+        text: `${voterName} shared their top ${top.length} baby name rankings`,
+        url,
+      }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(url).then(
+        () => showToast("Link copied!"),
+        () => prompt("Copy this link:", url),
+      );
+    }
+  }
+
+  function showToast(message) {
+    const existing = document.querySelector(".elo-toast");
+    if (existing) existing.remove();
+    const toast = document.createElement("div");
+    toast.className = "elo-toast";
+    toast.textContent = message;
+    $("elo-overlay").appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+  }
+
+  function loadPartnerFromInput() {
+    const input = $("elo-partner-url").value.trim();
+    if (!input) return;
+    try {
+      const hashPart = input.includes("#") ? input.split("#")[1] : input;
+      const encoded = hashPart.startsWith("elo=") ? hashPart.slice(4) : hashPart;
+      const data = decodeRankings(encoded);
+      if (!data || !data.t || !data.t.length) throw new Error("bad data");
+
+      if (data.g && data.g !== getGender()) {
+        const label = data.g === "M" ? "boys" : "girls";
+        const current = getGender() === "M" ? "boys" : "girls";
+        alert(`Those rankings are for ${label}, but you're viewing ${current}. Switch gender first.`);
+        return;
+      }
+
+      if (voterName && data.n === voterName) {
+        alert("That's your own rankings link!");
+        return;
+      }
+
+      const partner = {
+        name: data.n || "Partner",
+        gender: data.g,
+        rankings: data.t.map((e) => ({ rank: e.r, name: e.n, rating: e.s })),
+      };
+
+      // Replace existing partner with same name
+      partnerData = partnerData.filter((p) => p.name !== partner.name);
+      partnerData.push(partner);
+
+      $("elo-partner-input-row").style.display = "none";
+      showToast(`Loaded ${partner.name}'s top ${partner.rankings.length} rankings`);
+      showResults();
+    } catch {
+      alert("Could not read rankings. Make sure you paste the full link.");
+    }
+  }
+
+  function detectPartnerFromHash() {
+    const hash = location.hash;
+    if (!hash.includes("elo=")) return;
+    const encoded = hash.split("elo=")[1];
+    if (!encoded) return;
+    const data = decodeRankings(encoded);
+    if (!data || !data.t) return;
+    partnerData.push({
+      name: data.n || "Partner",
+      gender: data.g,
+      rankings: data.t.map((e) => ({ rank: e.r, name: e.n, rating: e.s })),
+    });
+    // Clean the hash so it doesn't reload on refresh
+    history.replaceState(null, "", location.pathname + location.search);
+  }
+
+  function renderComparison() {
+    const container = $("elo-compare-results");
+    container.innerHTML = "";
+
+    if (!partnerData.length) {
+      $("elo-compare-section").style.display = "none";
+      return;
+    }
+
+    $("elo-compare-section").style.display = "";
+    const myTop = getLeaderboard(30);
+    const myNames = new Map(myTop.map((e, i) => [e.name, { position: i + 1, rating: e.rating }]));
+
+    for (const partner of partnerData) {
+      const heading = document.createElement("h4");
+      heading.textContent = `You + ${partner.name}`;
+      container.appendChild(heading);
+
+      const partnerNames = new Map(
+        partner.rankings.map((e, i) => [e.name, { position: i + 1, rating: e.rating }]),
+      );
+
+      // Find overlapping names
+      const overlaps = [];
+      for (const [name, myInfo] of myNames) {
+        const theirInfo = partnerNames.get(name);
+        if (theirInfo) {
+          overlaps.push({
+            name,
+            myPos: myInfo.position,
+            theirPos: theirInfo.position,
+            avgPos: (myInfo.position + theirInfo.position) / 2,
+            myRating: myInfo.rating,
+            theirRating: theirInfo.rating,
+          });
+        }
+      }
+
+      overlaps.sort((a, b) => a.avgPos - b.avgPos);
+
+      if (!overlaps.length) {
+        const empty = document.createElement("p");
+        empty.className = "elo-compare-empty";
+        empty.textContent = "No overlapping names in your top rankings yet. Keep battling!";
+        container.appendChild(empty);
+        continue;
+      }
+
+      const matchLabel = document.createElement("p");
+      matchLabel.className = "elo-compare-count";
+      matchLabel.textContent = `${overlaps.length} names in common`;
+      container.appendChild(matchLabel);
+
+      for (const o of overlaps) {
+        const row = document.createElement("div");
+        row.className = "elo-compare-row";
+        const isTop5 = o.myPos <= 5 && o.theirPos <= 5;
+        if (isTop5) row.classList.add("elo-compare-hot");
+
+        row.innerHTML =
+          `<span class="elo-compare-name">${isTop5 ? "🔥 " : ""}${o.name}</span>` +
+          `<span class="elo-compare-pos">You: #${o.myPos} (${o.myRating})</span>` +
+          `<span class="elo-compare-pos">${partner.name}: #${o.theirPos} (${o.theirRating})</span>`;
+        container.appendChild(row);
+      }
+    }
   }
 
   // ---------------------------------------------------------------
   // Public API
   // ---------------------------------------------------------------
 
-  document.addEventListener("DOMContentLoaded", init);
+  document.addEventListener("DOMContentLoaded", () => {
+    init();
+    detectPartnerFromHash();
+  });
 
   return { openElo, closeElo };
 })();
