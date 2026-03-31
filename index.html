@@ -1741,6 +1741,107 @@
         padding: 2rem;
       }
 
+      /* Scope & Origin filters */
+      .elo-scope-select {
+        width: 100%;
+        padding: 0.4rem 0.6rem;
+        font-size: 0.9rem;
+        border: 1px solid var(--filter-border);
+        border-radius: 6px;
+        background: var(--filter-bg);
+        color: var(--pico-color);
+      }
+      .elo-origin-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.3rem;
+        margin-top: 0.3rem;
+      }
+      .elo-origin-chip {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.3rem 0.7rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        border-radius: 6px;
+        cursor: pointer;
+        background: var(--chip-bg);
+        border: 1px solid var(--filter-border);
+        color: var(--muted-stronger, var(--pico-color));
+        transition: all 0.15s;
+        &:hover { border-color: oklch(0.55 0.15 290); }
+        &.active {
+          background: oklch(0.55 0.15 290);
+          color: #fff;
+          border-color: transparent;
+        }
+      }
+      .elo-origin-hint {
+        display: block;
+        font-size: 0.72rem;
+        color: var(--pico-muted-color);
+        margin-top: 0.3rem;
+      }
+      .elo-server-status {
+        font-size: 0.78rem;
+        color: var(--pico-muted-color);
+        text-align: center;
+        &.synced { color: oklch(0.55 0.18 145); }
+        &.offline { color: oklch(0.6 0.15 30); }
+      }
+
+      /* Confidence bars in leaderboard */
+      .elo-lb-rd {
+        font-size: 0.7rem;
+        color: var(--pico-muted-color);
+      }
+      .elo-lb-conf {
+        width: 3rem;
+        height: 6px;
+        background: var(--chip-bg);
+        border-radius: 3px;
+        overflow: hidden;
+        flex-shrink: 0;
+      }
+      .elo-lb-conf-bar {
+        display: block;
+        height: 100%;
+        background: oklch(0.55 0.18 145);
+        border-radius: 3px;
+        transition: width 0.3s ease;
+      }
+
+      /* Side-by-side comparison */
+      .elo-side-by-side {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.25rem 1rem;
+        text-align: left;
+        font-size: 0.82rem;
+      }
+      .elo-sbs-header {
+        font-weight: 700;
+        font-size: 0.85rem;
+        padding-bottom: 0.3rem;
+        border-bottom: 1px solid var(--filter-border);
+      }
+      .elo-sbs-cell {
+        padding: 0.2rem 0;
+        & small {
+          font-size: 0.7rem;
+          color: var(--pico-muted-color);
+        }
+      }
+      .elo-sbs-match {
+        font-weight: 700;
+        color: oklch(0.55 0.18 145);
+      }
+      .elo-compare-score {
+        font-size: 0.75rem;
+        color: var(--pico-muted-color);
+        white-space: nowrap;
+      }
+
       /* Sharing & Comparison */
       .elo-share-section {
         display: flex;
@@ -2665,9 +2766,32 @@
               <div id="elo-veto-list" class="elo-veto-list"></div>
             </div>
 
+            <div class="elo-intro-field">
+              <label>How many names to battle?</label>
+              <select id="elo-scope-select" class="elo-scope-select">
+                <option value="100">Top 100</option>
+                <option value="250" selected>Top 250</option>
+                <option value="500">Top 500</option>
+                <option value="0">All</option>
+              </select>
+            </div>
+
+            <div class="elo-intro-field">
+              <label>Filter by origin</label>
+              <div class="elo-origin-chips">
+                <span class="elo-origin-chip" data-origin="english">English</span>
+                <span class="elo-origin-chip" data-origin="celtic">Celtic</span>
+                <span class="elo-origin-chip" data-origin="germanic">Germanic</span>
+                <span class="elo-origin-chip" data-origin="biblical">Biblical</span>
+              </div>
+              <small class="elo-origin-hint">Select none for all origins</small>
+            </div>
+
             <p class="elo-pool-info">
               <span id="elo-pool-size">0</span> names in the battle pool
             </p>
+
+            <p id="elo-server-status" class="elo-server-status"></p>
 
             <p
               id="elo-resume-info"
@@ -2857,7 +2981,7 @@
     ></script>
     <script src="grid.js"></script>
     <script src="swipe.js"></script>
-    <script src="elo.js"></script>
+    <script src="glicko.js"></script>
     <script>
       (function () {
         var overlay = document.getElementById("about-overlay");
