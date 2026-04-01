@@ -131,3 +131,10 @@ dmypy.json
 .DS_Store
 package-lock.json
 node_modules/
+
+# SvelteKit
+.svelte-kit/
+frontend/build/
+
+# Backend
+backend/.venv/
